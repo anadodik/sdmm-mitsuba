@@ -1,0 +1,20 @@
+{
+  "python.linting.pylintEnabled": true,
+  "python.linting.enabled": true,
+  "languageserver": {
+    "ccls": {
+      "command": "ccls",
+      "filetypes": ["c", "cpp", "objc", "objcpp"],
+      "rootPatterns": [".ccls", "compile_commands.json", "build/compile_commands.json", ".vim/", ".git/", ".hg/"],
+      "initializationOptions": {
+         "cache": {
+           "directory": ".ccls-cache"
+         },
+         "compilationDatabaseDirectory": ".",
+         "client": {
+           "snippetSupport": true
+        }
+       }
+    }
+  }
+}
