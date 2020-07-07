@@ -41,15 +41,17 @@ plugins += bidirEnv.SharedLibrary('erpt',
         ['erpt/erpt.cpp', 'erpt/erpt_proc.cpp']
 )
 
-# PMC
-plugins += bidirEnv.SharedLibrary('pmc', [
-    'pmc/volpath_pmc.cpp',
-    'pmc/pmc_proc.cpp',
-    'pmc/pmc_wr.cpp',
-    'pmc/pmc_wu.cpp',
-    'pmc/jmm/multivariate_tangent_normal.cpp',
-    '../subsurface/bluenoise.cpp',
-    '../subsurface/irrproc.cpp'
-])
+plugins += bidirEnv.SharedLibrary(
+    'sdmm',
+    [
+        'sdmm/volpath_sdmm.cpp',
+        'sdmm/sdmm_proc.cpp',
+        'sdmm/sdmm_wr.cpp',
+        'sdmm/sdmm_wu.cpp',
+        'sdmm/jmm/multivariate_tangent_normal.cpp',
+        '../subsurface/bluenoise.cpp',
+        '../subsurface/irrproc.cpp',
+    ]
+)
 
 Export('plugins')

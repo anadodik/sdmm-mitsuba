@@ -16,8 +16,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if !defined(__PMC_WU_H)
-#define __PMC_WU_H
+#if !defined(__SDMM_WU_H)
+#define __SDMM_WU_H
 
 #include <mitsuba/core/sched.h>
 
@@ -32,9 +32,9 @@ MTS_NAMESPACE_BEGIN
    since each rendering thread simultaneously renders to a small 'camera
    image' block and potentially a full-resolution 'light image'.
 */
-class MTS_EXPORT_RENDER PMCWorkUnit : public WorkUnit {
+class MTS_EXPORT_RENDER SDMMWorkUnit : public WorkUnit {
 public:
-	PMCWorkUnit() : WorkUnit() { }
+	SDMMWorkUnit() : WorkUnit() { }
 
     /* WorkUnit implementation */
     void set(const WorkUnit *wu);
@@ -52,7 +52,7 @@ public:
     MTS_DECLARE_CLASS()
 protected:
     /// Virtual destructor
-    virtual ~PMCWorkUnit() { }
+    virtual ~SDMMWorkUnit() { }
 private:
     int m_populationId;
     Vector2i m_size;

@@ -16,21 +16,21 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "pmc_wu.h"
+#include "sdmm_wu.h"
 
 MTS_NAMESPACE_BEGIN
 
 /* ==================================================================== */
-/*                          PMCWorkUnit                                 */
+/*                          SDMMWorkUnit                                 */
 /* ==================================================================== */
 
-void PMCWorkUnit::set(const WorkUnit *wu) {
-    const PMCWorkUnit *pmcWu = static_cast<const PMCWorkUnit *>(wu);
-    m_populationId = pmcWu->m_populationId;
-    m_size = pmcWu->m_size;
+void SDMMWorkUnit::set(const WorkUnit *wu) {
+    const SDMMWorkUnit *sdmmWu = static_cast<const SDMMWorkUnit *>(wu);
+    m_populationId = sdmmWu->m_populationId;
+    m_size = sdmmWu->m_size;
 }
 
-void PMCWorkUnit::load(Stream *stream) {
+void SDMMWorkUnit::load(Stream *stream) {
     m_populationId = stream->readInt();
     int data[2];
     stream->readIntArray(data, 2);
@@ -38,7 +38,7 @@ void PMCWorkUnit::load(Stream *stream) {
     m_size.y   = data[1];
 }
 
-void PMCWorkUnit::save(Stream *stream) const {
+void SDMMWorkUnit::save(Stream *stream) const {
     stream->writeInt(m_populationId);
     int data[2];
     data[0] = m_size.x;
@@ -46,12 +46,12 @@ void PMCWorkUnit::save(Stream *stream) const {
     stream->writeIntArray(data, 2);
 }
 
-std::string PMCWorkUnit::toString() const {
+std::string SDMMWorkUnit::toString() const {
     std::ostringstream oss;
-    oss << "PMCWorkUnit[id=" << m_populationId
+    oss << "SDMMWorkUnit[id=" << m_populationId
         << ", size=" << m_size.toString() << "]";
     return oss.str();
 }
 
-MTS_IMPLEMENT_CLASS(PMCWorkUnit, false, WorkUnit)
+MTS_IMPLEMENT_CLASS(SDMMWorkUnit, false, WorkUnit)
 MTS_NAMESPACE_END

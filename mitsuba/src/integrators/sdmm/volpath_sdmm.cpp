@@ -40,23 +40,23 @@
 #include <mitsuba/bidir/edge.h>
 #include "../../subsurface/bluenoise.h"
 
-#include "pmc_config.h"
-#include "pmc_proc.h"
+#include "sdmm_config.h"
+#include "sdmm_proc.h"
 
 MTS_NAMESPACE_BEGIN
 
-static StatsCounter avgPathLength("PMC volumetric path tracer", "Average path length", EAverage);
+static StatsCounter avgPathLength("SDMM volumetric path tracer", "Average path length", EAverage);
 
-class PMCVolumetricPathTracer : public Integrator {
-    using Scalar = typename PMCProcess::Scalar;
-    using SamplesType = typename jmm::Samples<PMCProcess::t_dims, Scalar>;
+class SDMMVolumetricPathTracer : public Integrator {
+    using Scalar = typename SDMMProcess::Scalar;
+    using SamplesType = typename jmm::Samples<SDMMProcess::t_dims, Scalar>;
 
-    using GridCell = typename PMCProcess::GridCell;
-    using HashGridType = typename PMCProcess::HashGridType;
-	using GridKeyVector = typename PMCProcess::HashGridType::Vectord;
+    using GridCell = typename SDMMProcess::GridCell;
+    using HashGridType = typename SDMMProcess::HashGridType;
+	using GridKeyVector = typename SDMMProcess::HashGridType::Vectord;
         
 public:
-    PMCVolumetricPathTracer(const Properties &props) : Integrator(props) { 
+    SDMMVolumetricPathTracer(const Properties &props) : Integrator(props) { 
 		/* Load the parameters / defaults */
 		m_config.maxDepth = props.getInteger("maxDepth", -1);
 		m_config.blockSize = props.getInteger("blockSize", -1);
@@ -92,9 +92,9 @@ public:
     }
 
     /// Unserialize from a binary data stream
-    PMCVolumetricPathTracer(Stream *stream, InstanceManager *manager)
+    SDMMVolumetricPathTracer(Stream *stream, InstanceManager *manager)
     : Integrator(stream, manager) { 
-        m_config = PMCConfiguration(stream);
+        m_config = SDMMConfiguration(stream);
     }
 
     void serialize(Stream *stream, InstanceManager *manager) const  override{
@@ -110,7 +110,7 @@ public:
 
 		if (scene->getSubsurfaceIntegrators().size() > 0)
 			Log(EError, "Subsurface integrators are not supported "
-				"by the PMC path tracer!");
+				"by the SDMM path tracer!");
 
 		return true;
 	}
@@ -120,7 +120,7 @@ public:
     }
 
     void initializeJMM() {
-        m_distribution->setNComponents(PMCProcess::t_initComponents);
+        m_distribution->setNComponents(SDMMProcess::t_initComponents);
         std::function<Scalar()> rng = 
             [samplerCopy = m_sampler]() mutable -> Scalar {
                 return samplerCopy->next1D();
@@ -278,14 +278,14 @@ public:
         Eigen::Matrix<Scalar, 5, 1> bPrior;// bPrior << 1e-3, 1e-3, 1e-3, 1e-5, 1e-5;
         GridCell cell;
         cell.samples.reserve(m_maxSamplesSize);
-        cell.optimizer = PMCProcess::StepwiseEMType(
+        cell.optimizer = SDMMProcess::StepwiseEMType(
             m_config.alpha, bPrior, 1e-3
         );
         return cell;
     }
 
     void blueNoiseHashGridInit() {
-        using ConditionVectord = typename PMCProcess::MM::ConditionVectord;
+        using ConditionVectord = typename SDMMProcess::MM::ConditionVectord;
         const auto scene_aabb = m_scene->getAABBWithoutCamera();
         const auto aabb_min = scene_aabb.min;
         const auto aabb_extents = scene_aabb.getExtents();
@@ -378,8 +378,8 @@ public:
 
     void optimizeHashGrid(int iteration) {
         std::cerr << "Splitting samples.\n";
-        using ConditionVectord = typename PMCProcess::MM::ConditionVectord;
-        constexpr static int t_conditionDims = PMCProcess::t_conditionDims;
+        using ConditionVectord = typename SDMMProcess::MM::ConditionVectord;
+        constexpr static int t_conditionDims = SDMMProcess::t_conditionDims;
         int splitThreshold = 16000;
 
         if(iteration * m_config.samplesPerIteration > m_config.sampleCount / 2) {
@@ -538,9 +538,9 @@ public:
 
         Properties props("independent");
         props.setInteger(
-            "sampleCount", PMCProcess::t_initComponents * PMCProcess::t_dims
+            "sampleCount", SDMMProcess::t_initComponents * SDMMProcess::t_dims
         );
-        props.setInteger("dimension", PMCProcess::t_dims);
+        props.setInteger("dimension", SDMMProcess::t_dims);
         props.setInteger("seed", m_config.rngSeed);
         m_sampler = static_cast<Sampler*>(
             PluginManager::getInstance()->createObject(
@@ -583,16 +583,16 @@ public:
         );
         m_grid->split_to_depth(2);
 
-        m_distribution = std::make_shared<PMCProcess::MM>();
-        m_diffuseDistribution = std::make_shared<PMCProcess::MMDiffuse>();
-        // m_diffuseDistribution->load("/home/anadodik/pmc/scenes/cornell-box/diffuse.jmm");
-        m_optimizer = std::make_shared<PMCProcess::StepwiseEMType>(
+        m_distribution = std::make_shared<SDMMProcess::MM>();
+        m_diffuseDistribution = std::make_shared<SDMMProcess::MMDiffuse>();
+        // m_diffuseDistribution->load("/home/anadodik/sdmm/scenes/cornell-box/diffuse.jmm");
+        m_optimizer = std::make_shared<SDMMProcess::StepwiseEMType>(
             m_config.alpha,
             Eigen::Matrix<Scalar, 5, 1>::Constant(1e-5),
-            1.f / Scalar(PMCProcess::t_initComponents)
+            1.f / Scalar(SDMMProcess::t_initComponents)
         );
 
-        m_samples = std::make_shared<PMCProcess::RenderingSamplesType>();
+        m_samples = std::make_shared<SDMMProcess::RenderingSamplesType>();
         m_samples->reserve(m_maxSamplesSize);
         m_samples->clear();
         // blueNoiseHashGridInit();
@@ -615,7 +615,7 @@ public:
                 "Render iteration " + std::to_string(iteration) + ".\n";
 
             m_samples->clear();
-            ref<PMCProcess> process = new PMCProcess(
+            ref<SDMMProcess> process = new SDMMProcess(
                 job,
                 queue,
                 m_config,
@@ -638,7 +638,7 @@ public:
             m_process = NULL;
             process->develop();
 
-            #if PMC_DEBUG == 1
+            #if SDMM_DEBUG == 1
                 process->getResult()->dump(m_config, path.parent_path(), path.stem());
             #endif
 
@@ -649,8 +649,8 @@ public:
 
             // if(m_config.correctStateDensity) {
             //     jmm::estimateStateDensity<
-            //         PMCProcess::t_dims,
-            //         PMCProcess::t_conditionDims,
+            //         SDMMProcess::t_dims,
+            //         SDMMProcess::t_conditionDims,
             //         Scalar
             //     >(*m_samples);
             //     // m_samples->stateDensities.topRows(m_samples->size()).setOnes();
@@ -817,22 +817,22 @@ public:
     MTS_DECLARE_CLASS()
 private:
     ref<ParallelProcess> m_process;
-    PMCConfiguration m_config;
+    SDMMConfiguration m_config;
 
     int m_maxSamplesSize;
 
     ref<Sampler> m_sampler;
     Scene* m_scene;
-    std::shared_ptr<typename PMCProcess::MM> m_distribution;
-    std::shared_ptr<typename PMCProcess::MMDiffuse> m_diffuseDistribution;
-    std::shared_ptr<typename PMCProcess::RenderingSamplesType> m_samples;
+    std::shared_ptr<typename SDMMProcess::MM> m_distribution;
+    std::shared_ptr<typename SDMMProcess::MMDiffuse> m_diffuseDistribution;
+    std::shared_ptr<typename SDMMProcess::RenderingSamplesType> m_samples;
     std::deque<SamplesType> m_replayBuffer;
     SamplesType m_mergedSamples;
 
-    std::shared_ptr<typename PMCProcess::StepwiseEMType> m_optimizer;
+    std::shared_ptr<typename SDMMProcess::StepwiseEMType> m_optimizer;
     std::shared_ptr<HashGridType> m_grid;
 };
 
-MTS_IMPLEMENT_CLASS_S(PMCVolumetricPathTracer, false, MonteCarloIntegrator)
-MTS_EXPORT_PLUGIN(PMCVolumetricPathTracer, "PMC volumetric path tracer");
+MTS_IMPLEMENT_CLASS_S(SDMMVolumetricPathTracer, false, MonteCarloIntegrator)
+MTS_EXPORT_PLUGIN(SDMMVolumetricPathTracer, "SDMM volumetric path tracer");
 MTS_NAMESPACE_END

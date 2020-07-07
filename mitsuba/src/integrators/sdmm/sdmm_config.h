@@ -16,10 +16,10 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if !defined(__PMC_CONFIG_H)
-#define __PMC_CONFIG_H
+#if !defined(__SDMM_CONFIG_H)
+#define __SDMM_CONFIG_H
 
-#define PMC_DEBUG 0
+#define SDMM_DEBUG 0
 
 #include <mitsuba/mitsuba.h>
 
@@ -33,7 +33,7 @@ MTS_NAMESPACE_BEGIN
  * \brief Stores all configuration parameters of the
  * bidirectional path tracer
  */
-struct PMCConfiguration {
+struct SDMMConfiguration {
 	int maxDepth, blockSize, borderSize;
     int sampleCount;
 	bool sampleDirect;
@@ -61,9 +61,9 @@ struct PMCConfiguration {
 	Vector2i cropSize;
 	int rrDepth;
 
-	inline PMCConfiguration() { }
+	inline SDMMConfiguration() { }
 
-	inline PMCConfiguration(Stream *stream) {
+	inline SDMMConfiguration(Stream *stream) {
 		maxDepth = stream->readInt();
 		blockSize = stream->readInt();
 		sampleDirect = stream->readBool();
@@ -123,7 +123,7 @@ struct PMCConfiguration {
 
 	void dump() const {
 #define LOG_TYPE EInfo
-		SLog(LOG_TYPE, "   PMC path tracer configuration:");
+		SLog(LOG_TYPE, "   SDMM path tracer configuration:");
 		SLog(LOG_TYPE, "   Maximum path depth          : %i", maxDepth);
 		SLog(LOG_TYPE, "   Image size                  : %ix%i",
 			cropSize.x, cropSize.y);
@@ -150,7 +150,7 @@ struct PMCConfiguration {
 			enablePER ? "yes" : "no");
 		SLog(LOG_TYPE, "   Replay buffer length        : %i", replayBufferLength);
 		SLog(LOG_TYPE, "   Resample proportion         : %f", resampleProportion);
-		#if PMC_DEBUG == 1
+		#if SDMM_DEBUG == 1
 		SLog(LOG_TYPE, "   Show weighted contributions : %s", showWeighted ? "yes" : "no");
 		#endif
 		SLog(LOG_TYPE, "   RNG seed                    : %i", rngSeed);
@@ -165,4 +165,4 @@ struct PMCConfiguration {
 
 MTS_NAMESPACE_END
 
-#endif /* __PMC_CONFIG  */
+#endif /* __SDMM_CONFIG  */

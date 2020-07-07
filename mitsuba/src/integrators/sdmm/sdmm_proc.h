@@ -16,8 +16,8 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if !defined(__PMC_PROC_H)
-#define __PMC_PROC_H
+#if !defined(__SDMM_PROC_H)
+#define __SDMM_PROC_H
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic error "-Wpedantic"
@@ -34,8 +34,8 @@
 #include <mitsuba/render/renderproc.h>
 #include <mitsuba/render/renderjob.h>
 #include <mitsuba/core/bitmap.h>
-#include "pmc_wr.h"
-#include "pmc_config.h"
+#include "sdmm_wr.h"
+#include "sdmm_config.h"
 
 #include "jmm/hash_grid.h"
 #include "jmm/stree.h"
@@ -52,7 +52,7 @@ using RenderingSamples = jmm::Samples<t_dims, Scalar>;
 /*                           Parallel process                           */
 /* ==================================================================== */
 
-class PMCProcess : public BlockedRenderProcess {
+class SDMMProcess : public BlockedRenderProcess {
 public:
     constexpr static int t_dims = 6;
     constexpr static int t_conditionalDims = 3;
@@ -114,10 +114,10 @@ public:
     using ConditionalVectord = typename MMCond::Vectord;
     using ConditionalMatrixd = typename MMCond::Matrixd;
 
-    PMCProcess(
+    SDMMProcess(
         const RenderJob *parent,
         RenderQueue *queue,
-        const PMCConfiguration &config,
+        const SDMMConfiguration &config,
         std::shared_ptr<MM> distribution,
         std::shared_ptr<HashGridType> grid,
         std::shared_ptr<MMDiffuse> diffuseDistribution,
@@ -125,7 +125,7 @@ public:
         int iteration
     );
 
-    inline const PMCWorkResult *getResult() const { return m_result.get(); }
+    inline const SDMMWorkResult *getResult() const { return m_result.get(); }
 
     /// Develop the image
     void develop();
@@ -138,14 +138,14 @@ public:
     MTS_DECLARE_CLASS()
 protected:
     /// Virtual destructor
-    virtual ~PMCProcess() { }
+    virtual ~SDMMProcess() { }
 private:
-    ref<PMCWorkResult> m_result;
+    ref<SDMMWorkResult> m_result;
     Float m_averagePathLength = 0.f;
     int m_pathCount = 0;
 
     ref<Timer> m_refreshTimer;
-    PMCConfiguration m_config;
+    SDMMConfiguration m_config;
 
     std::shared_ptr<MM> m_distribution;
     std::shared_ptr<HashGridType> m_grid;
@@ -156,4 +156,4 @@ private:
 
 MTS_NAMESPACE_END
 
-#endif /* __PMC_PROC */
+#endif /* __SDMM_PROC */

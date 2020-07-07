@@ -19,7 +19,7 @@
 #include <mitsuba/core/bitmap.h>
 #include <mitsuba/core/fstream.h>
 #include <iostream>
-#include "pmc_wr.h"
+#include "sdmm_wr.h"
 
 MTS_NAMESPACE_BEGIN
 
@@ -27,7 +27,7 @@ MTS_NAMESPACE_BEGIN
 /*                             Work result                              */
 /* ==================================================================== */
 
-PMCWorkResult::PMCWorkResult(const PMCConfiguration &conf,
+SDMMWorkResult::SDMMWorkResult(const SDMMConfiguration &conf,
 		const ReconstructionFilter *rfilter, Vector2i blockSize) {
     if (blockSize == Vector2i(-1, -1))
         blockSize = Vector2i(conf.blockSize, conf.blockSize);
@@ -40,7 +40,7 @@ PMCWorkResult::PMCWorkResult(const PMCConfiguration &conf,
 	m_blockSqr->setOffset(Point2i(0, 0));
 	m_blockSqr->setSize(blockSize);
 
-#if PMC_DEBUG == 1
+#if SDMM_DEBUG == 1
 	m_debugBlocks.resize(m_populations * m_iterations);
 	for (size_t i = 0; i < m_debugBlocks.size(); ++i) {
 		m_debugBlocks[i] = new ImageBlock(Bitmap::ESpectrum, blockSize, rfilter);
@@ -66,10 +66,10 @@ PMCWorkResult::PMCWorkResult(const PMCConfiguration &conf,
     m_denoised->setOffset(Point2i(0, 0));
 }
 
-PMCWorkResult::~PMCWorkResult() { }
+SDMMWorkResult::~SDMMWorkResult() { }
 
-void PMCWorkResult::put(const PMCWorkResult *workResult) {
-#if PMC_DEBUG == 1
+void SDMMWorkResult::put(const SDMMWorkResult *workResult) {
+#if SDMM_DEBUG == 1
 	for (size_t i = 0; i < m_debugBlocks.size(); ++i)
 		m_debugBlocks[i]->put(workResult->m_debugBlocks[i].get());
     m_manualImage->put(workResult->m_manualImage.get());
@@ -78,8 +78,8 @@ void PMCWorkResult::put(const PMCWorkResult *workResult) {
 	m_blockSqr->put(workResult->m_blockSqr.get());
 }
 
-void PMCWorkResult::clear() {
-#if PMC_DEBUG == 1
+void SDMMWorkResult::clear() {
+#if SDMM_DEBUG == 1
 	for (size_t i=0; i<m_debugBlocks.size(); ++i)
 		m_debugBlocks[i]->clear();
     m_manualImage->clear();
@@ -92,11 +92,11 @@ void PMCWorkResult::clear() {
     m_denoised->clear();
 }
 
-#if PMC_DEBUG == 1
+#if SDMM_DEBUG == 1
 /* In debug mode, this function allows to dump the contributions of
    the individual sampling strategies to a series of images */
-void PMCWorkResult::dump(
-    const PMCConfiguration &conf,
+void SDMMWorkResult::dump(
+    const SDMMConfiguration &conf,
     const fs::path &prefix,
     const fs::path &stem
 ) const {
@@ -118,7 +118,7 @@ void PMCWorkResult::dump(
     }
 }
 
-void PMCWorkResult::dumpManual(const PMCConfiguration &conf,
+void SDMMWorkResult::dumpManual(const SDMMConfiguration &conf,
 		const fs::path &prefix, const fs::path &stem) const {
     Bitmap *bitmap = const_cast<Bitmap *>(m_manualImage->getBitmap());
     fs::path hdrFilename = prefix / fs::path(formatString("manual_image.exr"));
@@ -128,7 +128,7 @@ void PMCWorkResult::dumpManual(const PMCConfiguration &conf,
 
 #endif
 
-void PMCWorkResult::dumpOutliers(const PMCConfiguration &conf,
+void SDMMWorkResult::dumpOutliers(const SDMMConfiguration &conf,
 		const fs::path &prefix, const fs::path &stem, int iteration) const {
 	Float weight = (Float) 1.0f / (Float) (conf.samplesPerIteration);
     Bitmap *bitmap = const_cast<Bitmap *>(m_outliers->getBitmap());
@@ -140,7 +140,7 @@ void PMCWorkResult::dumpOutliers(const PMCConfiguration &conf,
     cropped->write(Bitmap::EOpenEXR, targetFileHDR, 1);
 }
 
-void PMCWorkResult::dumpSpatialDensity(
+void SDMMWorkResult::dumpSpatialDensity(
     int spp, const fs::path &prefix, const fs::path &stem, int iteration
 ) const {
 	Float weight = (Float) 1.0f / (Float) spp;
@@ -153,7 +153,7 @@ void PMCWorkResult::dumpSpatialDensity(
     cropped->write(Bitmap::EOpenEXR, targetFileHDR, 1);
 }
 
-void PMCWorkResult::dumpDenoised(
+void SDMMWorkResult::dumpDenoised(
     int spp, const fs::path &prefix, const fs::path &stem, int iteration
 ) const {
 	Float weight = (Float) 1.0f / (Float) spp;
@@ -166,7 +166,7 @@ void PMCWorkResult::dumpDenoised(
     cropped->write(Bitmap::EOpenEXR, targetFileHDR, 1);
 }
 
-void PMCWorkResult::dumpIndividual(
+void SDMMWorkResult::dumpIndividual(
     int spp,
     int iteration,
     const fs::path &directory,
@@ -199,8 +199,8 @@ void PMCWorkResult::dumpIndividual(
     dumpImage(formatString("iteration_sqr%05i.exr", iteration), m_blockSqr);
 }
 
-void PMCWorkResult::load(Stream *stream) {
-#if PMC_DEBUG == 1
+void SDMMWorkResult::load(Stream *stream) {
+#if SDMM_DEBUG == 1
 	for (size_t i=0; i<m_debugBlocks.size(); ++i)
 		m_debugBlocks[i]->load(stream);
 #endif
@@ -211,8 +211,8 @@ void PMCWorkResult::load(Stream *stream) {
     m_denoised->load(stream);
 }
 
-void PMCWorkResult::save(Stream *stream) const {
-#if PMC_DEBUG == 1
+void SDMMWorkResult::save(Stream *stream) const {
+#if SDMM_DEBUG == 1
 	for (size_t i=0; i<m_debugBlocks.size(); ++i)
 		m_debugBlocks[i]->save(stream);
 #endif
@@ -223,9 +223,9 @@ void PMCWorkResult::save(Stream *stream) const {
     m_denoised->save(stream);
 }
 
-std::string PMCWorkResult::toString() const {
+std::string SDMMWorkResult::toString() const {
 	return m_block->toString();
 }
 
-MTS_IMPLEMENT_CLASS(PMCWorkResult, false, WorkResult)
+MTS_IMPLEMENT_CLASS(SDMMWorkResult, false, WorkResult)
 MTS_NAMESPACE_END

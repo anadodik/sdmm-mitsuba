@@ -16,12 +16,12 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if !defined(__PMC_WR_H)
-#define __PMC_WR_H
+#if !defined(__SDMM_WR_H)
+#define __SDMM_WR_H
 
 #include <mitsuba/render/imageblock.h>
 #include <mitsuba/core/fresolver.h>
-#include "pmc_config.h"
+#include "sdmm_config.h"
 
 MTS_NAMESPACE_BEGIN
 
@@ -34,10 +34,10 @@ MTS_NAMESPACE_BEGIN
    since each rendering thread simultaneously renders to a small 'camera
    image' block and potentially a full-resolution 'light image'.
 */
-class PMCWorkResult : public WorkResult {
+class SDMMWorkResult : public WorkResult {
 public:
 
-	PMCWorkResult(const PMCConfiguration &conf, const ReconstructionFilter *filter,
+	SDMMWorkResult(const SDMMConfiguration &conf, const ReconstructionFilter *filter,
         Vector2i blockSize = Vector2i(-1, -1));
 
 	// Clear the contents of the work result
@@ -54,12 +54,12 @@ public:
 	virtual void save(Stream *stream) const;
 
 	/// Aaccumulate another work result into this one
-	void put(const PMCWorkResult *workResult);
+	void put(const SDMMWorkResult *workResult);
 
-#if PMC_DEBUG == 1
+#if SDMM_DEBUG == 1
 	/* In debug mode, this function allows to dump the contributions of
 	   the individual sampling strategies to a series of images */
-	void dump(const PMCConfiguration &conf,
+	void dump(const SDMMConfiguration &conf,
 			const fs::path &prefix, const fs::path &stem) const;
 
 	inline void putDebugSample(int populationId, int iteration, const Point2 &sample,
@@ -67,7 +67,7 @@ public:
 		m_debugBlocks[sub2ind(populationId, iteration)]->put(sample, spec, 1.0f);
 	}
 
-	void dumpManual(const PMCConfiguration &conf,
+	void dumpManual(const SDMMConfiguration &conf,
 			const fs::path &prefix, const fs::path &stem) const;
 
 	inline void putManualSample(const Point2 &sample, const Spectrum &spec) {
@@ -79,7 +79,7 @@ public:
         int spp, int iteration, const fs::path &directory, Float time
     ) const;
 
-	void dumpOutliers(const PMCConfiguration &conf,
+	void dumpOutliers(const SDMMConfiguration &conf,
 			const fs::path &prefix, const fs::path &stem, int iteration) const;
     
 	void dumpSpatialDensity(
@@ -136,10 +136,10 @@ public:
 	MTS_DECLARE_CLASS()
 protected:
 	/// Virtual destructor
-	virtual ~PMCWorkResult();
+	virtual ~SDMMWorkResult();
 
 protected:
-#if PMC_DEBUG == 1
+#if SDMM_DEBUG == 1
     int sub2ind(int populationId, int iteration) const { return populationId * m_iterations + iteration; }
 	ref_vector<ImageBlock> m_debugBlocks;
 #endif

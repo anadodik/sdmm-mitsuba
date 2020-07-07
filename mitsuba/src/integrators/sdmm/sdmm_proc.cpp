@@ -16,7 +16,7 @@
    along with this program. If not, see <http://www.gnu.org/licenses/>.
    */
 
-#include "pmc_proc.h"
+#include "sdmm_proc.h"
 
 #include "blob_writer.h"
 
@@ -54,29 +54,29 @@
 
 MTS_NAMESPACE_BEGIN
 
-static StatsCounter avgPathLength("PMC path tracer", "Average path length", EAverage);
+static StatsCounter avgPathLength("SDMM path tracer", "Average path length", EAverage);
 
-static StatsCounter avgIterationTime("PMC Profiling (s)", "Average duration (s): render iteration", EAverage);
-static StatsCounter avgPyramidBuildTime("PMC Profiling (s)", "Average duration (s): pyramid build time", EAverage);
-static StatsCounter avgDensityEstimationTime("PMC Profiling (s)", "Average duration (s): density estimation", EAverage);
-static StatsCounter avgEMIterationTime("PMC Profiling (s)", "Average duration (s): EM iteration", EAverage);
-static StatsCounter avgPosteriorTime("PMC Profiling (s)", "Average duration (s): posterior calculation", EAverage);
+static StatsCounter avgIterationTime("SDMM Profiling (s)", "Average duration (s): render iteration", EAverage);
+static StatsCounter avgPyramidBuildTime("SDMM Profiling (s)", "Average duration (s): pyramid build time", EAverage);
+static StatsCounter avgDensityEstimationTime("SDMM Profiling (s)", "Average duration (s): density estimation", EAverage);
+static StatsCounter avgEMIterationTime("SDMM Profiling (s)", "Average duration (s): EM iteration", EAverage);
+static StatsCounter avgPosteriorTime("SDMM Profiling (s)", "Average duration (s): posterior calculation", EAverage);
 
-class PMCRenderer : public WorkProcessor {
-    constexpr static int t_dims = PMCProcess::t_dims;
-    constexpr static int t_conditionalDims = PMCProcess::t_conditionalDims;
-    constexpr static int t_conditionDims = PMCProcess::t_conditionDims;
-    constexpr static int t_initComponents = PMCProcess::t_initComponents;
-    constexpr static int t_components = PMCProcess::t_components;
-    constexpr static bool USE_BAYESIAN = PMCProcess::USE_BAYESIAN;
+class SDMMRenderer : public WorkProcessor {
+    constexpr static int t_dims = SDMMProcess::t_dims;
+    constexpr static int t_conditionalDims = SDMMProcess::t_conditionalDims;
+    constexpr static int t_conditionDims = SDMMProcess::t_conditionDims;
+    constexpr static int t_initComponents = SDMMProcess::t_initComponents;
+    constexpr static int t_components = SDMMProcess::t_components;
+    constexpr static bool USE_BAYESIAN = SDMMProcess::USE_BAYESIAN;
 
-    using MM = typename PMCProcess::MM;
-    using HashGridType = typename PMCProcess::HashGridType;
-    using GridCell = typename PMCProcess::GridCell;
+    using MM = typename SDMMProcess::MM;
+    using HashGridType = typename SDMMProcess::HashGridType;
+    using GridCell = typename SDMMProcess::GridCell;
 	using GridKeyVector = typename HashGridType::Vectord;
-    using MMDiffuse = typename PMCProcess::MMDiffuse;
+    using MMDiffuse = typename SDMMProcess::MMDiffuse;
     using MMCond = typename MM::ConditionalDistribution;
-    using StepwiseEMType = typename PMCProcess::StepwiseEMType;
+    using StepwiseEMType = typename SDMMProcess::StepwiseEMType;
     
     using MMScalar = typename MM::Scalar;
     using Vectord = typename MM::Vectord;
@@ -85,13 +85,13 @@ class PMCRenderer : public WorkProcessor {
     using ConditionalVectord = typename MMCond::Vectord;
     using ConditionalMatrixd = typename MMCond::Matrixd;
 
-    using RenderingSamplesType = typename PMCProcess::RenderingSamplesType;
+    using RenderingSamplesType = typename SDMMProcess::RenderingSamplesType;
 
     using FeatureVectord = Point3f;
     using KDNode = SimpleKDNode<FeatureVectord, Float>;
 public:
-	PMCRenderer(
-        const PMCConfiguration &config,
+	SDMMRenderer(
+        const SDMMConfiguration &config,
         std::shared_ptr<MM> distribution,
         std::shared_ptr<HashGridType> grid,
         std::shared_ptr<MMDiffuse> diffuseDistribution,
@@ -106,10 +106,10 @@ public:
         m_iteration(iteration)
     { }
 
-	PMCRenderer(Stream *stream, InstanceManager *manager)
+	SDMMRenderer(Stream *stream, InstanceManager *manager)
 	: WorkProcessor(stream, manager), m_config(stream) { }
 
-	virtual ~PMCRenderer() { }
+	virtual ~SDMMRenderer() { }
 
 	void serialize(Stream *stream, InstanceManager *manager) const {
 		m_config.serialize(stream);
@@ -120,7 +120,7 @@ public:
 	}
 
 	ref<WorkResult> createWorkResult() const {
-		return new PMCWorkResult(m_config, m_rfilter.get(), Vector2i(m_config.blockSize));
+		return new SDMMWorkResult(m_config, m_rfilter.get(), Vector2i(m_config.blockSize));
 	}
 
     Vectord sampleUniformVector(ref<Sampler> sampler) const {
@@ -148,7 +148,7 @@ public:
 
 	void process(const WorkUnit *workUnit, WorkResult *workResult, const bool &stop) {
         const RectangularWorkUnit *rect = static_cast<const RectangularWorkUnit *>(workUnit);
-        PMCWorkResult *result = static_cast<PMCWorkResult *>(workResult);
+        SDMMWorkResult *result = static_cast<SDMMWorkResult *>(workResult);
 
 		fs::path destinationFile = m_scene->getDestinationFile();
         m_cameraMatrix = m_sensor->getWorldTransform()->eval(0).getMatrix();
@@ -1079,7 +1079,7 @@ public:
     }
 
     /* 
-    void denoise(PMCWorkResult* result, const MM& distribution) {
+    void denoise(SDMMWorkResult* result, const MM& distribution) {
         using Scalar = MMScalar;
         using KDTree = typename kdt::KDTree<Scalar, kdt::EuclideanDistance<Scalar>>;
         using DistMatrix = typename KDTree::Matrix;
@@ -1601,7 +1601,7 @@ public:
     }
 
 	ref<WorkProcessor> clone() const {
-		return new PMCRenderer(
+		return new SDMMRenderer(
             m_config, m_distribution, m_grid, m_diffuseDistribution, m_samples, m_iteration
         );
 	}
@@ -1615,7 +1615,7 @@ private:
     std::function<MMScalar()> m_rng;
 	ref<ReconstructionFilter> m_rfilter;
 	MemoryPool m_pool;
-	PMCConfiguration m_config;
+	SDMMConfiguration m_config;
     int m_threadId = -1;
 	HilbertCurve2D<int> m_hilbertCurve;
     int m_iteration;
@@ -1640,27 +1640,27 @@ private:
     std::shared_ptr<RenderingSamplesType> m_samples;
 };
 
-std::deque<jmm::Samples<PMCProcess::t_dims, PMCRenderer::MMScalar>> PMCRenderer::prioritySamples;
-std::unique_ptr<typename PMCRenderer::StepwiseEMType> PMCRenderer::stepwiseEM;
+std::deque<jmm::Samples<SDMMProcess::t_dims, SDMMRenderer::MMScalar>> SDMMRenderer::prioritySamples;
+std::unique_ptr<typename SDMMRenderer::StepwiseEMType> SDMMRenderer::stepwiseEM;
 
-Eigen::Matrix<PMCRenderer::MMScalar, PMCProcess::t_conditionDims, 1> PMCRenderer::m_sampleMean;
-Eigen::Matrix<PMCRenderer::MMScalar, PMCProcess::t_conditionDims, 1> PMCRenderer::m_sampleStd;
+Eigen::Matrix<SDMMRenderer::MMScalar, SDMMProcess::t_conditionDims, 1> SDMMRenderer::m_sampleMean;
+Eigen::Matrix<SDMMRenderer::MMScalar, SDMMProcess::t_conditionDims, 1> SDMMRenderer::m_sampleStd;
 
 /* ==================================================================== */
 /*                           Parallel process                           */
 /* ==================================================================== */
 
-constexpr int PMCProcess::t_dims;
-constexpr int PMCProcess::t_conditionalDims;
-constexpr int PMCProcess::t_conditionDims;
-constexpr int PMCProcess::t_initComponents;
-constexpr int PMCProcess::t_components;
-constexpr bool PMCProcess::USE_BAYESIAN;
+constexpr int SDMMProcess::t_dims;
+constexpr int SDMMProcess::t_conditionalDims;
+constexpr int SDMMProcess::t_conditionDims;
+constexpr int SDMMProcess::t_initComponents;
+constexpr int SDMMProcess::t_components;
+constexpr bool SDMMProcess::USE_BAYESIAN;
 
-PMCProcess::PMCProcess(
+SDMMProcess::SDMMProcess(
     const RenderJob *parent,
     RenderQueue *queue,
-    const PMCConfiguration &config,
+    const SDMMConfiguration &config,
     std::shared_ptr<MM> distribution,
     std::shared_ptr<HashGridType> grid,
     std::shared_ptr<MMDiffuse> diffuseDistribution,
@@ -1679,14 +1679,14 @@ PMCProcess::PMCProcess(
     // barrier = std::make_unique<boost::barrier>(m_config.populations);
 }
 
-ref<WorkProcessor> PMCProcess::createWorkProcessor() const {
-    ref<WorkProcessor> renderer = new PMCRenderer(
+ref<WorkProcessor> SDMMProcess::createWorkProcessor() const {
+    ref<WorkProcessor> renderer = new SDMMRenderer(
         m_config, m_distribution, m_grid, m_diffuseDistribution, m_samples, m_iteration
     );
     return renderer;
 }
 
-void PMCProcess::develop() {
+void SDMMProcess::develop() {
     LockGuard lock(m_resultMutex);
     Bitmap *bitmap = const_cast<Bitmap *>(
         m_result->getImageBlock()->getBitmap()
@@ -1704,10 +1704,10 @@ void PMCProcess::develop() {
     m_queue->signalRefresh(m_parent);
 }
 
-void PMCProcess::processResult(const WorkResult *wr, bool cancelled) {
+void SDMMProcess::processResult(const WorkResult *wr, bool cancelled) {
     if (cancelled)
         return;
-    const PMCWorkResult *result = static_cast<const PMCWorkResult *>(wr);
+    const SDMMWorkResult *result = static_cast<const SDMMWorkResult *>(wr);
     ImageBlock *block = const_cast<ImageBlock *>(result->getImageBlock());
     LockGuard lock(m_resultMutex);
     m_progress->update(++m_resultCount);
@@ -1719,16 +1719,16 @@ void PMCProcess::processResult(const WorkResult *wr, bool cancelled) {
     m_queue->signalWorkEnd(m_parent, result->getImageBlock(), false);
 }
 
-void PMCProcess::bindResource(const std::string &name, int id) {
+void SDMMProcess::bindResource(const std::string &name, int id) {
     BlockedRenderProcess::bindResource(name, id);
     if (name == "sensor") {
-        m_result = new PMCWorkResult(m_config, NULL, m_film->getCropSize());
+        m_result = new SDMMWorkResult(m_config, NULL, m_film->getCropSize());
         m_result->clear();
     }
 }
 
-MTS_IMPLEMENT_CLASS(PMCRenderer, false, WorkProcessor)
-MTS_IMPLEMENT_CLASS(PMCProcess, false, BlockedImageProcess)
+MTS_IMPLEMENT_CLASS(SDMMRenderer, false, WorkProcessor)
+MTS_IMPLEMENT_CLASS(SDMMProcess, false, BlockedImageProcess)
 
 MTS_NAMESPACE_END
 #pragma GCC diagnostic pop
