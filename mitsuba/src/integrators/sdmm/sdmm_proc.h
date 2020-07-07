@@ -31,6 +31,9 @@
 
 #pragma GCC diagnostic pop
 
+#include "sdmm/distributions/sdmm.h"
+#include "sdmm/distributions/sdmm_conditioner.h"
+
 #include <mitsuba/render/renderproc.h>
 #include <mitsuba/render/renderjob.h>
 #include <mitsuba/core/bitmap.h>
@@ -91,20 +94,6 @@ public:
 
     using RenderingSamplesType = RenderingSamples<t_dims, typename MM::Scalar>;
 
-    struct GridCell {
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-        MM distribution;
-        RenderingSamplesType samples;
-        StepwiseEMType optimizer;
-        Scalar error;
-    };
-
-    using HashGridType = jmm::STree<
-        Scalar, 3, GridCell
-    >;
-	using GridKeyVector = typename HashGridType::Vectord;
-
     using MMCond = typename MM::ConditionalDistribution;
     
     using MMScalar = typename MM::Scalar;
@@ -113,6 +102,59 @@ public:
 
     using ConditionalVectord = typename MMCond::Vectord;
     using ConditionalMatrixd = typename MMCond::Matrixd;
+
+    constexpr static size_t PacketSize = 8;
+    constexpr static size_t JointSize = 5;
+    constexpr static size_t MarginalSize = 3;
+    constexpr static size_t ConditionalSize = 2;
+    constexpr static size_t NComponents = 64;
+    constexpr static int NSamples = 1;
+    static_assert(JointSize == MarginalSize + ConditionalSize);
+
+    using Packet = enoki::Packet<Scalar, PacketSize>;
+    using Value = enoki::DynamicArray<Packet>;
+
+    using JointTangentSpace = sdmm::SpatioDirectionalTangentSpace<
+        sdmm::Vector<Value, JointSize + 1>, sdmm::Vector<Value, JointSize>
+    >;
+    using JointSDMM = sdmm::SDMM<
+        sdmm::Matrix<Value, JointSize>, JointTangentSpace
+    >;
+    using MarginalTangentSpace = sdmm::EuclidianTangentSpace<
+        sdmm::Vector<Value, MarginalSize>, sdmm::Vector<Value, MarginalSize>
+    >;
+    using MarginalSDMM = sdmm::SDMM<
+        sdmm::Matrix<Value, MarginalSize>, MarginalTangentSpace
+    >;
+    using ConditionalTangentSpace = sdmm::DirectionalTangentSpace<
+        sdmm::Vector<Value, ConditionalSize + 1>, sdmm::Vector<Value, ConditionalSize>
+    >;
+    using ConditionalSDMM = sdmm::SDMM<
+        sdmm::Matrix<Value, ConditionalSize>, ConditionalTangentSpace
+    >;
+
+    using Conditioner = sdmm::SDMMConditioner<
+        JointSDMM, MarginalSDMM, ConditionalSDMM
+    >;
+
+    using RNG = enoki::PCG32<Value, NSamples>;
+
+    struct GridCell {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+        MM distribution;
+        RenderingSamplesType samples;
+        StepwiseEMType optimizer;
+        Scalar error;
+        
+        JointSDMM sdmm;
+        Conditioner conditioner;
+    };
+
+    using HashGridType = jmm::STree<
+        Scalar, 3, GridCell
+    >;
+	using GridKeyVector = typename HashGridType::Vectord;
 
     SDMMProcess(
         const RenderJob *parent,

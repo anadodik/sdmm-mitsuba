@@ -54,6 +54,7 @@ for ver in python_versions:
         vars.Add('PYTHON' + key + 'LIB',     'Python '+ ver +' libraries')
         vars.Add('PYTHON' + key + 'LIBDIR',  'Python '+ ver +' library path')
 
+vars.Add('SDMMINCLUDE',     'SDMM include path')
 vars.Add('EIGENINCLUDE',    'Eigen 3.x include path')
 vars.Add('XERCESINCLUDE',   'Xerces-C include path')
 vars.Add('XERCESLIB',       'Xerces-C libraries')
@@ -105,7 +106,7 @@ hasCollada=True
 hasPython = []
 
 env.Append(CPPPATH=env['BASEINCLUDE'])
-env.Append(CPPPATH='#src/integrators/pmc')
+env.Append(CPPPATH='#src/integrators/sdmm')
 env.Append(CPPFLAGS=[])
 env.Append(LIBPATH=[])
 env.Append(LIBS=env['BASELIB'])
@@ -123,6 +124,8 @@ if env.has_key('OEXRLIBDIR'):
         env.Prepend(LIBPATH=env['OEXRLIBDIR'])
 if env.has_key('EIGENINCLUDE'):
         env.Prepend(CPPPATH=env['EIGENINCLUDE'])
+if env.has_key('SDMMINCLUDE'):
+        env.Prepend(CPPPATH=env['SDMMINCLUDE'])
 
 env.Decider('MD5-timestamp')
 
