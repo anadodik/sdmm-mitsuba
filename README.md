@@ -1,6 +1,6 @@
 # SDMM Mitsuba
 
-Mitsuba Implementation of SDMM Path Guiding
+Mitsuba Implementation of SDMM Path Guiding.
 
 ## Getting Started
 
