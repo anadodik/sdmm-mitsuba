@@ -27,7 +27,7 @@
     <default name="useInitWeightsForMixture" value="true"/>
     <default name="initKMeansSwapTolerance" value="1.0"/>
 
-	<integrator type="pmc">
+	<integrator type="sdmm">
         <integer name="maxDepth" value="$maxDepth"/>
         <integer name="blockSize" value="$blockSize"/>
         <integer name="samplesPerIteration" value="$samplesPerIteration"/>

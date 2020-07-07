@@ -147,6 +147,41 @@ public:
         assert(success);
     }
 
+    template<typename JMM, typename SDMM, size_t... Indices>
+    void copy_means(JMM& jmm, SDMM& sdmm, std::index_sequence<Indices...>) {
+        size_t NComponents = jmm.nComponents();
+        for(size_t component_i = 0; component_i < NComponents; ++component_i) {
+            enoki::slice(sdmm.tangent_space, component_i).set_mean(
+                sdmm::embedded_s_t<SDMM>(
+                    jmm.components()[component_i].mean()(Indices)...
+                )
+            );
+        }
+    }
+
+    template<typename JMM, typename SDMM, size_t... Indices>
+    void copy_covs(JMM& jmm, SDMM& sdmm, std::index_sequence<Indices...>) {
+        size_t NComponents = jmm.nComponents();
+        for(size_t component_i = 0; component_i < NComponents; ++component_i) {
+            enoki::slice(sdmm.cov, component_i) = sdmm::matrix_s_t<SDMM>(
+                jmm.components()[component_i].cov()(Indices)...
+            );
+        }
+    }
+
+    template<typename JMM, typename SDMM>
+    void copy_sdmm(JMM& jmm, SDMM& sdmm) {
+        size_t NComponents = jmm.nComponents();
+        enoki::set_slices(sdmm, NComponents);
+        copy_means(jmm, sdmm, std::make_index_sequence<SDMM::Embedded::Size>{});
+        copy_covs(jmm, sdmm, std::make_index_sequence<SDMM::Tangent::Size * SDMM::Tangent::Size>{});
+        for(size_t component_i = 0; component_i < NComponents; ++component_i) {
+            enoki::slice(sdmm.weight.pmf, component_i) = jmm.weights()[component_i];
+        }
+        bool prepare_success = sdmm::prepare(sdmm);
+        assert(prepare_success);
+    }
+
     void saveCheckpoint(const fs::path& experimentPath, int iteration) {
         fs::path checkpointsDir = experimentPath / "checkpoints";
         if(iteration == 0 && (!fs::is_directory(checkpointsDir) || !fs::exists(checkpointsDir))) {
@@ -393,6 +428,7 @@ public:
 
         std::cerr << "Optimizing guiding distribution: " << nodes.size() << " nodes in tree.\n";
 
+        // TODO: TURN ON
         #pragma omp parallel for
         for(int cell_i = 0; cell_i < nodes.size(); ++cell_i) {
             if(!nodes[cell_i].isLeaf) {
@@ -424,6 +460,12 @@ public:
                 cell->optimizer.optimize(cell->distribution, cell->samples, error);
                 cell->error = error;
                 cell->samples.clear();
+
+                std::cerr << "Done optimizing. Copying " << cell->distribution.nComponents() << " components.\n";
+                copy_sdmm(cell->distribution, cell->sdmm);
+
+                enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
+                sdmm::prepare(cell->conditioner, cell->sdmm);
             }
         }
         /*

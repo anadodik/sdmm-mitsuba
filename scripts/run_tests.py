@@ -6,7 +6,6 @@ import numpy as np
 from test_suite_utils import MITSUBA_PATH, SCENES
 from test_suite_utils import get_scene_path, get_experiment_path, get_gt_path, get_combined_path, get_plots_path
 from combine_renders import combine_renders
-from jeri_viewer import create_jeri_page
 
 def render_experiment(scene_name, experiment_name, integrator, parameters, processors):
     print('Running experiment {}, scene {}, with {} and {}'.format(experiment_name, scene_name, integrator, parameters))
@@ -73,7 +72,6 @@ def render_experiment(scene_name, experiment_name, integrator, parameters, proce
 def combine(scene_name, experiment_name, integrator, parameters):
     experiment_path = get_experiment_path(scene_name, experiment_name, integrator, parameters)
     combine_renders(experiment_path, 'var')
-    # create_jeri_page(os.path.join(experiment_path, 'individual'), experiment_path)
 
 def render_gt(scene_name, parameters):
     print('Running ground truth with scene {}, with {}'.format(scene_name, parameters))

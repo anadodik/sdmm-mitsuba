@@ -189,7 +189,7 @@ namespace jmm {
         std::cerr << "3D depth initialized to " << depthPriorSqr / maxRadiusSqr << '\n';
 
         int component_i = 0;
-        Scalar nThetas = 3;
+        Scalar nThetas = 2;
         Scalar nPhis = 4;
         Scalar directionalInit = 1.f / (nThetas * nPhis);
         // Scalar nThetas = 3;
@@ -235,9 +235,9 @@ namespace jmm {
             bool isTwoSided = false; // sides[position_i] == SphereSide::Both;
             Scalar theta = (isTwoSided) ? -0.5 * M_PI : 0;
             Scalar totalNThetas = (isTwoSided) ? 2 * nThetas : nThetas;
-            if(std::abs(curvatures(position_i)) > 1e-4) {
-                totalNThetas++;
-            }
+            // if(std::abs(curvatures(position_i)) > 1e-4) {
+            //     totalNThetas++;
+            // }
             for(int theta_i = 0; theta_i < totalNThetas; ++theta_i) {
                 Scalar rn = (rng() - 0.5) * 2e-1;
                 theta += 0.5 * M_PI / (nThetas + 1) + rn;
@@ -266,25 +266,27 @@ namespace jmm {
                     bPriors[component_i] = bPrior;
                     bDepthPriors[component_i].setZero();
                     // std::cerr << "Curvature: " << curvatures(position_i) << "\n";
-                    // if(std::abs(curvatures(position_i)) < 1e-4) {
-                    //     bDepthPriors[component_i] += 
-                    //         n * n.transpose() * 5e-8;
-                    // } else {
-                    //     // std::cerr << "Large curvature init\n";
-                    //     bDepthPriors[component_i] +=
-                    //         n * n.transpose() * 1e-5;
-                    // }
+                    if(std::abs(curvatures(position_i)) < 1e-4) {
+                        bDepthPriors[component_i] += 
+                            n * n.transpose() * 5e-8;
+                    } else {
+                        // std::cerr << "Large curvature init\n";
+                        bDepthPriors[component_i] +=
+                            n * n.transpose() * 1e-5;
+                    }
 
                     ++component_i;
                 }
             }
         }
-        distribution.setNComponents(component_i);
+        // distribution.setNComponents(component_i);
         if(t_components > distribution.nComponents()) {
             std::fill(std::begin(weights) + distribution.nComponents(), std::end(weights), 0);
         }
         bool success = distribution.configure();
         assert(success);
+        std::cerr << "Finished initializing.\n";
+        std::cerr << "Initialized " << distribution.nComponents() << " .\n";
     }
 
     template<int t_dims, typename Scalar>

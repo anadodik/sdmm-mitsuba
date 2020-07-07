@@ -5,10 +5,10 @@ import scipy.misc
 from scipy.ndimage.filters import convolve1d
 from PIL import Image
 
-ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MITSUBA_PATH = os.path.join(ROOT_PATH, 'mitsuba')
-SCENES_PATH = os.path.join(ROOT_PATH, 'scenes')
-RESULTS_PATH = os.path.join(ROOT_PATH, 'results')
+SCENES_PATH = os.path.join(ROOT_PATH, 'test-suite', 'scenes')
+RESULTS_PATH = os.path.join(ROOT_PATH, 'test-suite', 'results')
 
 SCENES = [
     'cornell-box',

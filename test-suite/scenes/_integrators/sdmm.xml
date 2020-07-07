@@ -5,7 +5,7 @@
     <integer name="rrDepth" value="10"/>
     <default name="blockSize" value="-1"/>
 
-	<integrator type="pmc">
+	<integrator type="sdmm">
         <integer name="maxDepth" value="$maxDepth"/>
         <integer name="rrDepth" value="$maxDepth"/>
         <integer name="blockSize" value="$blockSize"/>
