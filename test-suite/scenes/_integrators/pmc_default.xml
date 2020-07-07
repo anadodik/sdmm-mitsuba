@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<scene version="0.6.0">
+    <integer name="maxDepth" value="10"/>
+    <integer name="rrDepth" value="10"/>
+    <default name="blockSize" value="-1"/>
+
+    <default name="samplesPerIteration" value="8"/>
+    <default name="useHierarchical" value="true"/>
+    <default name="sampleProduct" value="true"/>
+
+    <default name="alpha" value="0.5"/>
+    <default name="batchIterations" value="8"/>
+    <default name="initIterations" value="2"/>
+
+    <default name="enablePER" value="true"/>
+    <default name="replayBufferLength" value="2"/>
+    <default name="resampleProportion" value="0.1"/>
+
+    <default name="decreasePrior" value="true"/>
+    <default name="correctStateDensity" value="true"/>
+    <default name="savedSamplesPerPath" value="8"/>
+
+    <default name="useInit" value="true"/>
+    <default name="useInitCovar" value="true"/>
+    <default name="useInitWeightsForMeans" value="true"/>
+    <default name="useInitWeightsForMixture" value="true"/>
+    <default name="initKMeansSwapTolerance" value="1.0"/>
+
+	<integrator type="pmc">
+        <integer name="maxDepth" value="$maxDepth"/>
+        <integer name="blockSize" value="$blockSize"/>
+        <integer name="samplesPerIteration" value="$samplesPerIteration"/>
+        <boolean name="useHierarchical" value="$useHierarchical"/>
+        <boolean name="sampleProduct" value="$sampleProduct"/>
+
+        <float name="alpha" value="$alpha"/>
+        <integer name="batchIterations" value="$batchIterations"/>
+        <integer name="initIterations" value="$initIterations"/>
+
+        <boolean name="enablePER" value="$enablePER"/>
+        <integer name="replayBufferLength" value="$replayBufferLength"/>
+        <float name="resampleProportion" value="$resampleProportion"/>
+
+        <boolean name="decreasePrior" value="$decreasePrior"/>
+        <boolean name="correctStateDensity" value="$correctStateDensity"/>
+        <integer name="savedSamplesPerPath" value="$savedSamplesPerPath"/>
+
+        <integer name="rrDepth" value="$rrDepth"/>
+        <boolean name="strictNormals" value="true"/>
+
+        <boolean name="useInit" value="$useInit"/>
+        <boolean name="useInitCovar" value="$useInitCovar"/>
+        <boolean name="useInitWeightsForMeans" value="$useInitWeightsForMeans"/>
+        <boolean name="useInitWeightsForMixture" value="$useInitWeightsForMixture"/>	
+        <float name="initKMeansSwapTolerance" value="$initKMeansSwapTolerance"/>
+	</integrator>
+</scene>

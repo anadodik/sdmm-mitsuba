@@ -1,0 +1,39 @@
+2020-05-04 16:42:12 INFO  main [mitsuba.cpp:274] Mitsuba version 0.6.0 (Linux, 64 bit), Copyright (c) 2017 Wenzel Jakob
+2020-05-04 16:42:12 INFO  main [mitsuba.cpp:377] Parsing scene description from "/home/anadodik/pmc/scenes/cornell-box/cornell-box.xml" ..
+2020-05-04 16:42:12 INFO  main [scenehandler.cpp:675] In file "/home/anadodik/pmc/scenes/cornell-box/cornell-box.xml" (near line 13): Parsing included file "gt.xml" ..
+2020-05-04 16:42:12 INFO  main [PluginManager] Loading plugin "plugins/volpath.so" ..
+2020-05-04 16:42:12 INFO  main [PluginManager] Loading plugin "plugins/independent.so" ..
+2020-05-04 16:42:12 INFO  main [PluginManager] Loading plugin "plugins/box.so" ..
+2020-05-04 16:42:12 INFO  main [PluginManager] Loading plugin "plugins/hdrfilm.so" ..
+2020-05-04 16:42:12 INFO  main [PluginManager] Loading plugin "plugins/perspective.so" ..
+2020-05-04 16:42:12 INFO  main [PluginManager] Loading plugin "plugins/diffuse.so" ..
+2020-05-04 16:42:12 INFO  main [PluginManager] Loading plugin "plugins/twosided.so" ..
+2020-05-04 16:42:12 INFO  main [PluginManager] Loading plugin "plugins/rectangle.so" ..
+2020-05-04 16:42:12 INFO  main [PluginManager] Loading plugin "plugins/cube.so" ..
+2020-05-04 16:42:12 INFO  main [PluginManager] Loading plugin "plugins/area.so" ..
+2020-05-04 16:42:12 INFO  ren0 [KDTreeBase] Constructing a SAH kd-tree (30 primitives) ..
+2020-05-04 16:42:12 INFO  ren0 [KDTreeBase] Finished -- took 0 ms.
+2020-05-04 16:42:12 INFO  ren0 [SamplingIntegrator] Starting render job (256x256, 32768 samples, 128 cores, SSE2 enabled) ..
+2020-05-04 16:45:32 INFO  ren0 [RenderJob] Render time: 3.3244m
+2020-05-04 16:45:32 INFO  ren0 [HDRFilm] Writing image to "/home/anadodik/pmc/scenes/gt/cornell-box/gt/cornell-box.exr" ..
+2020-05-04 16:45:32 INFO  main [statistics.cpp:142] Statistics:
+------------------------------------------------------------
+ * Loaded plugins :
+    -  plugins/area.so [Area light]
+    -  plugins/box.so [Box filter]
+    -  plugins/cube.so [Cube intersection primitive]
+    -  plugins/diffuse.so [Smooth diffuse BRDF]
+    -  plugins/hdrfilm.so [High dynamic range film]
+    -  plugins/independent.so [Independent sampler]
+    -  plugins/perspective.so [Perspective camera]
+    -  plugins/rectangle.so [Rectangle intersection primitive]
+    -  plugins/twosided.so [Two-sided BRDF adapter]
+    -  plugins/volpath.so [Volumetric path tracer]
+
+  * General :
+    -  Normal rays traced : 12.350 G
+    -  Shadow rays traced : 8.583 G
+
+  * Volumetric path tracer :
+    -  Average path length : 5.75 (12.35 G / 2.15 G)
+------------------------------------------------------------

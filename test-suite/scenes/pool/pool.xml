@@ -1,0 +1,540 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- By Ondrej Karlik; Only for research purposes -->
+
+<scene version="0.6.0">
+	<!--<integrator type="pmc">
+		<float name="alpha" value="0.5"/>
+		<integer name="batchIterations" value="8"/>
+		<boolean name="decreasePrior" value="true"/>
+		<float name="initKMeansSwapTolerance" value="1"/>
+		<integer name="iterations" value="32"/>
+		<integer name="maxDepth" value="2"/>
+		<integer name="populations" value="8"/>
+		<integer name="rrDepth" value="2"/>
+		<boolean name="standardizeGMMSpace" value="false"/>
+		<boolean name="strictNormals" value="true"/>
+		<boolean name="useHierarchical" value="true"/>
+		<boolean name="useInit" value="true"/>
+		<boolean name="useInitCovar" value="true"/>
+		<boolean name="useInitWeightsForMeans" value="true"/>
+		<boolean name="useInitWeightsForMixture" value="true"/>
+		<boolean name="visualizeGaussians" value="true"/>
+	</integrator>-->
+	<!-- <integrator type="guided_path">
+		<integer name="maxDepth" value="40"/>
+		<integer name="nImportons" value="300000"/>
+		<integer name="nPhotons" value="300000"/>
+		<integer name="passes" value="30"/>
+		<boolean name="showVisualization" value="false"/>
+		<boolean name="strictNormals" value="true"/>
+		<boolean name="useEnvSampler" value="true"/>
+	</integrator> -->
+
+        <default name="seed" value="1234"/>
+
+	<default name="budget" value="1023"/>
+
+	<default name="budgetType" value="spp"/>
+
+	<default name="maxDepth" value="2"/>
+
+	<default name="rrDepth" value="2"/>
+
+	<default name="sampleCount" value="8"/>
+
+	<default name="integrator" value="pmc"/>
+
+	<include filename="../_integrators/$integrator.xml"/>
+
+	<sensor type="perspective">
+		<float name="farClip" value="4000"/>
+		<float name="focusDistance" value="527.279"/>
+		<float name="fov" value="60"/>
+		<string name="fovAxis" value="x"/>
+		<float name="nearClip" value="10"/>
+		<transform name="toWorld">
+
+			<lookat origin="-396.537, 306.956, 690.151" target="-396.537, 306.354, 689.352" up="0, 0.798688, -0.601746"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="$sampleCount"/>
+			<integer name="seed" value="$seed"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<boolean name="banner" value="false"/>
+			<integer name="height" value="360"/>
+			<integer name="width" value="640"/>
+
+			<rfilter type="box"/>
+		</film>
+	</sensor>
+
+	<emitter type="envmap" id="background">
+		<transform name="toWorld">
+			<rotate y="1" angle="190"/>
+			<rotate z="1" angle="-25"/>
+			<rotate x="1" angle="-45"/>
+		</transform>
+		<string name="filename" value="textures/skydome.exr"/>
+		<float name="scale" value="0.075"/>
+	</emitter>
+
+	<bsdf type="diffuse" id="poolinside">
+		<rgb name="reflectance" value="0.031373 0.478431 0.760784"/>
+	</bsdf>
+
+	<bsdf type="dielectric" id="Material#28">
+		<float name="intIOR" value="1.54"/>
+		<float name="extIOR" value="1.00028"/>
+	</bsdf>
+
+	<texture type="bitmap" id="poolframe-image">
+		<string name="filename" value="textures/00000000A32683C0.bmp"/>
+	</texture>
+
+	<texture type="bitmap" id="poolframe-image-spec">
+		<string name="filename" value="textures/00000000A32683C0.bmp"/>
+	</texture>
+
+	<bsdf type="phong" id="poolframe">
+		<ref name="diffuseReflectance" id="poolframe-image"/>
+
+		<ref name="specularReflectance" id="poolframe-image"/>
+		<float name="exponent" value="1"/>
+	</bsdf>
+
+	<texture type="bitmap" id="stonefloor-image">
+		<string name="filename" value="textures/00000000A3268280.bmp"/>
+	</texture>
+
+	<texture type="bitmap" id="stonefloor-image-spec">
+		<string name="filename" value="textures/00000000A32682C0.bmp"/>
+	</texture>
+
+	<bsdf type="phong" id="stonefloor">
+		<ref name="diffuseReflectance" id="stonefloor-image"/>
+
+		<ref name="specularReflectance" id="stonefloor-image-spec"/>
+		<float name="exponent" value="104.601"/>
+	</bsdf>
+
+	<bsdf type="phong" id="_02-Default">
+		<rgb name="diffuseReflectance" value="0.023529 0.023529 0.023529"/>
+		<rgb name="specularReflectance" value="0.5832 0.5832 0.5832"/>
+		<float name="exponent" value="2000"/>
+	</bsdf>
+	<!--<bsdf type="phong" id="glass">
+		<rgb name="diffuseReflectance" value="0 0 0"/>
+		<rgb name="specularReflectance" value="2 2 2"/>
+		<float name="exponent" value="6000"/>
+	</bsdf>-->
+
+	<bsdf type="dielectric" id="glass">
+		<float name="intIOR" value="1.52"/>
+		<float name="extIOR" value="1"/>
+		<spectrum name="specularReflectance" value="0.8"/>
+		<spectrum name="specularTransmittance" value="1"/>
+	</bsdf>
+
+	<bsdf type="phong" id="cr">
+		<rgb name="diffuseReflectance" value="0.015686 0.015686 0.015686"/>
+		<rgb name="specularReflectance" value="9.216 9.216 9.216"/>
+		<float name="exponent" value="6000"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="clay">
+		<rgb name="reflectance" value="0 0 0"/>
+	</bsdf>
+
+	<bsdf type="phong" id="Arch_056_053_02">
+		<rgb name="diffuseReflectance" value="1 0.858824 0.129412"/>
+		<rgb name="specularReflectance" value="0.5832 0.5832 0.5832"/>
+		<float name="exponent" value="1"/>
+	</bsdf>
+
+	<bsdf type="phong" id="Arch_056_053_12">
+		<rgb name="diffuseReflectance" value="0.015686 0.015686 0.015686"/>
+		<rgb name="specularReflectance" value="0.5832 0.5832 0.5832"/>
+		<float name="exponent" value="1"/>
+	</bsdf>
+
+	<bsdf type="phong" id="towel">
+		<rgb name="diffuseReflectance" value="0.67451 0.67451 0.67451"/>
+		<rgb name="specularReflectance" value="0.2592 0.2592 0.2592"/>
+		<float name="exponent" value="1"/>
+	</bsdf>
+
+	<bsdf type="phong" id="Arch_056_053_14">
+		<rgb name="diffuseReflectance" value="1 0.564706 0"/>
+		<rgb name="specularReflectance" value="0.5832 0.5832 0.5832"/>
+		<float name="exponent" value="1"/>
+	</bsdf>
+
+	<bsdf type="phong" id="_01-Default">
+		<rgb name="diffuseReflectance" value="0.67451 0.67451 0.67451"/>
+		<rgb name="specularReflectance" value="0.0128 0.0128 0.0128"/>
+		<float name="exponent" value="4"/>
+	</bsdf>
+	<!--<bsdf id="Arch_056_035_13" type="phong">
+		<rgb name="diffuseReflectance" value="0.5 0.5 0.5"/>
+		<rgb name="specularReflectance" value="0.5832 0.5832 0.5832"/>
+		<float name="exponent" value="1"/>
+	</bsdf>-->
+
+	<bsdf type="diffuse" id="Arch_056_035_13">
+		<rgb name="reflectance" value="0.5 0.5 0.5"/>
+	</bsdf>
+
+	<bsdf type="phong" id="Arch_056_035_14">
+		<rgb name="diffuseReflectance" value="0.094118 0.301961 0.431373"/>
+		<rgb name="specularReflectance" value="0.5832 0.5832 0.5832"/>
+		<float name="exponent" value="1"/>
+	</bsdf>
+
+	<texture type="bitmap" id="arch-image">
+		<string name="filename" value="textures/00000000A3268300.bmp"/>
+	</texture>
+
+	<texture type="bitmap" id="arch-image-spec">
+		<string name="filename" value="textures/00000000A3268340.bmp"/>
+	</texture>
+
+	<bsdf type="phong" id="Arch_056_049_02">
+		<ref name="diffuseReflectance" id="arch-image"/>
+
+		<ref name="specularReflectance" id="arch-image-spec"/>
+		<float name="exponent" value="22.8583"/>
+	</bsdf>
+
+	<shape type="serialized" id="pool-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -369.738 0 0 1 -24.2394 0 -1 0 193.367 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="poolinside"/>
+	</shape>
+
+	<shape type="serialized" id="poolwater-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -369.738 0 0 1 -16.2194 0 -1 0 193.367 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Material#28"/>
+	</shape>
+
+	<shape type="serialized" id="pool_copping-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -369.738 0 0 1 -25.2487 0 -1 0 193.367 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="poolframe"/>
+	</shape>
+
+	<shape type="serialized" id="Box041-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="3"/>
+		<transform name="toWorld">
+			<matrix value="0 -1 0 -464.504 0 0 1 -109.65 -1 0 0 -16.213 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="poolinside"/>
+	</shape>
+
+	<shape type="serialized" id="Plane001-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="4"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -401.083 0 0 1 9.53323 0 -1 0 173.97 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="stonefloor"/>
+	</shape>
+
+	<shape type="serialized" id="Box042-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="5"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -182.679 0 0 1 24.4344 0 -1 0 153.791 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="_02-Default"/>
+	</shape>
+
+	<shape type="serialized" id="Box043-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="6"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -87.0063 0 0 0.339552 0 0 -1 0 30.9088 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="poolframe"/>
+	</shape>
+
+	<shape type="serialized" id="Box044-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="7"/>
+		<transform name="toWorld">
+			<matrix value="0 0 -1 -180.852 0 1 0 130.187 1 0 0 154.558 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="glass"/>
+	</shape>
+
+	<shape type="serialized" id="RenderStuff_Swiming_pool_ladder-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="8"/>
+		<transform name="toWorld">
+			<matrix value="0 1.11011 0 -488.871 0 0 1.51128 4.90597 1 0 0 422.955 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="cr"/>
+	</shape>
+
+	<shape type="serialized" id="archmodels58_039_01-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="9"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -904.31 0 0 1 681.941 0 -1 0 -175.834 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="clay"/>
+	</shape>
+
+	<shape type="serialized" id="archmodels58_039_02-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="10"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -903.802 0 0 1 676.97 0 -1 0 -175.33 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="clay"/>
+	</shape>
+
+	<shape type="serialized" id="Box045-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="11"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -87.0063 0 0 0.339552 237.477 0 -1 0 30.9088 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="poolframe"/>
+	</shape>
+
+	<shape type="serialized" id="Box046-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="12"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -87.0063 0 -1 0 237.477 0 0 -0.339552 -309.146 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="poolframe"/>
+	</shape>
+
+	<shape type="serialized" id="Box047-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="13"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -87.0063 0 -1 0 237.477 0 0 -0.339552 680.058 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="poolframe"/>
+	</shape>
+
+	<shape type="serialized" id="Box048-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="14"/>
+		<transform name="toWorld">
+			<matrix value="0 0 -0.339552 258.681 0 -1 0 237.477 -1 0 0 552.07 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="poolframe"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_053_02-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="15"/>
+		<transform name="toWorld">
+			<matrix value="1.21256 0.849045 0.261011 -446.631 -0.213807 -0.14971 1.48027 13.1632 0.862143 -1.23127 0 293.428 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_053_02"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_053_12-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="16"/>
+		<transform name="toWorld">
+			<matrix value="1.21256 0.849045 0.261011 -449.007 -0.213807 -0.14971 1.48027 17.8175 0.862143 -1.23127 0 297.924 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_053_12"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_053_13-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="17"/>
+		<transform name="toWorld">
+			<matrix value="1.21256 0.849045 0.261011 -448.962 -0.213807 -0.14971 1.48027 17.7121 0.862143 -1.23127 0 297.834 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="towel"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_053_14-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="18"/>
+		<transform name="toWorld">
+			<matrix value="1.21256 0.849045 0.261011 -449.968 -0.213807 -0.14971 1.48027 15.578 0.862143 -1.23127 0 298.72 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_053_14"/>
+	</shape>
+
+	<shape type="serialized" id="Arch30_028_00-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="19"/>
+		<transform name="toWorld">
+			<matrix value="0.766044 0.642788 0 -525.658 0 0 1 11.997 0.642788 -0.766044 0 273.612 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="_01-Default"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_035_13-lib_0">
+		<string name="filename" value="pantofel.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+		<transform name="toWorld">
+			<matrix value="0.906308 -0.422618 0 -548.279 0 0 1 10.0504 -0.422618 -0.906308 0 297.277 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_035_13"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_035_16-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="21"/>
+		<transform name="toWorld">
+			<matrix value="0.906308 -0.422618 0 -546.079 0 0 1 12.5213 -0.422618 -0.906308 0 298.299 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_035_14"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_035_17-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="22"/>
+		<transform name="toWorld">
+			<matrix value="0.906308 -0.422618 0 -550.179 0 0 1 12.5213 -0.422618 -0.906308 0 300.211 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_035_14"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_035_20-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="23"/>
+		<transform name="toWorld">
+			<matrix value="0.906308 -0.422618 0 -564.98 0 0 1 12.5213 -0.422618 -0.906308 0 300.465 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_035_14"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_035_21-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="24"/>
+		<transform name="toWorld">
+			<matrix value="0.906308 -0.422618 0 -562.239 0 0 1 12.5213 -0.422618 -0.906308 0 298.007 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_035_14"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_035_22-lib_0">
+		<string name="filename" value="pantofel2.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+		<transform name="toWorld">
+			<matrix value="0.906308 -0.422618 0 -565.171 0 0 1 10.0504 -0.422618 -0.906308 0 297.935 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_035_13"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_049_07-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="26"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -646.567 0 0 1 89.576 0 -1 0 116.906 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_049_02"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_049_08-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="27"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -656.346 0 0 1 89.576 0 -1 0 116.906 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_049_02"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_049_09-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="28"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -666.124 0 0 1 89.576 0 -1 0 116.906 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_049_02"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_049_10-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="29"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -656.346 0 0 1 74.108 0 -1 0 173.907 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_049_02"/>
+	</shape>
+
+	<shape type="serialized" id="Arch_056_049_11-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="30"/>
+		<transform name="toWorld">
+			<matrix value="1 0 0 -656.346 0 0 1 74.108 0 -1 0 59.9048 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="Arch_056_049_02"/>
+	</shape>
+
+	<shape type="serialized" id="Arch30_028_001-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="31"/>
+		<transform name="toWorld">
+			<matrix value="0.766044 0.642788 0 -658.273 0 0 1 91.497 0.642788 -0.766044 0 83.8481 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="_01-Default"/>
+	</shape>
+
+	<shape type="serialized" id="Object001-lib_0">
+		<string name="filename" value="pool.serialized"/>
+		<integer name="shapeIndex" value="32"/>
+		<transform name="toWorld">
+			<matrix value="0 1.11011 0 -488.871 0 0 1.51128 4.90597 1 0 0 422.955 0 0 0 1"/>
+		</transform>
+
+		<ref name="bsdf" id="cr"/>
+	</shape>
+</scene>

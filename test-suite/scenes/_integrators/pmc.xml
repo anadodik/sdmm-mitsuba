@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<scene version="0.6.0">
+    <integer name="maxDepth" value="10"/>
+    <integer name="rrDepth" value="10"/>
+    <default name="blockSize" value="-1"/>
+
+	<integrator type="pmc">
+        <integer name="maxDepth" value="$maxDepth"/>
+        <integer name="rrDepth" value="$maxDepth"/>
+        <integer name="blockSize" value="$blockSize"/>
+	</integrator>
+</scene>

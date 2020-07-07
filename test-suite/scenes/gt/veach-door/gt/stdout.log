@@ -1,0 +1,131 @@
+2020-05-12 22:15:16 INFO  main [mitsuba.cpp:274] Mitsuba version 0.6.0 (Linux, 64 bit), Copyright (c) 2017 Wenzel Jakob
+2020-05-12 22:15:16 INFO  main [mitsuba.cpp:377] Parsing scene description from "/home/anadodik/pmc/scenes/veach-door/veach-door.xml" ..
+2020-05-12 22:15:16 INFO  main [scenehandler.cpp:675] In file "/home/anadodik/pmc/scenes/veach-door/veach-door.xml" (near line 11): Parsing included file "gt.xml" ..
+2020-05-12 22:15:16 INFO  main [PluginManager] Loading plugin "plugins/volpath.so" ..
+2020-05-12 22:15:16 INFO  main [PluginManager] Loading plugin "plugins/independent.so" ..
+2020-05-12 22:15:16 INFO  main [PluginManager] Loading plugin "plugins/box.so" ..
+2020-05-12 22:15:16 INFO  main [PluginManager] Loading plugin "plugins/hdrfilm.so" ..
+2020-05-12 22:15:16 INFO  main [PluginManager] Loading plugin "plugins/perspective.so" ..
+2020-05-12 22:15:16 INFO  main [PluginManager] Loading plugin "plugins/roughconductor.so" ..
+2020-05-12 22:15:16 INFO  main [spectrum.cpp:599] "Al.eta.spd": loaded a spectral power distribution with 56 entries (between 298.757050 and 885.601257 nm)
+2020-05-12 22:15:16 INFO  main [spectrum.cpp:599] "Al.k.spd": loaded a spectral power distribution with 56 entries (between 298.757050 and 885.601257 nm)
+2020-05-12 22:15:16 INFO  main [PluginManager] Loading plugin "plugins/bitmap.so" ..
+2020-05-12 22:15:16 INFO  main [BitmapTexture] Loading texture "perlin.png"
+2020-05-12 22:15:16 INFO  main [PluginManager] Loading plugin "plugins/lanczos.so" ..
+2020-05-12 22:15:16 INFO  main [PluginManager] Loading plugin "plugins/scale.so" ..
+2020-05-12 22:15:16 INFO  main [spectrum.cpp:599] "Al.eta.spd": loaded a spectral power distribution with 56 entries (between 298.757050 and 885.601257 nm)
+2020-05-12 22:15:16 INFO  main [spectrum.cpp:599] "Al.k.spd": loaded a spectral power distribution with 56 entries (between 298.757050 and 885.601257 nm)
+2020-05-12 22:15:16 INFO  main [PluginManager] Loading plugin "plugins/bumpmap.so" ..
+2020-05-12 22:15:16 INFO  main [PluginManager] Loading plugin "plugins/diffuse.so" ..
+2020-05-12 22:15:16 INFO  main [BitmapTexture] Loading texture "pic.jpg"
+2020-05-12 22:15:17 INFO  main [BitmapTexture] Loading texture "marble.jpg"
+2020-05-12 22:15:17 INFO  main [BitmapTexture] Loading texture "checker.png"
+2020-05-12 22:15:17 INFO  main [PluginManager] Loading plugin "plugins/coating.so" ..
+2020-05-12 22:15:17 INFO  main [BitmapTexture] Loading texture "72cf.jpg"
+2020-05-12 22:15:17 INFO  main [BitmapTexture] Loading texture "72rdf.jpg"
+2020-05-12 22:15:17 INFO  main [PluginManager] Loading plugin "plugins/dielectric.so" ..
+2020-05-12 22:15:17 INFO  main [PluginManager] Loading plugin "plugins/obj.so" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "table.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] table: 12 triangles, 24 vertices (merged 12 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "table.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "table_leg1.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] table_leg1: 12 triangles, 24 vertices (merged 12 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "table_leg1.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "table_leg2.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] table_leg2: 12 triangles, 24 vertices (merged 12 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "table_leg2.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "table_leg3.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] table_leg3: 12 triangles, 24 vertices (merged 12 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "table_leg3.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "table_leg4.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] table_leg4: 12 triangles, 24 vertices (merged 12 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "table_leg4.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "teapot1.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] teapot1: 6320 triangles, 3484 vertices (merged 15476 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "teapot1.obj" (took 25 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "teapot2.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] teapot2: 6320 triangles, 3484 vertices (merged 15476 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "teapot2.obj" (took 18 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "teapot3.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] teapot3: 6320 triangles, 3484 vertices (merged 15476 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "teapot3.obj" (took 18 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "door_frame_left.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] door_frame_left: 12 triangles, 24 vertices (merged 12 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "door_frame_left.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "door_frame_right.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] door_frame_right: 12 triangles, 24 vertices (merged 12 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "door_frame_right.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "door_frame_top.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] door_frame_top: 12 triangles, 24 vertices (merged 12 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "door_frame_top.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "door.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] door: 12 triangles, 24 vertices (merged 12 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "door.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "door_hinge1.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] door_hinge1: 216 triangles, 154 vertices (merged 494 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "door_hinge1.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "door_hinge2.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] door_hinge2: 216 triangles, 154 vertices (merged 494 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "door_hinge2.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "door_hinge3.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] door_hinge3: 216 triangles, 154 vertices (merged 494 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "door_hinge3.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "door_knob.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] door_knob: 960 triangles, 559 vertices (merged 2321 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "door_knob.obj" (took 3 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "floor.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] floor: 2 triangles, 4 vertices (merged 2 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "floor.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "floor01.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] floor01: 2 triangles, 4 vertices (merged 2 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "floor01.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "picture_frame.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] picture_frame: 12 triangles, 24 vertices (merged 12 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "picture_frame.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "picture_image.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] picture_image: 2 triangles, 4 vertices (merged 2 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "picture_image.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "walls.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] walls: 68 triangles, 104 vertices (merged 100 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "walls.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  main [PluginManager] Loading plugin "plugins/area.so" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Loading geometry from "lamp.obj" ..
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] lamp: 2 triangles, 4 vertices (merged 2 vertices).
+2020-05-12 22:15:17 INFO  main [WavefrontOBJ] Done with "lamp.obj" (took 0 ms)
+2020-05-12 22:15:17 INFO  ren0 [KDTreeBase] Constructing a SAH kd-tree (20764 primitives) ..
+2020-05-12 22:15:17 INFO  ren0 [KDTreeBase] Finished -- took 102 ms.
+2020-05-12 22:15:17 INFO  ren0 [SamplingIntegrator] Starting render job (640x360, 131072 samples, 128 cores, SSE2 enabled) ..
+2020-05-12 22:58:39 INFO  ren0 [RenderJob] Render time: 43.3715m
+2020-05-12 22:58:39 INFO  ren0 [HDRFilm] Writing image to "/home/anadodik/pmc/scenes/gt/veach-door/gt/veach-door.exr" ..
+2020-05-12 22:58:39 INFO  main [statistics.cpp:142] Statistics:
+------------------------------------------------------------
+ * Loaded plugins :
+    -  plugins/area.so [Area light]
+    -  plugins/bitmap.so [Bitmap texture]
+    -  plugins/box.so [Box filter]
+    -  plugins/bumpmap.so [Bump map modifier]
+    -  plugins/coating.so [Smooth dielectric coating]
+    -  plugins/dielectric.so [Smooth dielectric BSDF]
+    -  plugins/diffuse.so [Smooth diffuse BRDF]
+    -  plugins/hdrfilm.so [High dynamic range film]
+    -  plugins/independent.so [Independent sampler]
+    -  plugins/lanczos.so [Lanczos Sinc filter]
+    -  plugins/obj.so [OBJ triangle mesh loader]
+    -  plugins/perspective.so [Perspective camera]
+    -  plugins/roughconductor.so [Rough conductor BRDF]
+    -  plugins/scale.so [Scaling texture]
+    -  plugins/volpath.so [Volumetric path tracer]
+
+  * General :
+    -  Normal rays traced : 176.967 G
+    -  Shadow rays traced : 119.842 G
+
+  * Texture system :
+    -  Average EWA samples / lookup : 2.01 (85.89 K / 42.73 K)
+    -  Cumulative MIP map memory allocations : 14.117 MiB
+    -  Filtered texture lookups : 20.59 % (12.45 G of 60.47 G)
+    -  Lookups with clamped anisotropy : 3.51 % (437.10 M of 12.45 G)
+
+  * Volumetric path tracer :
+    -  Average path length : 5.86 (176.97 G / 30.20 G)
+------------------------------------------------------------

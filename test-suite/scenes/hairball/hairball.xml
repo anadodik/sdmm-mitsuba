@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Torus scene remodeled from Cline et al. by Olesya Jakob, but with a hairball (by Samuli Laine) instead of the torus. -->
+
+<scene version="0.6.0">
+	<default name="budget" value="2047"/>
+	<default name="budgetType" value="spp"/>
+
+	<default name="maxDepth" value="2"/>
+	<default name="rrDepth" value="2"/>
+
+	<default name="sampleCount" value="8"/>
+
+	<default name="integrator" value="pmc"/>
+	<include filename="../_integrators/$integrator.xml"/>
+
+	<bsdf type="roughconductor" id="mat_donut">
+		<string name="material" value="Cu" />
+		<float name="alpha" value="0.1" />
+		<!-- <rgb name="diffuseReflectance" value=".8,.8,.4"/> -->
+		<!-- Rhino object 'Donut' -->
+	</bsdf>
+
+	<bsdf type="conductor" id="mat_metal">
+		<string name="material" value="Al"/>
+		<float name="alpha" value="0.1"/>
+	</bsdf>
+
+	<bsdf type="dielectric" id="mat_glass">
+		<!-- Rhino object 'Glass' -->
+		<float name="intIOR" value="1.5"/>
+		<float name="extIOR" value="1.0"/>
+		<float name="alpha" value="0.05"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="mat_floor">
+		<!-- Rhino object 'Floor' -->
+	</bsdf>
+
+	<bsdf type="diffuse" id="mat_lamp">
+		<!-- Rhino object 'Lamp' -->
+	</bsdf>
+
+	<emitter type="sunsky">
+		<transform name="toWorld">
+			<rotate y="1" angle="-30"/>
+			<rotate x="1" angle="90"/>
+		</transform>
+		<float name="hour" value="9"/>
+		<float name="turbidity" value="5"/>
+		<float name="sunRadiusScale" value="4"/>
+	</emitter>
+
+	<shape type="serialized">
+		<string name="filename" value="meshes.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x=".36" y=".43"/>
+			<translate y="24" x="13"/>
+		</transform>
+
+		<ref id="mat_floor"/>
+	</shape>
+
+	<shape id="hairball_mesh" type="serialized">
+		<string name="filename" value="hairball.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<transform name="toWorld">
+			<translate z="5"/>
+		</transform>
+
+		<ref id="mat_donut"/>
+	</shape>
+
+	<shape type="serialized">
+		<string name="filename" value="meshes.serialized"/>
+		<integer name="shapeIndex" value="3"/>
+
+		<ref id="mat_glass"/>
+	</shape>
+
+	<shape type="serialized">
+		<string name="filename" value="meshes.serialized"/>
+		<integer name="shapeIndex" value="4"/>
+
+		<ref id="mat_metal"/>
+	</shape>
+
+	<shape type="serialized">
+		<string name="filename" value="meshes.serialized"/>
+		<integer name="shapeIndex" value="5"/>
+
+		<ref id="mat_metal"/>
+	</shape>
+
+	<sensor type="perspective">
+		<float name="farClip" value="1165.89"/>
+		<float name="focusDistance" value="51.7808"/>
+		<float name="fov" value="30.0"/>
+		<string name="fovAxis" value="x"/>
+		<float name="nearClip" value="0.00582945"/>
+		<transform name="toWorld">
+			<lookat target="-23.6953, -37.4261, 29.4905" origin="-24.115, -38.184, 30.0076" up="0.261433, 0.446628, 0.855673"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="$sampleCount"/>
+			<integer name="seed" value="1234"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<integer name="height" value="360"/>
+			<integer name="width" value="640"/>
+			<boolean name="banner" value="false"/>
+
+			<rfilter type="box"/>
+		</film>
+	</sensor>
+</scene>

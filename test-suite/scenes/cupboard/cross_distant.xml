@@ -1,0 +1,225 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Automatically converted from Rhino 5.0 -->
+
+<scene version="0.5.0">
+	<!-- Parameters -->
+	<default name="neeType" value="bayes"/>
+	<default name="budget" value="64"/>
+	<default name="budgetType" value="spp"/>
+	<default name="maxDepth" value="2"/>
+	<default name="dumpSDTree" value="false"/>
+	<default name="bsdfSamplingFraction" value=".5"/>
+	<default name="lcPriorRegularization" value=".5"/>
+
+	<!--  -->
+	<integrator type="guided_path">
+		<float name="budget" value="$budget"/>
+		<string name="budgetType" value="$budgetType"/>
+		<integer name="maxDepth" value="$maxDepth"/>
+		<string name="nee" value="always"/>
+		<string name="neeType" value="$neeType"/>
+		<boolean name="dumpSDTree" value="$dumpSDTree"/>
+		<float name="bsdfSamplingFraction" value="$bsdfSamplingFraction"/>
+		<float name="lcPriorRegularization" value="$lcPriorRegularization"/>
+		<!-- <string name="lcTestPoints" value="0, 0, 0"/> -->
+	</integrator>
+	<!-- <string name="lcTestPoints" value="0, 0, 0; 100, 100, 0; 20, 20, 0; 15, 15, 0; 14, 14, 0; 10, 10, 0; 10, -10, 0; 15, -15, 0; 20, -20, 0; 100, -100, 0"/> -->
+	<!-- <string name="lcTestPoints" value="100, 0, 0; 20, 0, 0; 15, 0, 0; 14, 0, 0; 10, 0, 0"/> -->
+	<!-- <string name="lcTestPoints" value="100, 0, 0"/> -->
+	<!-- <string name="lcTestPoints" value="15, -15, 0"/> -->
+
+	<sensor type="perspective">
+		<float name="farClip" value="1165.89"/>
+		<float name="focusDistance" value="139.469"/>
+		<float name="fov" value="34.6222"/>
+		<string name="fovAxis" value="x"/>
+		<float name="nearClip" value="0.00582945"/>
+		<transform name="toWorld">
+
+			<lookat target="-53.7331, -105.671, 69.3432" origin="-54.1214, -106.436, 69.8572" up="0.260137, 0.444082, 0.857391"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="256"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<integer name="height" value="480"/>
+			<integer name="width" value="640"/>
+
+			<rfilter type="gaussian"/>
+		</film>
+	</sensor>
+
+	<bsdf type="diffuse" id="mat_floor">
+	</bsdf>
+
+	<shape type="serialized">
+		<string name="filename" value="meshes.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x=".5" y=".5"/>
+			<translate y="0"/>
+		</transform>
+
+		<ref id="mat_floor"/>
+	</shape>
+	<!--  -->
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="115" z="0"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="120" z="0"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="130" z="0"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+	<!--  -->
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="115" z="0"/>
+			<rotate z="1" angle="90"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="120" z="0"/>
+			<rotate z="1" angle="90"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="130" z="0"/>
+			<rotate z="1" angle="90"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+	<!--  -->
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="115" z="0"/>
+			<rotate z="1" angle="180"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="120" z="0"/>
+			<rotate z="1" angle="180"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="130" z="0"/>
+			<rotate z="1" angle="180"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+
+	<!--  -->
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="115" z="0"/>
+			<rotate z="1" angle="270"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="120" z="0"/>
+			<rotate z="1" angle="270"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="90"/>
+			<scale x="4" y="1" z="4"/>
+			<translate y="130" z="0"/>
+			<rotate z="1" angle="270"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="30"/>
+		</emitter>
+	</shape>
+</scene>

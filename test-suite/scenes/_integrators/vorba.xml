@@ -1,0 +1,17 @@
+<scene version="0.5.0">
+	<default name="numParticles" value="300000"/>
+	<default name="globalSizeMult" value="0.01"/>
+
+	<integrator type="guided_path">
+		<integer name="maxDepth" value="$maxDepth"/>
+		<integer name="rrDepth" value="$rrDepth"/>
+
+		<integer name="nImportons" value="$numParticles"/>
+		<integer name="nPhotons" value="$numParticles"/>
+		<float name="globalSizeMult" value="$globalSizeMult"/>
+		<integer name="passes" value="30"/>
+		<boolean name="showVisualization" value="false"/>
+		<boolean name="strictNormals" value="true"/>
+		<boolean name="useEnvSampler" value="true"/>
+	</integrator>
+</scene>

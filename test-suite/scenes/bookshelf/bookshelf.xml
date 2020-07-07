@@ -1,0 +1,1457 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- The Bookshelf scene has been ported to Mitsuba renderer by Tiziano Portenier. -->
+
+<scene version="0.6.0">
+	<default name="seed" value="1234"/>
+
+	<default name="budget" value="1023"/>
+	<default name="budgetType" value="spp"/>
+
+	<default name="integrator" value="pmc"/>
+	<include filename="../_integrators/$integrator.xml"/>
+
+	<sensor type="perspective">
+		<float name="farClip" value="215.049"/>
+		<float name="focusDistance" value="15.6881"/>
+		<float name="fov" value="64.1856"/>
+		<string name="fovAxis" value="x"/>
+		<float name="nearClip" value="0.41821"/>
+		<transform name="toWorld">
+			<lookat target="4.21104, 5.77674, 22.2634" origin="3.4115, 5.8428, 22.8604" up="0.0, 1.0, 0.0"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="$sampleCount"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<integer name="width" value="640"/>
+			<integer name="height" value="360"/>
+			<boolean name="banner" value="false"/>
+
+			<rfilter type="box"/>
+		</film>
+	</sensor>
+
+	<!-- tiny picture -->
+	<texture type="bitmap" id="tiny_picture">
+		<string name="filename" value="textures/tiny_picture.jpg"/>
+	</texture>
+
+	<bsdf type="phong" id="tinyPicMaterial">
+		<float name="exponent" value="5000"/>
+
+		<ref name="diffuseReflectance" id="tiny_picture"/>
+		<spectrum name="specularReflectance" value="0.1"/>
+	</bsdf>
+	<!-- black finished -->
+
+	<bsdf type="phong" id="blackFinished">
+		<float name="exponent" value="5000"/>
+		<spectrum name="specularReflectance" value="0.1"/>
+		<spectrum name="diffuseReflectance" value="0.005"/>
+	</bsdf>
+	<!-- rough aluminium -->
+
+	<bsdf type="roughconductor" id="roughAlu">
+		<string name="material" value="Al"/>
+		<float name="alpha" value="0.15"/>
+		<string name="distribution" value="phong"/>
+	</bsdf>
+	<!-- white diffuse -->
+
+	<bsdf type="diffuse" id="whiteDiff">
+		<rgb name="reflectance" value="0.5"/>
+	</bsdf>
+	<!-- polished chromium -->
+
+	<bsdf type="conductor" id="polishedChromium">
+		<string name="material" value="Cr"/>
+		<string name="distribution" value="phong"/>
+	</bsdf>
+	<!-- ceramics -->
+
+	<bsdf type="phong" id="ceramics">
+		<float name="exponent" value="5000"/>
+		<spectrum name="specularReflectance" value="0.2"/>
+		<spectrum name="diffuseReflectance" value="0.8"/>
+	</bsdf>
+	<!-- glass -->
+
+	<bsdf type="dielectric" id="glass">
+		<string name="distribution" value="phong"/>
+		<float name="intIOR" value="1.5"/>
+	</bsdf>
+	<!-- glass teapot -->
+
+	<bsdf type="roughdielectric" id="glass_teapot">
+		<float name="intIOR" value="1.5"/>
+		<float name="extIOR" value="1.0"/>
+		<float name="alpha" value="0.001"/>
+	</bsdf>
+	<!-- diffuse glass -->
+
+	<bsdf type="roughdielectric" id="glassDiff">
+		<string name="distribution" value="phong"/>
+		<float name="alpha" value="0.5"/>
+		<float name="intIOR" value="1.7"/>
+	</bsdf>
+	<!-- silver -->
+
+	<bsdf type="roughconductor" id="silver">
+		<string name="material" value="Ag"/>
+		<float name="alpha" value="0.03"/>
+		<string name="distribution" value="phong"/>
+	</bsdf>
+	<!-- floor -->
+
+	<texture type="bitmap" id="wood_floor">
+		<string name="filename" value="textures/wood_floor.jpg"/>
+	</texture>
+
+	<!--
+	<bsdf type="roughcoating" id="floorMaterial">
+		<string name="distribution" value="phong"/>
+		<float name="alpha" value="0.01"/>
+		<float name="intIOR" value="1.7"/>
+		<spectrum name="specularReflectance" value="0.3"/>
+
+		<bsdf type="diffuse">
+			<ref name="reflectance" id="wood_floor"/>
+		</bsdf>
+	</bsdf>-->
+	<bsdf type="phong" id="floorMaterial">
+		<float name="exponent" value="256"/>
+		<spectrum name="specularReflectance" value="0.3"/>
+		<ref name="diffuseReflectance" id="wood_floor"/>
+	</bsdf>
+	<!-- booksLeft -->
+
+	<texture type="bitmap" id="books1">
+		<string name="filename" value="textures/books1.png"/>
+	</texture>
+
+	<bsdf type="diffuse" id="booksLeftMaterial">
+		<ref name="reflectance" id="books1"/>
+	</bsdf>
+	<!-- booksTop -->
+
+	<texture type="bitmap" id="books2">
+		<string name="filename" value="textures/books2.jpg"/>
+	</texture>
+
+	<bsdf type="diffuse" id="booksTopMaterial">
+		<ref name="reflectance" id="books2"/>
+	</bsdf>
+	<!-- booksAlistair -->
+
+	<texture type="bitmap" id="book_alistair">
+		<string name="filename" value="textures/book_alistair.jpg"/>
+	</texture>
+
+	<bsdf type="diffuse" id="booksAlistairMaterial">
+		<ref name="reflectance" id="book_alistair"/>
+	</bsdf>
+	<!-- booksHistoria -->
+
+	<texture type="bitmap" id="book_historia">
+		<string name="filename" value="textures/book_historia.jpg"/>
+	</texture>
+
+	<bsdf type="diffuse" id="booksHistoriaMaterial">
+		<ref name="reflectance" id="book_historia"/>
+	</bsdf>
+	<!-- booksDictionary -->
+
+	<texture type="bitmap" id="book_dictionary">
+		<string name="filename" value="textures/book_dictionary.jpg"/>
+	</texture>
+
+	<bsdf type="diffuse" id="booksDictionaryMaterial">
+		<ref name="reflectance" id="book_dictionary"/>
+	</bsdf>
+	<!-- furniture -->
+
+	<texture type="bitmap" id="105">
+		<string name="filename" value="textures/105.JPG"/>
+	</texture>
+
+	<bsdf type="phong" id="furnitureMaterial">
+		<float name="exponent" value="32"/>
+		<spectrum name="specularReflectance" value="0.1"/>
+
+		<ref name="diffuseReflectance" id="105"/>
+	</bsdf>
+	<!-- gold -->
+
+	<bsdf type="roughconductor" id="gold">
+		<string name="material" value="Au"/>
+		<float name="alpha" value="0.1"/>
+		<string name="distribution" value="phong"/>
+	</bsdf>
+	<!-- brown diffuse -->
+
+	<bsdf type="diffuse" id="brownDiff">
+		<rgb name="reflectance" value="#0e0701"/>
+	</bsdf>
+	<!-- wallpapaer -->
+
+	<texture type="bitmap" id="wallpaper">
+		<string name="filename" value="textures/wallpaper.jpg"/>
+	</texture>
+
+	<bsdf type="diffuse" id="wallpaperMaterial">
+		<ref name="reflectance" id="wallpaper"/>
+	</bsdf>
+	<!-- mirror -->
+
+	<bsdf type="conductor" id="mirrorMaterial">
+		<string name="material" value="Al"/>
+		<string name="distribution" value="phong"/>
+	</bsdf>
+	<!-- picture (snow flowers) -->
+
+	<texture type="bitmap" id="snow_flowers">
+		<string name="filename" value="textures/Snow flowers.jpg"/>
+	</texture>
+
+	<bsdf type="phong" id="largePicMaterial">
+		<float name="exponent" value="5000"/>
+
+		<ref name="diffuseReflectance" id="snow_flowers"/>
+		<spectrum name="specularReflectance" value="0.1"/>
+	</bsdf>
+	<!-- red diffuse -->
+
+	<bsdf type="diffuse" id="redDiff">
+		<rgb name="reflectance" value="0.5 0.05 0.05"/>
+	</bsdf>
+	<!-- thin glass -->
+
+	<bsdf type="thindielectric" id="thinglass"/>
+	<!--
+	################################################
+	############ GEOMETRY STARTS HERE ##############
+	################################################
+	-->
+
+	<shape type="serialized" id="lampLightSource">
+		<string name="filename" value="geometry/lightBulb.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="4000"/>
+		</emitter>
+	</shape>
+
+	<shape type="serialized" id="lightSource1">
+		<string name="filename" value="geometry/lightArea1.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+		<boolean name="faceNormals" value="true"/>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="500"/>
+		</emitter>
+	</shape>
+
+	<shape type="serialized" id="lightSource1Socket">
+		<string name="filename" value="geometry/lightSocket1Long.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<ref name="bsdf" id="brownDiff"/>
+		<transform name="toWorld">
+			<translate y="0.01"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="lightSource2">
+		<string name="filename" value="geometry/lightArea.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+		<boolean name="faceNormals" value="true"/>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="100"/>
+		</emitter>
+	</shape>
+
+	<shape type="serialized" id="lightSource2Socket">
+		<string name="filename" value="geometry/lightSocketLong.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<ref name="bsdf" id="brownDiff"/>
+		<transform name="toWorld">
+			<translate y="0.01"/>
+		</transform>
+	</shape>
+	<!-- do not remove the following two! -->
+
+	<shape type="serialized" id="lightSource1Dummy">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="11"/>
+		<transform name="toWorld">
+			<translate y="10"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="lightSource1SocketDummy">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="61"/>
+		<transform name="toWorld">
+			<translate y="10"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="lampshade">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="107"/>
+
+		<ref name="bsdf" id="whiteDiff"/>
+	</shape>
+
+	<shape type="serialized" id="lampSocket">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="108"/>
+
+		<ref name="bsdf" id="gold"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="lampStand0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="109"/>
+
+		<ref name="bsdf" id="gold"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="lampStand1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="110"/>
+
+		<ref name="bsdf" id="gold"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="lampStand2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="111"/>
+
+		<ref name="bsdf" id="gold"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="tinyPic">
+		<string name="filename" value="geometry/tinyPic.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<ref name="bsdf" id="tinyPicMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="tinyPicFrame">
+		<string name="filename" value="geometry/tinyPicFrame.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<ref name="bsdf" id="blackFinished"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="tinyPicHolder">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="13"/>
+
+		<ref name="bsdf" id="polishedChromium"/>
+	</shape>
+
+	<shape type="serialized" id="candleHolderTop0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+
+		<ref name="bsdf" id="roughAlu"/>
+	</shape>
+
+	<shape type="serialized" id="candle0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+
+		<ref name="bsdf" id="whiteDiff"/>
+	</shape>
+
+	<shape type="serialized" id="candleHolder0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="3"/>
+
+		<ref name="bsdf" id="polishedChromium"/>
+	</shape>
+
+	<shape type="serialized" id="candleHolderTop1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="4"/>
+
+		<ref name="bsdf" id="roughAlu"/>
+	</shape>
+
+	<shape type="serialized" id="candleHolderTop2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="5"/>
+
+		<ref name="bsdf" id="roughAlu"/>
+	</shape>
+
+	<shape type="serialized" id="candle1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="6"/>
+
+		<ref name="bsdf" id="whiteDiff"/>
+	</shape>
+
+	<shape type="serialized" id="candleHolder1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="7"/>
+
+		<ref name="bsdf" id="polishedChromium"/>
+	</shape>
+
+	<shape type="serialized" id="candle2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="9"/>
+
+		<ref name="bsdf" id="whiteDiff"/>
+	</shape>
+
+	<shape type="serialized" id="candleHolder2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="10"/>
+
+		<ref name="bsdf" id="polishedChromium"/>
+	</shape>
+
+	<shape type="serialized" id="candleTrays">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="90"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="candleCovers">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="91"/>
+
+		<ref name="bsdf" id="roughAlu"/>
+	</shape>
+
+	<shape type="serialized" id="candleHolders">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="92"/>
+
+		<ref name="bsdf" id="redDiff"/>
+	</shape>
+
+	<shape type="serialized" id="candles">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="93"/>
+
+		<ref name="bsdf" id="whiteDiff"/>
+	</shape>
+
+	<shape type="serialized" id="cup0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="14"/>
+
+		<ref name="bsdf" id="glass"/>
+	</shape>
+
+	<shape type="serialized" id="cup1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="15"/>
+
+		<ref name="bsdf" id="glass"/>
+	</shape>
+
+	<shape type="serialized" id="cup2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="18"/>
+
+		<ref name="bsdf" id="glass"/>
+	</shape>
+
+	<shape type="serialized" id="cup3">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="20"/>
+
+		<ref name="bsdf" id="glass"/>
+	</shape>
+
+	<shape type="serialized" id="cupHolder0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="16"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="cupHolder1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="17"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="cupHolder2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="19"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="cupHolder3">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="21"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="floor">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="22"/>
+
+		<ref name="bsdf" id="floorMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="43"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="44"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="46"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft3">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="47"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft4">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="48"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft5">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="49"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft6">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="50"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft7">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="51"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft8">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="52"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft9">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="53"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft10">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="152"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksBottomleft11">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="153"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="23"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="24"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="25"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft3">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="26"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft4">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="27"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft5">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="28"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft6">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="29"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft7">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="30"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft8">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="31"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft9">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="32"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft10">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="94"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTopLeft11">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="95"/>
+
+		<ref name="bsdf" id="booksLeftMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="66"/>
+
+		<ref name="bsdf" id="booksTopMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="67"/>
+
+		<ref name="bsdf" id="booksTopMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="69"/>
+
+		<ref name="bsdf" id="booksAlistairMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop3">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="70"/>
+
+		<ref name="bsdf" id="booksHistoriaMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop4">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="71"/>
+
+		<ref name="bsdf" id="booksDictionaryMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop5">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="72"/>
+
+		<ref name="bsdf" id="booksTopMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop6">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="73"/>
+
+		<ref name="bsdf" id="booksTopMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop7">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="74"/>
+
+		<ref name="bsdf" id="booksTopMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop8">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="75"/>
+
+		<ref name="bsdf" id="booksTopMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop9">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="98"/>
+
+		<ref name="bsdf" id="booksDictionaryMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop10">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="99"/>
+
+		<ref name="bsdf" id="booksTopMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop11">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="100"/>
+
+		<ref name="bsdf" id="booksTopMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop12">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="101"/>
+
+		<ref name="bsdf" id="booksTopMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop13">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="102"/>
+
+		<ref name="bsdf" id="booksDictionaryMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop14">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="103"/>
+
+		<ref name="bsdf" id="booksDictionaryMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop15">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="104"/>
+
+		<ref name="bsdf" id="booksDictionaryMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="booksTop16">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="105"/>
+
+		<ref name="bsdf" id="booksDictionaryMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="smallFurniture0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="33"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="smallFurniture1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="34"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="smallFurniture2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="35"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="smallFurniture3">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="36"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="smallFurniture4">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="37"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="smallFurniture5">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="39"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="smallFurniture6">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="40"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="smallFurniture7">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="41"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurniture0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="58"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurniture1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="59"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurniture2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="60"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurniture3">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="79"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurniture4">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="80"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurniture5">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="81"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurniture6">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="82"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurniture7">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="83"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurniture8">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="84"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurniture9">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="86"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurniture10">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="87"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurnitureBolt">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="65"/>
+
+		<ref name="bsdf" id="roughAlu"/>
+	</shape>
+
+	<shape type="serialized" id="smallFurnitureButtons">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="38"/>
+
+		<ref name="bsdf" id="blackFinished"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurnitureButtons">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="62"/>
+
+		<ref name="bsdf" id="blackFinished"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurnitureButton0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="63"/>
+
+		<ref name="bsdf" id="blackFinished"/>
+	</shape>
+
+	<shape type="serialized" id="largeFurnitureButton1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="64"/>
+
+		<ref name="bsdf" id="blackFinished"/>
+	</shape>
+
+	<shape type="serialized" id="doubleVase">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="42"/>
+
+		<ref name="bsdf" id="roughAlu"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="potTop0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="8"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="potTop1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="112"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="quadPot">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="113"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="quadPotTop">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="114"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="pot0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="115"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="pot1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="117"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="saucer0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="126"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="saucer1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="127"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="cup4">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="128"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="saucer2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="129"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="cup5">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="130"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="cup6">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="131"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="saucer3">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="132"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="cup7">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="133"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="saucer4">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="134"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="cup8">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="149"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="saucer5">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="150"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="cup9">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="151"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="plate0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="135"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="plate1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="136"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="plate2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="137"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="plate3">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="138"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="cookingPot0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="118"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="cookingPot1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="119"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="cookingPot2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="120"/>
+
+		<ref name="bsdf" id="polishedChromium"/>
+	</shape>
+
+	<shape type="serialized" id="spoon">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="121"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="sugarPotRings">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="122"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="sugarPot">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="123"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="sugarPotTop">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="124"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="trophyCup0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="45"/>
+
+		<ref name="bsdf" id="gold"/>
+	</shape>
+
+	<shape type="serialized" id="trophyCup1">
+		<string name="filename" value="geometry/trophyCup1.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<ref name="bsdf" id="silver"/>
+	</shape>
+
+	<shape type="serialized" id="trophyCup1Socket">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="96"/>
+
+		<ref name="bsdf" id="ceramics"/>
+	</shape>
+
+	<shape type="serialized" id="skirting0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="54"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="skirting1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="55"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="skirting2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="56"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+	</shape>
+
+	<shape type="serialized" id="skirtingTop0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="76"/>
+
+		<ref name="bsdf" id="whiteDiff"/>
+	</shape>
+
+	<shape type="serialized" id="skirtingTop1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="77"/>
+
+		<ref name="bsdf" id="whiteDiff"/>
+	</shape>
+
+	<shape type="serialized" id="skirtingTop2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="139"/>
+
+		<ref name="bsdf" id="whiteDiff"/>
+	</shape>
+
+	<shape type="serialized" id="skirtingTop3">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="142"/>
+
+		<ref name="bsdf" id="whiteDiff"/>
+	</shape>
+
+	<shape type="serialized" id="ceiling">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="57"/>
+
+		<ref name="bsdf" id="whiteDiff"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="wall0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="85"/>
+
+		<ref name="bsdf" id="wallpaperMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="wall1">
+		<string name="filename" value="geometry/wallFixed.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<ref name="bsdf" id="wallpaperMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="branches">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="68"/>
+
+		<ref name="bsdf" id="brownDiff"/>
+	</shape>
+
+	<shape type="serialized" id="mirrorFrame">
+		<string name="filename" value="geometry/mirrorFrame.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="mirror">
+		<string name="filename" value="geometry/mirror.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<ref name="bsdf" id="mirrorMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largePicFrame">
+		<string name="filename" value="geometry/largePicFrame.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<ref name="bsdf" id="furnitureMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="largePic">
+		<string name="filename" value="geometry/largePic.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<ref name="bsdf" id="largePicMaterial"/>
+		<boolean name="faceNormals" value="true"/>
+	</shape>
+
+	<shape type="serialized" id="hands">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="125"/>
+
+		<ref name="bsdf" id="roughAlu"/>
+	</shape>
+
+	<shape type="serialized" id="watch0">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="141"/>
+
+		<ref name="bsdf" id="ceramics"/>
+		<boolean name="faceNormals" value="true"/>
+		<transform name="toWorld">
+			<translate x="2"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="watch1">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="144"/>
+
+		<ref name="bsdf" id="roughAlu"/>
+		<boolean name="faceNormals" value="true"/>
+		<transform name="toWorld">
+			<translate x="2"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="watch2">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="145"/>
+
+		<ref name="bsdf" id="polishedChromium"/>
+		<transform name="toWorld">
+			<translate x="2"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="watch3">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="146"/>
+
+		<ref name="bsdf" id="polishedChromium"/>
+		<transform name="toWorld">
+			<translate x="2"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="watch4">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="147"/>
+
+		<ref name="bsdf" id="roughAlu"/>
+		<boolean name="faceNormals" value="true"/>
+		<transform name="toWorld">
+			<translate x="2"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="watch5">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="148"/>
+
+		<ref name="bsdf" id="polishedChromium"/>
+		<transform name="toWorld">
+			<translate x="2"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="watch6">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="106"/>
+
+		<ref name="bsdf" id="polishedChromium"/>
+		<transform name="toWorld">
+			<translate x="2"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="watch7">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="140"/>
+
+		<ref name="bsdf" id="polishedChromium"/>
+		<transform name="toWorld">
+			<translate x="2"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="watch8">
+		<string name="filename" value="geometry/archinterior04.serialized"/>
+		<integer name="shapeIndex" value="116"/>
+
+		<ref name="bsdf" id="polishedChromium"/>
+		<transform name="toWorld">
+			<translate x="2"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="teapot">
+		<string name="filename" value="geometry/teapot.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<ref name="bsdf" id="ceramics"/>
+		<transform name="toWorld">
+			<translate x="-3"/>
+		</transform>
+	</shape>
+
+	<shape type="serialized" id="glassWindows">
+		<string name="filename" value="geometry/windows.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+		<boolean name="faceNormals" value="true"/>
+
+		<ref name="bsdf" id="glass"/>
+	</shape>
+</scene>

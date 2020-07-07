@@ -1,0 +1,159 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+
+	Automatically converted from Wavefront OBJ
+
+-->
+
+<scene version="0.5.0">
+
+	<bsdf type="diffuse" id="SocleMaterial_material">
+		<rgb name="reflectance" value="0.814795 0.814795 0.814795"/>
+	</bsdf>
+
+	<texture type="bitmap" id="darkoak">
+		<string name="filename" value="textures/darkoak.JPG"/>
+	</texture>
+
+	<bsdf type="diffuse" id="mat_dvirka">
+		<ref name="reflectance" id="darkoak"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="wire_177026088_material">
+		<rgb name="reflectance" value="0.439632 0.010336 0.0975885"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="wire_027177148_material">
+		<rgb name="reflectance" value="0.010963 0.439632 0.296147"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="wire_154215229_material">
+		<rgb name="reflectance" value="0.323118 0.679475 0.78346"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="wire_138008110_material">
+		<rgb name="reflectance" value="0.254176 0.00243034 0.155948"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="wire_198224087_material">
+		<rgb name="reflectance" value="0.564759 0.745344 0.095321"/>
+	</bsdf>
+
+	<bsdf type="phong" id="mat_plate">
+		<rgb name="diffuseReflectance" value="0.7 0.439632 0.1"/>
+		<rgb name="specularReflectance" value="0.1 0.1 0.1"/>
+		<float name="exponent" value="400.07177"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="mat_box">
+		<rgb name="reflectance" value="0.7 0.439632 0.1"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="wire_108008136_material">
+		<rgb name="reflectance" value="0.149938 0.00243034 0.246168"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="wire_006135113_material">
+		<rgb name="reflectance" value="0.00181889 0.242269 0.165103"/>
+	</bsdf>
+
+	<bsdf type="phong" id="mat_pear">
+		<rgb name="diffuseReflectance" value="0.25 0.3 0.1"/>
+		<rgb name="specularReflectance" value="0.025 0.03 0.01"/>
+		<float name="exponent" value="20.07177"/>
+	</bsdf>
+
+	<bsdf type="phong" id="mat_apple">
+		<rgb name="diffuseReflectance" value="0.25 0.01 0.01"/>
+		<rgb name="specularReflectance" value="0.025 0.025 0.025"/>
+		<float name="exponent" value="400.07177"/>
+	</bsdf>
+
+	<bsdf type="phong" id="mat_lemon">
+		<rgb name="diffuseReflectance" value="0.25 0.25 0.01"/>
+		<rgb name="specularReflectance" value="0.025 0.025 0.001"/>
+		<float name="exponent" value="20.07177"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="mat_steny">
+		<rgb name="reflectance" value="0.9 0.9 0.9"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="mat_prac_deska_ostrov">
+		<rgb name="reflectance" value="0.9 0.9 0.9"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="mat_podlaha">
+		<rgb name="reflectance" value="0.9 0.9 0.9"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="mat_nuz">
+		<rgb name="reflectance" value="0.1 0.05 0.035"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="mat_strop">
+		<rgb name="reflectance" value="0.9 0.9 0.9"/>
+	</bsdf>
+
+	<bsdf type="roughconductor" id="zelezo">
+		<string name="material" value="Cr"/>
+		<float name="alpha" value="0.1"/>
+	</bsdf>
+
+	<bsdf type="roughconductor" id="mat_zatka">
+		<string name="material" value="Al"/>
+		<float name="alpha" value="0.1"/>
+	</bsdf>
+
+	<bsdf type="roughconductor" id="mat_madlo">
+		<string name="material" value="Cr"/>
+		<float name="alpha" value="0.2"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="mat_papir">
+		<rgb name="reflectance" value="0.9 0.9 0.9"/>
+	</bsdf>
+
+	<bsdf type="conductor" id="mat_opener">
+		<string name="material" value="Al"/>
+		<float name="alpha" value="0.0001"/>
+	</bsdf>
+
+	<bsdf type="roughconductor" id="wire_000000000_material">
+		<string name="material" value="Cr"/>
+		<float name="alpha" value="0.1"/>
+	</bsdf>
+
+	<bsdf type="roughconductor" id="tools_material">
+		<string name="material" value="Cr"/>
+		<float name="alpha" value="0.01"/>
+	</bsdf>
+
+	<bsdf type="roughconductor" id="baterie_material">
+		<string name="material" value="Cr"/>
+		<float name="alpha" value="0.01"/>
+	</bsdf>
+
+	<bsdf type="roughconductor" id="pot_material">
+		<string name="material" value="Cr"/>
+		<float name="alpha" value="0.01"/>
+	</bsdf>
+
+	<bsdf type="dielectric" id="mat_glass">
+		<!-- Rhino object 'Glass' -->
+		<float name="intIOR" value="1.5"/>
+		<float name="extIOR" value="1.0"/>
+		<rgb name="specularTransmittance" value="  0.095321 0.564759 0.745344 "/>
+		<float name="alpha" value="0.1"/>
+	</bsdf>
+
+	<bsdf type="dielectric" id="glass2">
+		<!-- Rhino object 'Glass' -->
+		<float name="intIOR" value="1.5"/>
+		<float name="extIOR" value="1.0"/>
+		<rgb name="specularTransmittance" value="  0.9 0.9 0.9 "/>
+		<float name="alpha" value="0.1"/>
+	</bsdf>
+
+
+</scene>

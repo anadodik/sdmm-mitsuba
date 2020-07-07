@@ -1,0 +1,67 @@
+<scene version="0.6.0">
+	<default name="nee" value="never"/>
+
+	<default name="performPathSpaceGuiding" value="true"/>
+	<default name="adaptiveDTree" value="true"/>
+	<default name="learnCosine" value="false"/>
+	<default name="learnBsdfSamplingFraction" value="false"/>
+	<default name="dTreeThreshold" value="0.01"/>
+	<default name="sTreeThreshold" value="2048"/>
+	<default name="bsdfSamplingFraction" value="0.5"/>
+
+	<default name="performPssGuiding" value="false"/>
+	<default name="pssSampleThreshold" value="0.01"/>
+	<default name="pssConditionalThreshold" value="12000"/>
+	<default name="pssSamplingFraction" value="0.5"/>
+
+	<default name="automaticBudget" value="false"/>
+
+	<default name="budgetType" value="spp"/>
+	<default name="budget" value="255"/>
+
+	<integrator type="guided_path">
+		<integer name="maxDepth" value="$maxDepth"/>
+		<integer name="rrDepth" value="$rrDepth"/>
+		<integer name="sppPerPass" value="1"/>
+
+		<boolean name="performPathSpaceGuiding" value="$performPathSpaceGuiding"/>
+		<boolean name="adaptiveDTree" value="$adaptiveDTree"/>
+		<float name="dTreeThreshold" value="$dTreeThreshold"/>
+		<integer name="sTreeThreshold" value="$sTreeThreshold"/>
+		<float name="bsdfSamplingFraction" value="$bsdfSamplingFraction"/>
+
+		<boolean name="performPssGuiding" value="$performPssGuiding"/>
+		<float name="pssSampleThreshold" value="$pssSampleThreshold"/>
+		<integer name="pssConditionalThreshold" value="$pssConditionalThreshold"/>
+		<float name="pssSamplingFraction" value="$pssSamplingFraction"/>
+
+		<boolean name="strictNormals" value="true"/>
+		<boolean name="automaticBudget" value="$automaticBudget"/>
+		<boolean name="learnCosine" value="$learnCosine"/>
+		<boolean name="learnBsdfSamplingFraction" value="$learnBsdfSamplingFraction"/>
+
+        <string name="sampleCombination" value="inversevar"/>
+        <string name="spatialFilter" value="stochastic"/>
+        <string name="directionalFilter" value="box"/>
+        <integer name="sTreeThreshold" value="4000"/>
+        <integer name="sppPerPass" value="1"/>
+
+		<!-- Parameters for the guided path tracer by Vorba et al. [2014] -->
+		<!--<integer name="maxDepth" value="40"/>
+		<integer name="nImportons" value="300000"/>
+		<integer name="nPhotons" value="300000"/>
+		<integer name="passes" value="30"/>
+		<boolean name="showVisualization" value="false"/>
+		<boolean name="strictNormals" value="true"/>
+		<boolean name="useEnvSampler" value="true"/>-->
+
+		<!-- Parameters for our guided path tracer -->
+		<!--<string name="nee" value="$nee"/>-->
+		<string name="budgetType" value="$budgetType"/>
+		<float name="budget" value="$budget"/>
+
+		<!--<string name="runDir" value="$runDir"/>-->
+
+		<boolean name="dumpSDTree" value="$performPathSpaceGuiding"/>
+	</integrator>
+</scene>

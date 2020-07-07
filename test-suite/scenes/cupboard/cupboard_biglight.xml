@@ -1,0 +1,210 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Automatically converted from Rhino 5.0 -->
+
+<!--  -->
+<scene version="0.5.0">
+	<!-- Parameters -->
+	<default name="neeType" value="bayes"/>
+	<default name="budget" value="64"/>
+	<default name="budgetType" value="spp"/>
+	<default name="maxDepth" value="2"/>
+	<default name="dumpSDTree" value="false"/>
+	<default name="bsdfSamplingFraction" value=".5"/>
+	<default name="lcPriorRegularization" value=".5"/>
+
+	<!--  -->
+	<integrator type="guided_path">
+		<float name="budget" value="$budget"/>
+		<string name="budgetType" value="$budgetType"/>
+		<integer name="maxDepth" value="$maxDepth"/>
+		<string name="nee" value="always"/>
+		<string name="neeType" value="$neeType"/>
+		<boolean name="dumpSDTree" value="$dumpSDTree"/>
+		<float name="bsdfSamplingFraction" value="$bsdfSamplingFraction"/>
+		<float name="lcPriorRegularization" value="$lcPriorRegularization"/>
+		<!-- <string name="lcTestPoints" value="0, 0, 0"/> -->
+	</integrator>
+
+	<sensor type="perspective">
+		<float name="farClip" value="1165.89"/>
+		<float name="focusDistance" value="23.812"/>
+		<float name="fov" value="34.6222"/>
+		<string name="fovAxis" value="x"/>
+		<float name="nearClip" value="0.00582945"/>
+		<transform name="toWorld">
+
+			<lookat target="2.54983, 14.0642, 22.4352" origin="2.45293, 14.6237, 23.2583" up="-0.995284, -0.0580676, -0.0776992"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="256"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<integer name="height" value="480"/>
+			<integer name="width" value="640"/>
+
+			<rfilter type="gaussian"/>
+		</film>
+	</sensor>
+
+	<bsdf type="diffuse" id="mat_floor"/>
+
+	<shape type="serialized">
+		<string name="filename" value="meshes.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x=".15" y=".15"/>
+			<translate y="0"/>
+		</transform>
+		<ref id="mat_floor"/>
+	</shape>
+	<!--  -->
+
+	<shape type="shapeGroup" id="cbPart">
+		<shape type="cube">
+			<transform name="toWorld">
+				<scale x=".1" y="4" z="2"/>
+				<translate x="0"/>
+			</transform>
+
+			<ref id="mat_floor"/>
+		</shape>
+
+		<shape type="cube">
+			<transform name="toWorld">
+				<scale x="2" y=".1" z="2"/>
+				<translate y="-4"/>
+				<translate x="0"/>
+			</transform>
+
+			<ref id="mat_floor"/>
+		</shape>
+
+		<shape type="cube">
+			<transform name="toWorld">
+				<scale x="2" y=".1" z="2"/>
+				<translate y="4"/>
+				<translate x="0"/>
+			</transform>
+
+			<ref id="mat_floor"/>
+		</shape>
+	</shape>
+
+	<shape type="instance">
+		<ref id="cbPart"/>
+		<transform name="toWorld">
+			<translate x="0"/>
+		</transform>
+	</shape>
+
+	<shape type="instance">
+		<ref id="cbPart"/>
+		<transform name="toWorld">
+			<translate x="4"/>
+		</transform>
+	</shape>
+
+	<shape type="instance">
+		<ref id="cbPart"/>
+		<transform name="toWorld">
+			<translate x="8"/>
+		</transform>
+	</shape>
+	<!--  -->
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<scale x=".1" y=".25" z="1"/>
+			<rotate y="1" angle="90"/>
+			<translate x=".11" y="-2"/>
+			<translate x="0"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="300"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<scale x=".1" y=".25" z="1"/>
+			<rotate y="1" angle="90"/>
+			<translate x=".11" y="-2"/>
+			<translate x="4"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="300"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<scale x=".1" y=".25" z="1"/>
+			<rotate y="1" angle="90"/>
+			<translate x=".11" y="-2"/>
+			<translate x="8"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="300"/>
+		</emitter>
+	</shape>
+	<!--  -->
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<scale x=".1" y=".25" z="1"/>
+			<rotate y="1" angle="90"/>
+			<translate x=".11" y="2"/>
+			<translate x="0"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="300"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<scale x=".1" y=".25" z="1"/>
+			<rotate y="1" angle="90"/>
+			<translate x=".11" y="2"/>
+			<translate x="4"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="300"/>
+		</emitter>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<scale x=".1" y=".25" z="1"/>
+			<rotate y="1" angle="90"/>
+			<translate x=".11" y="2"/>
+			<translate x="8"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="300"/>
+		</emitter>
+	</shape>
+
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<scale x=".25" y=".25" z="1"/>
+			<rotate y="1" angle="90"/>
+			<translate x=".11" y="2"/>
+			<translate x="-8" z="8"/>
+		</transform>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="3000"/>
+			<!-- <spectrum name="radiance" value="300"/> -->
+		</emitter>
+	</shape>
+</scene>

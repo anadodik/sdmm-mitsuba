@@ -1,0 +1,2 @@
+2020-05-12 22:15:16 INFO  main [mitsuba.cpp:274] Mitsuba version 0.6.0 (Linux, 64 bit), Copyright (c) 2017 Wenzel Jakob
+2020-05-12 22:15:16 INFO  main [mitsuba.cpp:377] Parsing scene description from "/home/anadodik/pmc/scenes/glossy-bathroom2/glossy-bathroom2.xml" ..

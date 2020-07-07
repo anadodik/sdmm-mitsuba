@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original scene by Toshiya Hachisuka; Origin of this particular scene unknown -->
+
+<scene version="0.5.0">
+	<default name="budget" value="1023"/>
+	<default name="budgetType" value="spp"/>
+
+	<default name="maxDepth" value="10"/>
+	<default name="rrDepth" value="10"/>
+
+	<default name="sampleCount" value="1024"/>
+
+	<default name="integrator" value="ppg"/>
+	<include filename="../_integrators/$integrator.xml"/>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="180"/>
+			<scale x="30" y="30" z="1"/>
+			<translate x="210" y="264" z="567"/>
+		</transform>
+
+		<emitter name="matLight" type="area">
+			<rgb name="radiance" value="500,500,500"/>
+		</emitter>
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0 0 0"/>
+		</bsdf>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<rotate x="1" angle="180"/>
+			<scale x="30" y="30" z="1"/>
+			<translate x="-163" y="264" z="567"/>
+		</transform>
+
+		<emitter name="matLight" type="area">
+			<rgb name="radiance" value="500,500,500"/>
+		</emitter>
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0 0 0"/>
+		</bsdf>
+	</shape>
+
+	<!--<shape type="obj">
+		<string name="filename" value="mirrorballs.obj"/>
+		<integer name="shapeIndex" value="8"/>
+		<boolean name="faceNormals" value="true"/>
+		<boolean name="flipNormals" value="false"/>
+		<emitter name="matLight" type="area">
+			<rgb name="radiance" value="500000,500000,500000"/>
+		</emitter>
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0 0 0"/>
+		</bsdf>
+	</shape>
+
+	<shape type="obj">
+		<string name="filename" value="mirrorballs.obj"/>
+		<integer name="shapeIndex" value="9"/>
+		<boolean name="faceNormals" value="true"/>
+		<boolean name="flipNormals" value="false"/>
+		<emitter name="matLight" type="area">
+			<rgb name="radiance" value="500000,500000,500000"/>
+		</emitter>
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0 0 0"/>
+		</bsdf>
+	</shape>-->
+
+	<!--<shape type="obj">
+		<string name="filename" value="mirrorballs.obj"/>
+		<integer name="shapeIndex" value="13"/>
+		<boolean name="faceNormals" value="true"/>
+		<emitter name="matLight" type="area">
+			<rgb name="radiance" value="100,100,100"/>
+		</emitter>
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0 0 0"/>
+		</bsdf>
+	</shape>-->
+
+	<shape type="obj">
+		<string name="filename" value="mirrorballs.obj"/>
+		<boolean name="faceNormals" value="true"/>
+
+		<bsdf name="matGlass" type="dielectric">
+			<float name="intIOR" value="1.5"/>
+		</bsdf>
+		<bsdf name="matChrome" type="conductor">
+			<string name="material" value="Cr"/>
+		</bsdf>
+		<bsdf name="matBall" type="conductor">
+			<string name="material" value="Cr"/>
+		</bsdf>
+		<bsdf name="matBall2" type="conductor">
+			<string name="material" value="Cr"/>
+		</bsdf>
+		<bsdf name="matLight" type="null">
+		</bsdf>
+		<!--<bsdf name="Water" type="dielectric">
+			<float name="intIOR" value="1.333"/>
+		</bsdf>-->
+
+		<!--<emitter name="matLight" type="area">
+			<rgb name="radiance" value="100,100,100"/>
+		</emitter>-->
+
+
+	</shape>
+
+	<sensor type="perspective">
+		<float name="farClip" value="10000"/>
+		<float name="focusDistance" value="51.7808"/>
+		<float name="fov" value="70"/>
+		<string name="fovAxis" value="x"/>
+		<float name="nearClip" value="1"/>
+		<transform name="toWorld">
+
+			<lookat target="0, 0, 250" origin="0, 1100, 300" up="0, 0, 1"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="$sampleCount"/>
+			<integer name="seed" value="1234"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<integer name="height" value="384"/>
+			<integer name="width" value="512"/>
+			<boolean name="banner" value="false"/>
+
+			<rfilter type="box"/>
+		</film>
+	</sensor>
+</scene>

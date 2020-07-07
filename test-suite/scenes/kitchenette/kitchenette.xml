@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Creator unclear; ask Martin Sik -->
+
+<scene version="0.5.0">
+	<default name="budget" value="1023"/>
+	<default name="budgetType" value="spp"/>
+
+	<default name="maxDepth" value="15"/>
+	<default name="rrDepth" value="15"/>
+
+	<default name="sampleCount" value="512"/>
+
+	<default name="integrator" value="ppg"/>
+	<include filename="../_integrators/$integrator.xml"/>
+
+	<sensor type="perspective">
+		<float name="farClip" value="100000"/>
+		<float name="focusDistance" value="1403.13"/>
+		<float name="fov" value="60"/>
+		<string name="fovAxis" value="x"/>
+		<float name="nearClip" value="10"/>
+		<transform name="toWorld">
+
+			<!--<lookat target="-798.397, 1468.61, -1298.62" origin="-798.986, 1468.72, -1297.82" up="0.013583, 0.991892, -0.126358"/>-->
+      <lookat target="-1017.51, 1315.84, -1643.31" origin="-1018.23, 1315.89, -1642.62" up="0.0349388, 0.998741, -0.0359899"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="$sampleCount"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<integer name="height" value="360"/>
+			<integer name="width" value="640"/>
+			<rfilter type="box"/>
+			<boolean name="banner" value="false"/>
+		</film>
+	</sensor>
+	
+	<include filename="kitchen_materials_less_glossy.xml"/>
+	<include filename="kitchen_scene.xml"/>
+</scene>

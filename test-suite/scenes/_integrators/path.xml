@@ -1,0 +1,8 @@
+<scene version="0.6.0">
+	<integrator type="volpath">
+		<integer name="maxDepth" value="$maxDepth"/>
+		<integer name="rrDepth" value="$rrDepth"/>
+		<boolean name="nee" value="false"/>
+		<boolean name="strictNormals" value="true"/>
+	</integrator>
+</scene>

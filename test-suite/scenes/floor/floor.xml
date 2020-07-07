@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scene remodeled from Cline et al. by Olesya Jakob. -->
+
+<scene version="0.6.0">
+	<default name="budget" value="1023"/>
+	<default name="budgetType" value="spp"/>
+
+	<default name="maxDepth" value="2"/>
+	<default name="rrDepth" value="2"/>
+
+	<default name="sampleCount" value="8"/>
+
+	<default name="integrator" value="pmc"/>
+	<include filename="../_integrators/$integrator.xml"/>
+
+	<bsdf type="diffuse" id="mat_donut">
+		<rgb name="reflectance" value=".8,.8,.4"/>
+		<!-- Rhino object 'Donut' -->
+	</bsdf>
+
+	<bsdf type="conductor" id="mat_metal">
+		<string name="material" value="Al"/>
+		<float name="alpha" value="0.1"/>
+	</bsdf>
+
+	<bsdf type="dielectric" id="mat_glass">
+		<!-- Rhino object 'Glass' -->
+		<float name="intIOR" value="1.5"/>
+		<float name="extIOR" value="1.0"/>
+		<float name="alpha" value="0.05"/>
+	</bsdf>
+
+	<bsdf type="diffuse" id="mat_floor">
+		<!-- Rhino object 'Floor' -->
+	</bsdf>
+
+	<bsdf type="diffuse" id="mat_lamp">
+		<!-- Rhino object 'Lamp' -->
+	</bsdf>
+
+	<emitter type="sunsky">
+		<transform name="toWorld">
+			<rotate y="1" angle="-30"/>
+			<rotate x="1" angle="90"/>
+		</transform>
+		<float name="hour" value="9"/>
+		<float name="turbidity" value="5"/>
+		<float name="sunRadiusScale" value="4"/>
+	</emitter>
+
+	<shape type="serialized">
+		<string name="filename" value="meshes.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<transform name="toWorld">
+			<scale x=".36" y=".43"/>
+			<translate y="24" x="13"/>
+		</transform>
+
+		<ref id="mat_floor"/>
+	</shape>
+
+	<sensor type="perspective">
+		<float name="farClip" value="1165.89"/>
+		<float name="focusDistance" value="51.7808"/>
+		<float name="fov" value="34.6222"/>
+		<string name="fovAxis" value="x"/>
+		<float name="nearClip" value="0.00582945"/>
+		<transform name="toWorld">
+
+			<lookat target="-23.7753, -37.4261, 29.4905" origin="-24.173, -38.184, 30.0076" up="0.261433, 0.446628, 0.855673"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="$sampleCount"/>
+			<integer name="seed" value="1234"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<integer name="height" value="384"/>
+			<integer name="width" value="512"/>
+			<boolean name="banner" value="false"/>
+
+			<rfilter type="box"/>
+		</film>
+	</sensor>
+</scene>

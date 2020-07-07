@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+
+	Automatically converted from Wavefront OBJ
+
+-->
+
+<scene version="0.6.0">
+
+
+	<bsdf type="roughconductor" id="gold_material">
+		<string name="material" value="Au"/>
+	</bsdf>
+
+	<bsdf type="roughconductor" id="silver_material">
+		<string name="material" value="Ag"/>
+	</bsdf>
+
+	<bsdf type="dielectric" id="diamond_material">
+		<string name="intIOR" value="diamond"/>
+		<string name="extIOR" value="air"/>
+	</bsdf>
+
+	<bsdf type="dielectric" id="bigdiamond_material">
+		<float name="intIOR" value="1.8"/>
+		<float name="extIOR" value="1"/>
+	</bsdf>
+
+	<bsdf type="dielectric" id="glass_material">
+		<float name="intIOR" value="1.4"/>
+		<float name="extIOR" value="1"/>
+	</bsdf>
+	<!--
+	<bsdf type="roughconductor" id="ground_material">
+		<string name="material" value="Ag"/>
+	</bsdf>
+  -->
+
+	<bsdf type="roughplastic" id="ground_material">
+		<string name="distribution" value="beckmann"/>
+		<float name="intIOR" value="2.31"/>
+		<rgb name="diffuseReflectance" value=".04, .04, .04"/>
+		<float name="alpha" value="0.1"/>
+	</bsdf>
+
+</scene>

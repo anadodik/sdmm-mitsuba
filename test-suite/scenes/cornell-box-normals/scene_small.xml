@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<scene version="0.6.0">
+    <default name="maxDepth" value="2"/>
+	<default name="rrDepth" value="2"/>
+
+	<default name="sampleCount" value="8"/>
+    <default name="integrator" value="pmc"/>
+    
+	<include filename="../_integrators/$integrator.xml"/>
+
+	<sensor type="perspective">
+		<float name="fov" value="19.5"/>
+		<transform name="toWorld">
+			<matrix value="-1 0 0 0 0 1 0 1 0 0 -1 6.8 0 0 0 1"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="$sampleCount"/>
+			<integer name="seed" value="1234"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<integer name="width" value="256"/>
+			<integer name="height" value="256"/>
+			<boolean name="banner" value="false"/>
+            <string name="pixelFormat" value="rgb"/>
+
+			<rfilter type="box"/>
+		</film>
+	</sensor>
+
+	<bsdf type="twosided" id="LeftWall">
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0.63, 0.065, 0.05"/>
+		</bsdf>
+	</bsdf>
+
+	<bsdf type="twosided" id="RightWall">
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0.14, 0.45, 0.091"/>
+		</bsdf>
+	</bsdf>
+
+	<bsdf type="twosided" id="Floor">
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0.725, 0.71, 0.68"/>
+		</bsdf>
+	</bsdf>
+
+	<bsdf type="twosided" id="Ceiling">
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0.725, 0.71, 0.68"/>
+		</bsdf>
+	</bsdf>
+
+	<bsdf type="twosided" id="BackWall">
+        <bsdf type="normalmap">
+            <texture type="bitmap">
+                <float name="gamma" value="1.0"/>
+                <string name="filename" value="Organic_Matter_002_NORM.jpg"/>
+            </texture>
+            <bsdf type="diffuse">
+                <rgb name="reflectance" value="0.725, 0.71, 0.68"/>
+            </bsdf>
+		</bsdf>
+	</bsdf>
+
+	<bsdf type="twosided" id="ShortBox">
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0.725, 0.71, 0.68"/>
+		</bsdf>
+	</bsdf>
+
+	<bsdf type="twosided" id="TallBox">
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0.725, 0.71, 0.68"/>
+		</bsdf>
+	</bsdf>
+
+	<bsdf type="twosided" id="Light">
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0, 0, 0"/>
+		</bsdf>
+	</bsdf>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<matrix value="-4.37114e-008 1 4.37114e-008 0 0 -8.74228e-008 2 0 1 4.37114e-008 1.91069e-015 0 0 0 0 1"/>
+		</transform>
+
+		<ref id="Floor"/>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<matrix value="-1 7.64274e-015 -1.74846e-007 0 8.74228e-008 8.74228e-008 -2 2 0 -1 -4.37114e-008 0 0 0 0 1"/>
+		</transform>
+
+		<ref id="Ceiling"/>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<matrix value="1.91069e-015 1 1.31134e-007 0 1 3.82137e-015 -8.74228e-008 1 -4.37114e-008 1.31134e-007 -2 -1 0 0 0 1"/>
+		</transform>
+
+		<ref id="BackWall"/>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<matrix value="4.37114e-008 -1.74846e-007 2 1 1 3.82137e-015 -8.74228e-008 1 3.82137e-015 1 2.18557e-007 0 0 0 0 1"/>
+		</transform>
+
+		<ref id="RightWall"/>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<matrix value="-4.37114e-008 8.74228e-008 -2 -1 1 3.82137e-015 -8.74228e-008 1 0 -1 -4.37114e-008 0 0 0 0 1"/>
+		</transform>
+
+		<ref id="LeftWall"/>
+	</shape>
+
+	<shape type="cube">
+		<transform name="toWorld">
+			<matrix value="0.0851643 0.289542 1.31134e-008 0.328631 3.72265e-009 1.26563e-008 -0.3 0.3 -0.284951 0.0865363 5.73206e-016 0.374592 0 0 0 1"/>
+		</transform>
+
+		<ref id="ShortBox"/>
+	</shape>
+
+	<shape type="cube">
+		<transform name="toWorld">
+			<matrix value="0.286776 0.098229 -2.29282e-015 -0.335439 -4.36233e-009 1.23382e-008 -0.6 0.6 -0.0997984 0.282266 2.62268e-008 -0.291415 0 0 0 1"/>
+		</transform>
+
+		<ref id="TallBox"/>
+	</shape>
+
+	<shape type="rectangle">
+		<transform name="toWorld">
+			<matrix value="4.700000e-02 -3.322060e-09 -1.561370e-09 -5.000000e-03 -4.108880e-09  7.806860e-10 -1.786000e-02  1.980000e+00        4.108880e-09  3.800000e-02  1.661032e-09 -3.000000e-02        0.000000e+00  0.000000e+00  0.000000e+00  1.000000e+00"/>		</transform>
+
+		<ref id="Light"/>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="400:0, 500:1600, 600:3180, 700:3680"/>
+		</emitter>
+	</shape>
+</scene>

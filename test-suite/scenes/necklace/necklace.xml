@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- By Anton Kaplanyan und Johannes Hannika; made tougher by Sebastian Herholz & co-authors -->
+
+<scene version="0.6.0" >
+	<default name="seed" value="1234"/>
+
+	<default name="budget" value="1023"/>
+	<default name="budgetType" value="spp"/>
+
+	<default name="integrator" value="pmc"/>
+	<include filename="../_integrators/$integrator.xml"/>
+
+	<sensor type="perspective">
+		<float name="farClip" value="496.569"/>
+		<float name="focusDistance" value="5.72457"/>
+		<float name="fov" value="60.0"/>
+		<string name="fovAxis" value="x"/>
+		<float name="nearClip" value="0.965685"/>
+		<transform name="toWorld">
+
+			<lookat target="-8.66715, 1.55353, -0.587664" origin="-9.45391, 1.97728, -0.138841" up="0.388927, 0.90495, -0.172631"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="$sampleCount"/>
+			<integer name="seed" value="1234"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<integer name="height" value="360"/>
+			<integer name="width" value="640"/>
+			<boolean name="banner" value="false"/>
+			
+			<string name="fileFormat" value="openexr"/>
+			<rfilter type="box"/>
+		</film>
+	</sensor>
+
+	<include filename="necklace_materials.xml"/>
+	<include filename="necklace_scene.xml"/>
+</scene>
+

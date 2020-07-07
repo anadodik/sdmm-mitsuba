@@ -1,0 +1,7 @@
+<scene version="0.5.0">
+	<integrator type="bdpt">
+		<integer name="maxDepth" value="$maxDepth"/>
+		<integer name="rrDepth" value="$rrDepth"/>
+		<boolean name="strictNormals" value="true"/>
+	</integrator>
+</scene>	

@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+
+	Automatically converted from Wavefront OBJ
+
+-->
+
+<scene version="0.6.0">
+	<default name="budget" value="1023"/>
+	<default name="budgetType" value="spp"/>
+
+	<default name="maxDepth" value="6"/>
+	<default name="rrDepth" value="10"/>
+
+	<default name="sampleCount" value="512"/>
+
+	<default name="integrator" value="pmc"/>
+	<include filename="../_integrators/$integrator.xml"/>
+
+	<shape type="serialized" id="lucy-4M_mesh">
+		<string name="filename" value="lucy-4M.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+
+		<bsdf type="diffuse"/>
+	</shape>
+
+	<emitter type="envmap">
+		<string name="filename" value="grace.exr"/>
+		<transform name="toWorld">
+			<rotate y="1" angle="180"/>
+		</transform>
+	</emitter>
+
+	<sensor type="perspective">
+		<float name="farClip" value="12.4103"/>
+		<float name="focusDistance" value="3.6298"/>
+		<float name="fov" value="45"/>
+		<string name="fovAxis" value="x"/>
+		<float name="nearClip" value="0.0241345"/>
+		<transform name="toWorld">
+
+			<lookat target="-0.0156176, 0.2128, 2.62108" origin="-0.0215779, 0.293704, 3.61778" up="0.000483805, 0.996722, -0.0809029"/>
+		</transform>
+
+		<sampler type="independent">
+			<integer name="sampleCount" value="$sampleCount"/>
+		</sampler>
+
+		<film type="hdrfilm">
+			<rfilter type="box"/>
+            
+			<boolean name="banner" value="false"/>
+		</film>
+	</sensor>
+</scene>

@@ -1,0 +1,744 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+
+	Automatically converted from Wavefront OBJ
+
+-->
+
+<scene version="0.6.0">
+	
+	<default name="faceNormalsFlag" value="false"/>
+	
+
+	<shape type="serialized" id="box_sphere_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="0"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="silver_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_0_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="1"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="silver_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_1_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="2"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="silver_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_2_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="3"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_3_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="4"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_4_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="5"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_5_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="6"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_6_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="7"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_7_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="8"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_8_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="9"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_9_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="10"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="silver_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_10_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="11"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="silver_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_11_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="12"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_12_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="13"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_13_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="14"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_14_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="15"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_15_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="16"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_16_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="17"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_17_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="18"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_18_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="19"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_19_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="20"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_20_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="21"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_21_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="22"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_22_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="23"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_23_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="24"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_24_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="25"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_25_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="26"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="silver_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_26_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="27"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="bigdiamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_27_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="28"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="bigdiamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_28_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="29"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_29_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="30"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_30_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="31"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_31_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="32"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_32_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="33"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_33_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="34"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_34_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="35"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_35_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="36"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_36_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="37"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_37_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="38"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_38_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="39"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="silver_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_39_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="40"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_40_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="41"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_41_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="42"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_42_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="43"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_43_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="44"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_44_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="45"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_45_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="46"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_46_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="47"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_47_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="48"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_48_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="49"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_49_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="50"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_50_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="51"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_51_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="52"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_52_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="53"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="silver_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_53_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="54"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_54_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="55"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_55_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="56"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_56_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="57"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_57_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="58"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_58_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="59"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_59_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="60"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_60_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="61"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="diamond_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_61_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="62"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="silver_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_62_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="63"/>
+		<!-- this is the ground plane -->
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="ground_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_63_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="64"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_64_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="65"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_65_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="66"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_66_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="67"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_67_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="68"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_68_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="69"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_69_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="70"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		<!--boolean name="flipNormals" value="true"/-->
+		
+		<ref name="bsdf" id="gold_material"/>
+	</shape>
+	<!-- two big fill lights behind cam-->
+
+	<shape type="serialized" id="box_sphere_70_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="71"/>
+
+		<emitter type="area">
+			<rgb name="radiance" value="1 1 1"/>
+		</emitter>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_71_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="72"/>
+
+		<emitter type="area">
+			<rgb name="radiance" value="1 1 1"/>
+		</emitter>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_72_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="73"/>
+
+		<emitter type="area">
+			<rgb name="radiance" value="10 10 10"/>
+		</emitter>
+	</shape>
+
+	<shape type="serialized" id="box_sphere_73_mesh">
+		<string name="filename" value="necklace_0002.serialized"/>
+		<integer name="shapeIndex" value="74"/>
+
+		<emitter type="area">
+			<rgb name="radiance" value="10 10 10"/>
+		</emitter>
+	</shape>
+	<!--
+	<emitter type="spot" id="spot light">
+		<spectrum name="intensity" value="150.00"/>
+		<float name="cutoffAngle" value="50.00"/>
+		<float name="beamWidth" value="20.00"/>
+		<transform name="toWorld">
+
+			<lookat target="-2.48234, 2.82397, 3.11122" origin="-2.07308, 3.24641, 3.91995" up="0.216465, 0.816104, -0.535833"/>
+		</transform>
+	</emitter>
+	-->
+	<!-- Substitute for the spotlight emitter, including a glass 'bulb' -->
+
+	<shape type="sphere">
+		<point name="center" x="-2.07308" y="3.24641" z="3.91995"/>
+		<float name="radius" value=".025"/>
+
+		<emitter type="area">
+			<spectrum name="radiance" value="21000.00"/>
+		</emitter>
+
+		<bsdf type="diffuse">
+			<rgb name="reflectance" value="0,0,0"/>
+		</bsdf>
+	</shape>
+<!-- -->
+	<shape type="sphere">
+		<point name="center" x="-2.07308" y="3.24641" z="3.91995"/>
+		<float name="radius" value=".050"/>
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		
+		
+		<ref name="bsdf" id="glass_material"/>
+	</shape>
+
+	<shape type="sphere">
+		<point name="center" x="-2.07308" y="3.24641" z="3.91995"/>
+		<float name="radius" value=".045"/>
+		
+		<boolean name="faceNormals" value="$faceNormalsFlag"/>
+		
+		
+		<ref name="bsdf" id="glass_material"/>
+	</shape>
+<!-- -->	<!--
+	<emitter type="spot" id="fill">
+		<spectrum name="intensity" value="10.00"/>
+		<float name="cutoffAngle" value="50.00"/>
+		<float name="beamWidth" value="40.00"/>
+		<transform name="toWorld">
+    <lookat target="0.761516, 3.50846, -4.44207" origin="1.47959, 4.12747, -4.86019" up="-0.56623, 0.785384,  0.250113"/>
+		</transform>
+	</emitter>
+  -->
+
+</scene>
