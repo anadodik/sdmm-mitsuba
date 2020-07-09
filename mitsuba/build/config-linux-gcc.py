@@ -4,7 +4,7 @@ BUILDDIR       = '#build/release'
 DISTDIR        = '#dist'
 CXX            = 'g++'
 CC             = 'gcc'
-CXXFLAGS       = ['-O3', '-w', '-Wall', '-Wfloat-conversion', '-fPIC', '-g', '-pipe', '-march=native', '-ftree-vectorize', '-funsafe-math-optimizations', '-fno-rounding-math', '-fno-signaling-nans', '-fno-math-errno', '-DMTS_DEBUG', '-DSINGLE_PRECISION', '-DSPECTRUM_SAMPLES=3', '-DMTS_SSE', '-DMTS_HAS_COHERENT_RT', '-fopenmp', '-fvisibility=hidden', '-mtls-dialect=gnu2', '-std=gnu++17', '-Wno-error=deprecated'] # '-fomit-frame-pointer', 
+CXXFLAGS       = ['-O3', '-w', '-Wall', '-Wfloat-conversion', '-fPIC', '-g', '-pipe', '-march=native', '-ftree-vectorize', '-funsafe-math-optimizations', '-fno-rounding-math', '-fno-signaling-nans', '-fno-math-errno', '-DMTS_DEBUG', '-DSINGLE_PRECISION', '-DSPECTRUM_SAMPLES=3', '-DMTS_SSE', '-DMTS_HAS_COHERENT_RT', '-fopenmp', '-fvisibility=hidden', '-mtls-dialect=gnu2', '-std=gnu++17', '-Wno-error=deprecated', '-fno-stack-protector', '-ffp-contract=fast'] # '-fomit-frame-pointer', 
 LINKFLAGS      = ['-lprofiler']
 SHLINKFLAGS    = ['-rdynamic', '-shared', '-fPIC', '-lstdc++', '-lprofiler']
 BASEINCLUDE    = ['#include']

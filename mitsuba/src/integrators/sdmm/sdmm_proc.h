@@ -107,7 +107,6 @@ public:
     constexpr static size_t JointSize = 5;
     constexpr static size_t MarginalSize = 3;
     constexpr static size_t ConditionalSize = 2;
-    constexpr static size_t NComponents = 64;
     constexpr static int NSamples = 1;
     static_assert(JointSize == MarginalSize + ConditionalSize);
 
@@ -137,7 +136,7 @@ public:
         JointSDMM, MarginalSDMM, ConditionalSDMM
     >;
 
-    using RNG = enoki::PCG32<Value, NSamples>;
+    using RNG = enoki::PCG32<float, NSamples>;
 
     struct GridCell {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW

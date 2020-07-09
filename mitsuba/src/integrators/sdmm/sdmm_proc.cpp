@@ -433,8 +433,9 @@ public:
         thread_local SDMMProcess::Conditioner conditioner;
         thread_local SDMMProcess::RNG sdmm_rng;
         thread_local SDMMProcess::Value inv_jacobian;
-        thread_local sdmm::replace_embedded_t<SDMMProcess::ConditionalSDMM, SDMMProcess::Value> embedded_sample;
-        thread_local sdmm::replace_tangent_t<SDMMProcess::ConditionalSDMM, SDMMProcess::Value> tangent_sample;
+        thread_local sdmm::replace_embedded_t<SDMMProcess::ConditionalSDMM, float> embedded_sample;
+        thread_local sdmm::replace_tangent_t<SDMMProcess::ConditionalSDMM, float> tangent_sample;
+        enoki::set_slices(inv_jacobian, 1);
 
         createCondition(sample, its, rRec.depth);
         gmmPdf = bsdfPdf = pdf = 0.f;
@@ -476,7 +477,7 @@ public:
         //     heuristicConditionalWeight
         // );
 
-        // MMCond* samplingConditional = nullptr;
+        // MMCond* samplingConditional = &conditional;
 
         if(
             m_config.sampleProduct &&
@@ -529,9 +530,9 @@ public:
             }
             ConditionalVectord condVec;
             condVec <<
-                enoki::slice(embedded_sample, 0).coeff(0),
-                enoki::slice(embedded_sample, 0).coeff(1),
-                enoki::slice(embedded_sample, 0).coeff(2);
+                embedded_sample.coeff(0),
+                embedded_sample.coeff(1),
+                embedded_sample.coeff(2);
             // std::cerr << fmt::format(
             //     "embedded_sample={}, "
             //     "tangent_sample={}, "
@@ -560,6 +561,7 @@ public:
             bRec,
             bsdfPdf,
             gmmPdf,
+            conditional,
             // *samplingConditional,
             conditioner,
             heuristicConditionalWeight,
@@ -577,7 +579,7 @@ public:
         const BSDFSamplingRecord& bRec,
         Float& bsdfPdf,
         Float& gmmPdf,
-        // const MMCond& conditional,
+        const MMCond& conditional,
         SDMMProcess::Conditioner& conditioner,
         const Float heuristicConditionalWeight,
         const ConditionalVectord& sample
@@ -603,6 +605,7 @@ public:
             posterior
         );
         gmmPdf = enoki::hsum_nested(posterior);
+        // gmmPdf = conditional.pdf(sample) * dirToCanonicalInvJacobian<t_conditionalDims>();
 
         return
             heuristicConditionalWeight * bsdfPdf +
