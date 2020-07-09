@@ -35,15 +35,12 @@ struct Coordinates {
     Coordinates(const Eigen::MatrixBase<Derived>& n) {
         static_assert(Derived::RowsAtCompileTime == 3);
         static_assert(Derived::ColsAtCompileTime == 1);
+        Scalar sign = std::copysign(1.0f, n(2));
+        const Scalar a = -1.0f / (sign + n(2));
+        const Scalar b = n(0) * n(1) * a;
+        to.row(0) << 1.0f + sign * n(0) * n(0) * a, sign * b, -sign * n(0);
+        to.row(1) << b, sign + n(1) * n(1) * a, -n(1);
         to.row(2) << n.transpose();
-        if (std::abs(n(0)) > std::abs(n(1))) {
-            Scalar invLen = 1.0f / tsqrtf(n(0) * n(0) + n(2) * n(2));
-            to.row(0) << n(2) * invLen, 0.0f, -n(0) * invLen;
-        } else {
-            Scalar invLen = 1.0f / tsqrtf(n(1) * n(1) + n(2) * n(2));
-            to.row(0) << 0.0f, n(2) * invLen, -n(1) * invLen;
-        }
-        to.row(1) = to.row(0).cross(n);
     }
 
     Eigen::Matrix<Scalar, 3, 3> to;
@@ -56,14 +53,11 @@ void coordinateSystem(
     Eigen::Matrix<Scalar, 3, 1> &s,
     Eigen::Matrix<Scalar, 3, 1> &t
 ) {
-    if (std::abs(n(0)) > std::abs(n(1))) {
-        Scalar invLen = 1.0f / std::sqrt(n(0) * n(0) + n(2) * n(2));
-        s << n(2) * invLen, 0.0f, -n(0) * invLen;
-    } else {
-        Scalar invLen = 1.0f / std::sqrt(n(1) * n(1) + n(2) * n(2));
-        s << 0.0f, n(2) * invLen, -n(1) * invLen;
-    }
-    t = s.cross(n);
+    Scalar sign = std::copysign(1.0f, n(2));
+    const Scalar a = -1.0f / (sign + n(2));
+    const Scalar b = n(0) * n(1) * a;
+    s << 1.0f + sign * n(0) * n(0) * a, sign * b, -sign * n(0);
+    t << b, sign + n(1) * n(1) * a, -n(1);
 }
 
 
