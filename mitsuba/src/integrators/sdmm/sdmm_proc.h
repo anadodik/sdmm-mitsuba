@@ -111,7 +111,7 @@ public:
     constexpr static int NSamples = 1;
     static_assert(JointSize == MarginalSize + ConditionalSize);
 
-    using Packet = enoki::Packet<Scalar, PacketSize>;
+    using Packet = enoki::Packet<float, PacketSize>;
     using Value = enoki::DynamicArray<Packet>;
 
     using JointTangentSpace = sdmm::SpatioDirectionalTangentSpace<
@@ -149,6 +149,7 @@ public:
         
         JointSDMM sdmm;
         Conditioner conditioner;
+        RNG rng;
     };
 
     using HashGridType = jmm::STree<

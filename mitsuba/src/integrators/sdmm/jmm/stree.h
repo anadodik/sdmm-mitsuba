@@ -173,6 +173,8 @@ public:
         auto childValue = std::make_shared<Value>();
         childValue->distribution = m_nodes[node_i].value->distribution;
         childValue->optimizer = m_nodes[node_i].value->optimizer;
+        childValue->sdmm = m_nodes[node_i].value->sdmm;
+        childValue->conditioner = m_nodes[node_i].value->conditioner;
         childValue->samples.reserve(m_nodes[node_i].value->samples.capacity());
         for(int sample_i = 0; sample_i < m_nodes[node_i].value->samples.size(); ++sample_i) {
             Position position = 

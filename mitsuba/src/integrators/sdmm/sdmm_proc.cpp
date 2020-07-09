@@ -430,6 +430,12 @@ public:
         MMCond& rotatedMaterialConditional,
         MMCond& productConditional
     ) const {
+        thread_local SDMMProcess::Conditioner conditioner;
+        thread_local SDMMProcess::RNG sdmm_rng;
+        thread_local SDMMProcess::Value inv_jacobian;
+        thread_local sdmm::replace_embedded_t<SDMMProcess::ConditionalSDMM, SDMMProcess::Value> embedded_sample;
+        thread_local sdmm::replace_tangent_t<SDMMProcess::ConditionalSDMM, SDMMProcess::Value> tangent_sample;
+
         createCondition(sample, its, rRec.depth);
         gmmPdf = bsdfPdf = pdf = 0.f;
 
@@ -453,19 +459,6 @@ public:
 		GridKeyVector key;
 		jmm::buildKey(sample, normal, key);
         auto gridCell = m_grid->find(key);
-        // if(gridCell == nullptr) {
-        //     if(m_iteration > 0) {
-        //         std::cerr <<
-        //             "sampleSurface: Could not find matching cell with key " <<
-        //             key.transpose() <<
-        //             ", position " <<
-        //             sample.transpose() <<
-        //             ", normal " <<
-        //             normal.transpose() <<
-        //             "\n";
-        //     }
-        // }
-
         if(m_iteration == 0 || gridCell == nullptr || gridCell->distribution.nComponents() == 0) {
             heuristicConditionalWeight = 1.0f;
             Spectrum result = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
@@ -476,22 +469,14 @@ public:
             return result;
         }
 
-        bool validConditional;
-        if(m_config.useHierarchical) {
-            validConditional = gridCell->distribution.conditional(
-                sample.template topRows<t_conditionDims>(),
-                conditional,
-                heuristicConditionalWeight
-            );
-        } else {
-            validConditional = gridCell->distribution.conditional(
-                sample.template topRows<t_conditionDims>(),
-                conditional,
-                heuristicConditionalWeight
-            );
-        }
+        bool validConditional = true;
+        // validConditional = gridCell->distribution.conditional(
+        //     sample.template topRows<t_conditionDims>(),
+        //     conditional,
+        //     heuristicConditionalWeight
+        // );
 
-        MMCond* samplingConditional = nullptr;
+        // MMCond* samplingConditional = nullptr;
 
         if(
             m_config.sampleProduct &&
@@ -499,12 +484,18 @@ public:
             (type & BSDF::EDiffuseReflection) == (type & BSDF::EAll)
         ) {
             std::cerr << "Calculating product!\n";
-            materialConditional.rotateTo(normal, rotatedMaterialConditional);
-            conditional.multiply(rotatedMaterialConditional, productConditional);
-            samplingConditional = &productConditional;
+            // materialConditional.rotateTo(normal, rotatedMaterialConditional);
+            // conditional.multiply(rotatedMaterialConditional, productConditional);
+            // samplingConditional = &productConditional;
         } else {
-            samplingConditional = &conditional;
+            // samplingConditional = &conditional;
         }
+
+        conditioner = gridCell->conditioner;
+        sdmm::embedded_s_t<SDMMProcess::MarginalSDMM> condition({
+            sample(0), sample(1), sample(2)
+        });
+        sdmm::create_conditional(conditioner, condition);
         
         heuristicConditionalWeight = 0.5;
         if(!validConditional) {
@@ -528,7 +519,29 @@ public:
 
             bsdfWeight *= pdf;
         } else {
-            ConditionalVectord condVec = samplingConditional->sample(m_rng);
+            // ConditionalVectord condVec = samplingConditional->sample(m_rng);
+
+            conditioner.conditional.sample(
+                sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
+            );
+            if(inv_jacobian.coeff(0) == 0) {
+                return Spectrum(0.f);
+            }
+            ConditionalVectord condVec;
+            condVec <<
+                enoki::slice(embedded_sample, 0).coeff(0),
+                enoki::slice(embedded_sample, 0).coeff(1),
+                enoki::slice(embedded_sample, 0).coeff(2);
+            // std::cerr << fmt::format(
+            //     "embedded_sample={}, "
+            //     "tangent_sample={}, "
+            //     "condVec={}, "
+            //     "norm={}\n",
+            //     embedded_sample,
+            //     tangent_sample,
+            //     condVec.transpose(),
+            //     enoki::norm(embedded_sample)
+            // );
             sample.template bottomRows<t_conditionalDims>() << condVec;
 
             if(
@@ -547,7 +560,8 @@ public:
             bRec,
             bsdfPdf,
             gmmPdf,
-            *samplingConditional,
+            // *samplingConditional,
+            conditioner,
             heuristicConditionalWeight,
             sample.template bottomRows<t_conditionalDims>()
         );
@@ -563,7 +577,8 @@ public:
         const BSDFSamplingRecord& bRec,
         Float& bsdfPdf,
         Float& gmmPdf,
-        const MMCond& conditional,
+        // const MMCond& conditional,
+        SDMMProcess::Conditioner& conditioner,
         const Float heuristicConditionalWeight,
         const ConditionalVectord& sample
     ) const {
@@ -576,7 +591,18 @@ public:
         if (bsdfPdf <= 0 || !std::isfinite(bsdfPdf)) {
             return 0;
         }
-        gmmPdf = conditional.pdf(sample) * dirToCanonicalInvJacobian<t_conditionalDims>();
+        SDMMProcess::Value posterior;
+        enoki::set_slices(posterior, enoki::slices(conditioner.conditional));
+        sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM> embedded_sample({
+            sample(0), sample(1), sample(2)
+        });
+        enoki::vectorize_safe(
+            VECTORIZE_WRAP_MEMBER(posterior),
+            conditioner.conditional,
+            embedded_sample,
+            posterior
+        );
+        gmmPdf = enoki::hsum_nested(posterior);
 
         return
             heuristicConditionalWeight * bsdfPdf +

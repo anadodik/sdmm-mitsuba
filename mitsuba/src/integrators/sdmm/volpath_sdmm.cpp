@@ -407,6 +407,9 @@ public:
                     sides,
                     true
                 );
+                copy_sdmm(cell->distribution, cell->sdmm);
+                enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
+                sdmm::prepare(cell->conditioner, cell->sdmm);
             }
         }
     }
@@ -461,9 +464,8 @@ public:
                 cell->error = error;
                 cell->samples.clear();
 
-                std::cerr << "Done optimizing. Copying " << cell->distribution.nComponents() << " components.\n";
+                // std::cerr << "Done optimizing. Copying " << cell->distribution.nComponents() << " components.\n";
                 copy_sdmm(cell->distribution, cell->sdmm);
-
                 enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
                 sdmm::prepare(cell->conditioner, cell->sdmm);
             }
