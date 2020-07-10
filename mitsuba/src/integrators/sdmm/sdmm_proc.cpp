@@ -425,17 +425,19 @@ public:
         Vectord& sample,
         RadianceQueryRecord& rRec,
         const MM& distribution,
-        MMCond& conditional,
+        // MMCond& conditional,
         MMCond& materialConditional,
         MMCond& rotatedMaterialConditional,
         MMCond& productConditional
     ) const {
-        thread_local SDMMProcess::Conditioner conditioner;
+        thread_local SDMMProcess::ConditionalSDMM conditional;
         thread_local SDMMProcess::RNG sdmm_rng;
         thread_local SDMMProcess::Value inv_jacobian;
         thread_local sdmm::replace_embedded_t<SDMMProcess::ConditionalSDMM, float> embedded_sample;
         thread_local sdmm::replace_tangent_t<SDMMProcess::ConditionalSDMM, float> tangent_sample;
-        enoki::set_slices(inv_jacobian, 1);
+        if(enoki::slices(inv_jacobian) == 0) {
+            enoki::set_slices(inv_jacobian, 1);
+        }
 
         createCondition(sample, its, rRec.depth);
         gmmPdf = bsdfPdf = pdf = 0.f;
@@ -492,11 +494,13 @@ public:
             // samplingConditional = &conditional;
         }
 
-        conditioner = gridCell->conditioner;
         sdmm::embedded_s_t<SDMMProcess::MarginalSDMM> condition({
             sample(0), sample(1), sample(2)
         });
-        sdmm::create_conditional(conditioner, condition);
+        if(enoki::slices(conditional) != enoki::slices(gridCell->conditioner)) {
+            enoki::set_slices(conditional, enoki::slices(gridCell->conditioner));
+        }
+        validConditional = sdmm::create_conditional(gridCell->conditioner, condition, conditional);
         
         heuristicConditionalWeight = 0.5;
         if(!validConditional) {
@@ -522,7 +526,7 @@ public:
         } else {
             // ConditionalVectord condVec = samplingConditional->sample(m_rng);
 
-            conditioner.conditional.sample(
+            conditional.sample(
                 sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
             );
             if(inv_jacobian.coeff(0) == 0) {
@@ -561,9 +565,9 @@ public:
             bRec,
             bsdfPdf,
             gmmPdf,
-            conditional,
+            // conditional,
             // *samplingConditional,
-            conditioner,
+            conditional,
             heuristicConditionalWeight,
             sample.template bottomRows<t_conditionalDims>()
         );
@@ -579,11 +583,15 @@ public:
         const BSDFSamplingRecord& bRec,
         Float& bsdfPdf,
         Float& gmmPdf,
-        const MMCond& conditional,
-        SDMMProcess::Conditioner& conditioner,
+        // const MMCond& conditional,
+        SDMMProcess::ConditionalSDMM& conditional,
         const Float heuristicConditionalWeight,
         const ConditionalVectord& sample
     ) const {
+        thread_local SDMMProcess::Value posterior;
+        if(enoki::slices(posterior) == 0) {
+            enoki::set_slices(posterior, enoki::slices(conditional));
+        }
         auto type = bsdf->getType();
         if ((type & BSDF::EDelta) == (type & BSDF::EAll)) {
             return bsdf->pdf(bRec);
@@ -593,14 +601,12 @@ public:
         if (bsdfPdf <= 0 || !std::isfinite(bsdfPdf)) {
             return 0;
         }
-        SDMMProcess::Value posterior;
-        enoki::set_slices(posterior, enoki::slices(conditioner.conditional));
         sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM> embedded_sample({
             sample(0), sample(1), sample(2)
         });
         enoki::vectorize_safe(
             VECTORIZE_WRAP_MEMBER(posterior),
-            conditioner.conditional,
+            conditional,
             embedded_sample,
             posterior
         );
@@ -799,7 +805,7 @@ public:
                 canonicalSample,
                 rRec,
                 distribution,
-                conditional,
+                // conditional,
                 materialConditional,
                 rotatedMaterialConditional,
                 productConditional
