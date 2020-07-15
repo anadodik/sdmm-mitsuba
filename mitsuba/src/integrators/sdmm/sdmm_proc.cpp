@@ -33,10 +33,7 @@
 #include "../../subsurface/bluenoise.h"
 
 #include <iterator>
-
-#include <boost/thread.hpp>
-#include <boost/thread/barrier.hpp>
-#include <boost/thread/synchronized_value.hpp>
+#include <mutex>
 
 #define DUMP_DISTRIB 0
 // #define INIT_DEBUG
@@ -78,7 +75,7 @@ class SDMMRenderer : public WorkProcessor {
     using MMCond = typename MM::ConditionalDistribution;
     using StepwiseEMType = typename SDMMProcess::StepwiseEMType;
     
-    using MMScalar = typename MM::Scalar;
+    using Scalar = typename MM::Scalar;
     using Vectord = typename MM::Vectord;
     using Matrixd = typename MM::Matrixd;
 
@@ -92,17 +89,13 @@ class SDMMRenderer : public WorkProcessor {
 public:
 	SDMMRenderer(
         const SDMMConfiguration &config,
-        std::shared_ptr<MM> distribution,
         std::shared_ptr<HashGridType> grid,
         std::shared_ptr<MMDiffuse> diffuseDistribution,
-        std::shared_ptr<RenderingSamplesType> samples,
         int iteration
     ) :
         m_config(config),
-        m_distribution(distribution),
         m_grid(grid),
         m_diffuseDistribution(diffuseDistribution),
-        m_samples(samples),
         m_iteration(iteration)
     { }
 
@@ -190,7 +183,7 @@ public:
         MMCond productConditional;
 
         {
-            MMScalar diffuseHeuristicWeight;
+            Scalar diffuseHeuristicWeight;
             typename MMDiffuse::ConditionVectord diffuseCondition;
             diffuseCondition.setOnes();
             // m_diffuseDistribution->conditional(
@@ -257,7 +250,6 @@ public:
                 spec *= Li(
                     sensorRay,
                     rRec,
-                    *m_distribution,
                     conditional,
                     diffuseConditional,
                     productConditional,
@@ -294,7 +286,6 @@ public:
             if(m_threadId == 0){
                 std::cerr << "Denoising.\n";
                 result->clearDenoised();
-                denoise(result, *m_distribution);
                 result->dumpDenoised(
                     samplesInThisIteration,
                     destinationFile.parent_path(),
@@ -309,7 +300,7 @@ public:
 
     template<int conditionalDims>
     static typename std::enable_if<conditionalDims == 2, Vector3>::type
-    canonicalToDir(const Eigen::Matrix<MMScalar, conditionalDims, 1>& p) {
+    canonicalToDir(const Eigen::Matrix<Scalar, conditionalDims, 1>& p) {
         const Float cosTheta = 2 * p.x() - 1;
         const Float phi = 2 * M_PI * p.y();
 
@@ -322,25 +313,25 @@ public:
 
     template<int conditionalDims>
     static typename std::enable_if<conditionalDims == 3, Vector3>::type
-    canonicalToDir(const Eigen::Matrix<MMScalar, conditionalDims, 1>& p) {
+    canonicalToDir(const Eigen::Matrix<Scalar, conditionalDims, 1>& p) {
         return {p.x(), p.y(), p.z()};
     }
 
     template<int conditionalDims>
-    static typename std::enable_if<conditionalDims == 2, MMScalar>::type
+    static typename std::enable_if<conditionalDims == 2, Scalar>::type
     canonicalToDirInvJacobian() {
         return 4 * M_PI;
     }
 
     template<int conditionalDims>
-    static typename std::enable_if<conditionalDims == 3, MMScalar>::type
+    static typename std::enable_if<conditionalDims == 3, Scalar>::type
     canonicalToDirInvJacobian() {
         return 1;
     }
     
     template<int conditionalDims>
     static typename std::enable_if<
-        conditionalDims == 2, Eigen::Matrix<MMScalar, conditionalDims, 1>
+        conditionalDims == 2, Eigen::Matrix<Scalar, conditionalDims, 1>
     >::type dirToCanonical(const Vector& d) {
         if (!std::isfinite(d.x) || !std::isfinite(d.y) || !std::isfinite(d.z)) {
             return {0, 0};
@@ -356,19 +347,19 @@ public:
     
     template<int conditionalDims>
     static typename std::enable_if<
-        conditionalDims == 3, Eigen::Matrix<MMScalar, conditionalDims, 1>
+        conditionalDims == 3, Eigen::Matrix<Scalar, conditionalDims, 1>
     >::type dirToCanonical(const Vector& d) {
         return {d.x, d.y, d.z};
     }
 
     template<int conditionalDims>
-    static typename std::enable_if<conditionalDims == 2, MMScalar>::type
+    static typename std::enable_if<conditionalDims == 2, Scalar>::type
     dirToCanonicalInvJacobian() {
         return INV_FOURPI;
     }
 
     template<int conditionalDims>
-    static typename std::enable_if<conditionalDims == 3, MMScalar>::type
+    static typename std::enable_if<conditionalDims == 3, Scalar>::type
     dirToCanonicalInvJacobian() {
         return 1;
     }
@@ -421,11 +412,10 @@ public:
         Float& pdf,
         Float& bsdfPdf,
         Float& gmmPdf,
-        MMScalar& heuristicConditionalWeight,
+        Scalar& heuristicConditionalWeight,
         Vectord& sample,
         RadianceQueryRecord& rRec,
-        const MM& distribution,
-        // MMCond& conditional,
+        MMCond& jmm_conditional,
         MMCond& materialConditional,
         MMCond& rotatedMaterialConditional,
         MMCond& productConditional
@@ -433,8 +423,8 @@ public:
         thread_local SDMMProcess::ConditionalSDMM conditional;
         thread_local SDMMProcess::RNG sdmm_rng;
         thread_local SDMMProcess::Value inv_jacobian;
-        thread_local sdmm::replace_embedded_t<SDMMProcess::ConditionalSDMM, float> embedded_sample;
-        thread_local sdmm::replace_tangent_t<SDMMProcess::ConditionalSDMM, float> tangent_sample;
+        thread_local sdmm::replace_embedded_t<SDMMProcess::ConditionalSDMM, Scalar> embedded_sample;
+        thread_local sdmm::replace_tangent_t<SDMMProcess::ConditionalSDMM, Scalar> tangent_sample;
         if(enoki::slices(inv_jacobian) == 0) {
             enoki::set_slices(inv_jacobian, 1);
         }
@@ -453,7 +443,7 @@ public:
             return result;
         }
 
-		Eigen::Matrix<MMScalar, 3, 1> normal;
+		Eigen::Matrix<Scalar, 3, 1> normal;
 		normal << its.shFrame.n.x, its.shFrame.n.y, its.shFrame.n.z;
 		if(Frame::cosTheta(its.wi) < 0) {
 			normal = -normal;
@@ -475,11 +465,10 @@ public:
         bool validConditional = true;
         // validConditional = gridCell->distribution.conditional(
         //     sample.template topRows<t_conditionDims>(),
-        //     conditional,
+        //     jmm_conditional,
         //     heuristicConditionalWeight
         // );
-
-        // MMCond* samplingConditional = &conditional;
+        // MMCond* samplingConditional = &jmm_conditional;
 
         if(
             m_config.sampleProduct &&
@@ -565,7 +554,6 @@ public:
             bRec,
             bsdfPdf,
             gmmPdf,
-            // conditional,
             // *samplingConditional,
             conditional,
             heuristicConditionalWeight,
@@ -621,7 +609,6 @@ public:
     Spectrum Li(
         const RayDifferential &r,
         RadianceQueryRecord &rRec,
-        const MM& distribution,
         MMCond& conditional,
         MMCond& materialConditional,
         MMCond& rotatedMaterialConditional,
@@ -639,7 +626,7 @@ public:
 
         constexpr static Float initialHeuristicWeight = 1.f;
         const Float heuristicWeight = 
-            (m_iteration == 0) ? initialHeuristicWeight : distribution.heuristicWeight();
+            (m_iteration == 0) ? initialHeuristicWeight : 0.5;
 
         struct Vertex {
             Vectord canonicalSample;
@@ -651,9 +638,12 @@ public:
             Float heuristicPdf;
             Float samplingPdf;
             Float learnedPdf;
-            Eigen::Matrix<MMScalar, 3, 1> normal;
+            Eigen::Matrix<Scalar, 3, 1> normal;
             bool isDiffuse;
-            MMScalar curvature;
+            Scalar curvature;
+
+            sdmm::embedded_s_t<SDMMProcess::Data> point;
+            sdmm::normal_s_t<SDMMProcess::Data> sdmm_normal;
 
             void record(const Spectrum& radiance) {
                 for(int ch = 0; ch < 3; ++ch) {
@@ -699,7 +689,7 @@ public:
 
             // = std::max(minHeuristicWeight, initialHeuristicWeight * std::pow(0.6f, (Float) m_iteration));
         while (rRec.depth <= m_config.maxDepth || m_config.maxDepth < 0) {
-            Eigen::Matrix<MMScalar, 3, 1> normal;
+            Eigen::Matrix<Scalar, 3, 1> normal;
             normal << its.shFrame.n.x, its.shFrame.n.y, its.shFrame.n.z;
 
             assert(depth < (int) vertices.size() - 1);
@@ -792,7 +782,7 @@ public:
             /* Sample BSDF * cos(theta) */
             BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
             Float misPdf, heuristicPdf, gmmPdf;
-            MMScalar heuristicConditionalWeight;
+            Scalar heuristicConditionalWeight;
             Spectrum bsdfWeight = sampleSurface(
                 bsdf,
                 scene,
@@ -804,8 +794,7 @@ public:
                 heuristicConditionalWeight,
                 canonicalSample,
                 rRec,
-                distribution,
-                // conditional,
+                conditional,
                 materialConditional,
                 rotatedMaterialConditional,
                 productConditional
@@ -916,7 +905,18 @@ public:
                             gmmPdf,
                             normal,
                             isDiffuse,
-                            meanCurvature
+                            meanCurvature,
+                            sdmm::embedded_s_t<SDMMProcess::JointSDMM>{
+                                canonicalSample(0),
+                                canonicalSample(1),
+                                canonicalSample(2),
+                                canonicalSample(3),
+                                canonicalSample(4),
+                                canonicalSample(5),
+                            },
+                            sdmm::normal_s_t<SDMMProcess::Data>{
+                                normal(0), normal(1), normal(2)
+                            }
                         };
 
                         ++depth;
@@ -957,12 +957,12 @@ public:
         }
 
         auto push_back_vertex = [&](RenderingSamplesType& samples, int d) {
-            Eigen::Matrix<MMScalar, 3, 1> color;
+            Eigen::Matrix<Scalar, 3, 1> color;
             color <<
                 vertices[d].weight[0],
                 vertices[d].weight[1],
                 vertices[d].weight[2];
-            MMScalar discount = 0;
+            Scalar discount = 0;
             samples.push_back_synchronized(
                 vertices[d].canonicalSample,
                 // vertices[d].functionValue.max() * canonicalToDirInvJacobian<t_conditionalDims>(),
@@ -981,11 +981,22 @@ public:
                 discount
             );
         };
+
+        auto push_back_data = [&](SDMMProcess::GridCell& cell, int d) {
+            std::lock_guard lock(cell.mutex_wrapper.mutex);
+            Float heuristic_pdf = vertices[d].isDiffuse ? vertices[d].heuristicPdf : 0;
+            cell.data.push_back(
+                vertices[d].point,
+                vertices[d].sdmm_normal,
+                vertices[d].weight.average(),
+                heuristic_pdf
+            );
+        };
         
         typename MM::ConditionVectord offset;
 		int firstSaved = std::max(depth - m_config.savedSamplesPerPath, 0);
         for(int d = depth - 1; d >= firstSaved; --d) {
-            Eigen::Matrix<MMScalar, 3, 1> position = vertices[d].
+            Eigen::Matrix<Scalar, 3, 1> position = vertices[d].
                 canonicalSample.template topRows<3>();
             GridKeyVector key;
             jmm::buildKey(position, vertices[d].normal, key);
@@ -993,8 +1004,10 @@ public:
             auto sampleCell = m_grid->find(key, sampleAABB);
             if(sampleCell != nullptr) {
                 push_back_vertex(sampleCell->samples, d);
+                push_back_data(*sampleCell, d);
             } else {
-                push_back_vertex(*m_samples, d);
+                std::cerr << "ERROR: COULD NOT FIND CELL FOR SAMPLE." << std::endl;
+                throw std::runtime_error("ERROR: COULD NOT FIND CELL FOR SAMPLE.");
                 continue;
             }
 
@@ -1006,7 +1019,7 @@ public:
                     rRec.sampler->next1D() - 0.5;
                 offset.array() *= sampleAABB.diagonal().template topRows<3>().array();
 
-                Eigen::Matrix<MMScalar, 3, 1> jitteredPosition =
+                Eigen::Matrix<Scalar, 3, 1> jitteredPosition =
                     position.array() + offset.array();
                 GridKeyVector key;
                 jmm::buildKey(jitteredPosition, vertices[d].normal, key);
@@ -1016,6 +1029,7 @@ public:
                     continue;
                 } else {
                     push_back_vertex(gridCell->samples, d);
+                    push_back_data(*gridCell, d);
                 }
             }
         }
@@ -1113,531 +1127,9 @@ public:
         return pdfA / (pdfA + pdfB);
     }
 
-    /* 
-    void denoise(SDMMWorkResult* result, const MM& distribution) {
-        using Scalar = MMScalar;
-        using KDTree = typename kdt::KDTree<Scalar, kdt::EuclideanDistance<Scalar>>;
-        using DistMatrix = typename KDTree::Matrix;
-        using IdxMatrix = typename KDTree::MatrixI;
-
-        int nSamples = m_samples->size();
-        int nComponents = distribution.nComponents();
-
-        KDTree kdtree(m_samples->samples.topLeftCorner(t_dims, nSamples), true);
-        kdtree.setTakeRoot(true);
-        kdtree.build();
-
-        DistMatrix dists;
-        IdxMatrix idx;
-        size_t knn = 10;
-        kdtree.query(m_samples->samples.topLeftCorner(t_dims, nSamples), knn, idx, dists);
-
-        Eigen::Matrix<Scalar, Eigen::Dynamic, 1> maxDistances =
-            dists.transpose().rowwise().maxCoeff();
-        Eigen::Matrix<Scalar, Eigen::Dynamic, 1> volume = 
-            jmm::volume_norm<t_dims>::value * maxDistances.array().pow(t_dims);
-        assert(volume.rows() == nSamples);
-        
-        Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> localDensity(nSamples, 1);
-        
-        // Eigen::Matrix<Scalar, Eigen::Dynamic, 1> normalizedWeights =
-        //    m_samples->weights.topRows(nSamples) /
-        //    m_samples->weights.topRows(m_samples->size()).mean();
-
-        localDensity.setZero();
-        Scalar localDensityNormalization = 0.f;
-        for(int sample_i = 0; sample_i < nSamples; ++sample_i) {
-            for(int nn_i = 0; nn_i < (int) knn; ++nn_i) {
-                int sample_j = idx(nn_i, sample_i);
-                localDensity(sample_i) += m_samples->weights(sample_j);
-            }
-            localDensityNormalization += m_samples->weights(sample_i);
-        }
-        
-        localDensity.array() /= volume.array() * localDensityNormalization;
-
-        for(int sample_i = 0; sample_i < nSamples; ++sample_i) {
-            if(m_samples->depths(sample_i) == 0) {
-                result->putDenoisedSample(
-                    m_samples->sensorPositions[sample_i],
-                    m_samples->throughputs[sample_i] *
-                    m_samples->samplingPdfs[sample_i] *
-                    Spectrum(localDensity(sample_i))
-                    // m_samples->spatialDensity(sample_i) *
-                    // Spectrum(m_samples->weights(sample_i))
-                );
-            }
-        }
-
-        // int nSamples = m_samples->size();
-        // using KDTree = kdt::KDTree<MMScalar, kdt::EuclideanDistance<MMScalar>>;
-        // constexpr static int filteringDims = t_dims + 3;
-        // constexpr static MMScalar featureSensitivity = 0.6;
-        // Eigen::Matrix<MMScalar, t_conditionDims, Eigen::Dynamic> features;
-        // features.conservativeResize(Eigen::NoChange, nSamples);
-        // features.setZero();
-        // features.topLeftCorner(t_conditionDims, nSamples) = m_samples->samples.topLeftCorner(t_conditionDims, nSamples);
-        //     // (0.5 * m_samples->normals.topLeftCorner(3, nSamples) + 0.5) / featureSensitivity;
-
-        // KDTree kdtree(features, true);
-        // kdtree.setSorted(true);
-        // kdtree.setTakeRoot(false);
-        // kdtree.build();
-
-        // KDTree::Matrix dists;
-        // KDTree::MatrixI idx;
-        // constexpr static size_t knn = 100;
-        // kdtree.query(features, knn, idx, dists);
-
-        // MMScalar sigma = 0.01;
-        // for(int sample_i = 0; sample_i < nSamples; ++sample_i) {
-        //     Eigen::Matrix<MMScalar, filteringDims, 1> sampleFeatures;
-        //     sampleFeatures << m_samples->samples.col(sample_i), m_samples->normals.col(sample_i);
-        //     Spectrum denoised(0.f);
-        //     MMScalar normalization = 0.f;
-        //     for(int nn_i = 0; nn_i < knn; ++nn_i) {
-        //         int nn_idx = idx(nn_i, sample_i);
-        //         if(nn_idx == -1) {
-        //             continue;
-        //         }
-        //         Eigen::Matrix<MMScalar, filteringDims, 1> neighborFeatures;
-        //         neighborFeatures <<
-        //             m_samples->samples.col(nn_idx).topRows(3),
-        //             canonicalToDir(m_samples->samples.col(nn_idx).bottomRows(2)),
-        //             (0.5 * m_samples->normals.col(nn_idx).array() + 0.5);
-        //         MMScalar distanceSqr = (sampleFeatures - neighborFeatures).squaredNorm();
-        //         MMScalar weight = std::exp(-distanceSqr / sigma * sigma);
-        //         denoised += weight * m_samples->Lis[nn_idx];
-        //         normalization += weight;
-        //     }
-
-        //     if(normalization > 0) {
-        //         denoised /= normalization;
-        //     } else {
-        //         denoised = Spectrum(0.f);
-        //     }
-
-        //     m_samples->denoisedWeights(sample_i) = denoised.max();
-        //     if(m_samples->depths(sample_i) == 0) {
-        //         result->putDenoisedSample(
-        //             m_samples->sensorPositions[sample_i],
-        //             m_samples->throughputs[sample_i] *
-        //             m_samples->samplingPdfs[sample_i] *
-        //             denoised
-        //             // m_samples->spatialDensity(sample_i) *
-        //             // Spectrum(m_samples->weights(sample_i))
-        //         );
-        //     }
-        // }
-    }
-    */
-
-        
-    void getShapesAndBsdfs(std::vector<Shape*>& shapes, std::vector<BSDF*>& bsdfs) {        
-        auto& sceneShapes = m_scene->getShapes();
-        for (size_t i = 0; i < sceneShapes.size(); ++i) {
-            Shape* shape = sceneShapes[i].get();
-            if (!shape || !shape->getBSDF()) {
-                continue;
-            }
-            BSDF* bsdf = shape->getBSDF();
-
-            auto bsdfType = shape->getBSDF()->getType();
-            if ((bsdfType & BSDF::EDiffuseReflection) || (bsdfType & BSDF::EGlossyReflection)) {
-                shapes.push_back(shape);
-                bsdfs.push_back(bsdf);
-            }
-        }
-
-        for (size_t i = 0; i < shapes.size(); ++i) {
-            Shape* s = shapes[i];
-            if (s->isCompound()) {
-                int j = 0;
-                Shape* child = s->getElement(j);
-                while (child != nullptr) {
-                    shapes.emplace_back(child);
-                    child = s->getElement(++j);
-                }
-            }
-        }        
-    }
-
-    template<typename Optimizer>
-    void perMeshBlueNoiseInit(MM& distribution, Optimizer em) {
-        MMScalar spatialComponents = 85;
-        std::vector<Shape*> shapes;
-        std::vector<BSDF*> bsdfs;
-        getShapesAndBsdfs(shapes, bsdfs);
-
-        MMScalar totalArea = 0;
-        for(auto shape : shapes) {
-            totalArea += shape->getSurfaceArea();
-        }
-
-        jmm::Samples<t_dims, MMScalar> samples;
-        m_samples->reserve(4 * spatialComponents);
-        m_samples->setSize(spatialComponents);
-        std::vector<jmm::SphereSide> sides;
-        sides.reserve(spatialComponents);
-
-        const auto aabb_min = m_sceneAabb.min;
-        int point_i = 0;
-        for(auto shape : shapes) {
-            AABB shapeAABB = shape->getAABB();
-            MMScalar radius = std::sqrt(shape->getSurfaceArea()) * 0.20;
-            AABB aabb;
-            Float sa;
-            std::vector<Shape*> bnShapes;
-            bnShapes.push_back(shape);
-            ref<PositionSampleVector> points = new PositionSampleVector();
-            blueNoisePointSet(m_scene, bnShapes, radius, points, sa, aabb, nullptr);
-
-            Log(EInfo, "Generated " SIZE_T_FMT " blue-noise points.", points->size());
-
-            for(int sample_i = 0; sample_i < points->size(); ++sample_i) {
-                m_samples->samples.col(point_i).topRows(3) <<
-                    ((*points)[sample_i].p.x - aabb_min[0]) / m_spatialNormalization,
-                    ((*points)[sample_i].p.y - aabb_min[1]) / m_spatialNormalization,
-                    ((*points)[sample_i].p.z - aabb_min[2]) / m_spatialNormalization
-                ;
-
-                m_samples->normals.col(point_i) <<
-                    (*points)[sample_i].n.x,
-                    (*points)[sample_i].n.y,
-                    (*points)[sample_i].n.z
-                ;
-                jmm::SphereSide side;
-                auto type = shape->getBSDF()->getType();
-                if((type | BSDF::EFrontSide) && (type | BSDF::EBackSide)) {
-                    sides.push_back(jmm::SphereSide::Both);
-                } else if(type | BSDF::EFrontSide) {
-                    sides.push_back(jmm::SphereSide::Top);
-                } else if(type | BSDF::EBackSide) {
-                    sides.push_back(jmm::SphereSide::Bottom);
-                }
-                ++point_i;
-            }
-        }
-        spatialComponents = std::min((int) spatialComponents, point_i);
-        m_samples->setSize(spatialComponents);
-
-        auto& bPriors = em.getBPriors();
-        auto& bDepthPriors = em.getBDepthPriors();
-        jmm::uniformHemisphereInit(
-            distribution,
-            bPriors,
-            bDepthPriors,
-            m_rng,
-            spatialComponents,
-            // 1e-2,
-            // (MMScalar) std::sqrt(0.5) * radius / m_spatialNormalization,
-            1e-4,
-            samples,
-            sides,
-            false,
-            true
-        );
-    }
-
-    
-    template<typename Optimizer>
-    void hammersleyInit(MM& distribution, Optimizer em) {
-        MMScalar spatialComponents = 40;
-        std::vector<Shape*> shapes;
-        std::vector<BSDF*> bsdfs;
-        getShapesAndBsdfs(shapes, bsdfs);
-
-        ref<Sampler> shapeSampler;
-        MMScalar totalArea = 0;
-        for(auto shape : shapes) {
-            totalArea += shape->getSurfaceArea();
-        }
-
-        jmm::Samples<t_dims, MMScalar> samples;
-        m_samples->reserve(4 * spatialComponents);
-        m_samples->setSize(spatialComponents);
-        std::vector<jmm::SphereSide> sides;
-        sides.reserve(spatialComponents);
-
-        const auto aabb_min = m_sceneAabb.min;
-        int point_i = 0;
-        for(auto shape : shapes) {
-            int nSamples = spatialComponents * shape->getSurfaceArea() / totalArea;
-            nSamples = std::max(nSamples, 8);
-            auto properties = Properties("hammersley");
-            properties.setInteger("sampleCount", nSamples);
-            properties.setInteger("dimension", 2);
-            properties.setInteger("scramble", -1);
-            shapeSampler = static_cast<Sampler*>(
-                PluginManager::getInstance()->createObject(MTS_CLASS(Sampler), properties)
-            );
-            shapeSampler->generate({-1, -1});
-            nSamples = shapeSampler->getSampleCount();
-            PositionSamplingRecord pRec;
-            for(int sample_i = 0; sample_i < nSamples; ++sample_i) {
-                shape->samplePosition(pRec, shapeSampler->next2D());
-                shapeSampler->advance();
-                
-                m_samples->samples.col(point_i).topRows(3) <<
-                    (pRec.p.x - aabb_min[0]) / m_spatialNormalization,
-                    (pRec.p.y - aabb_min[1]) / m_spatialNormalization,
-                    (pRec.p.z - aabb_min[2]) / m_spatialNormalization
-                ;
-
-                m_samples->normals.col(point_i) <<
-                    pRec.n.x,
-                    pRec.n.y,
-                    pRec.n.z
-                ;
-                jmm::SphereSide side;
-                auto type =shape->getBSDF()->getType();
-                if((type | BSDF::EFrontSide) && (type | BSDF::EBackSide)) {
-                    sides.push_back(jmm::SphereSide::Both);
-                } else if(type | BSDF::EFrontSide) {
-                    sides.push_back(jmm::SphereSide::Top);
-                } else if(type | BSDF::EBackSide) {
-                    sides.push_back(jmm::SphereSide::Bottom);
-                }
-                ++point_i;
-            }
-        }
-        spatialComponents = point_i;
-
-
-        auto& bPriors = em.getBPriors();
-        auto& bDepthPriors = em.getBDepthPriors();
-        jmm::uniformHemisphereInit(
-            distribution,
-            bPriors,
-            bDepthPriors,
-            m_rng,
-            spatialComponents,
-            // 1e-2,
-            // (MMScalar) std::sqrt(0.5) * radius / m_spatialNormalization,
-            1e-4,
-            samples,
-            sides,
-            false,
-            true
-        );
-    }
-
-    template<typename Optimizer>
-    void blueNoiseInit(MM& distribution, Optimizer em) {
-        const auto aabb_extents = m_scene->getAABBWithoutCamera().getExtents();
-        Float radius = std::min(aabb_extents[0], std::min(aabb_extents[1], aabb_extents[2])) / 100.f;
-        std::cerr << "Spatial radius: " << radius << std::endl; 
-
-        std::vector<Shape*> shapes;
-        std::vector<BSDF*> bsdfs;
-        getShapesAndBsdfs(shapes, bsdfs);
-
-        AABB aabb;
-        Float sa;
-        ref<PositionSampleVector> points = new PositionSampleVector();
-        blueNoisePointSet(m_scene, shapes, radius, points, sa, aabb, nullptr);
-
-        Log(EInfo, "Generated " SIZE_T_FMT " blue-noise points.", points->size());
-
-        jmm::Samples<t_dims, MMScalar> samples;
-        m_samples->reserve(points->size());
-        m_samples->setSize(points->size());
-        std::vector<jmm::SphereSide> sides(points->size(), jmm::SphereSide::Both);
-
-        const auto aabb_min = m_sceneAabb.min;
-        for(int point_i = 0; point_i < points->size(); ++point_i) {
-            m_samples->samples.col(point_i).topRows(3) <<
-                ((*points)[point_i].p.x - aabb_min[0]) / m_spatialNormalization,
-                ((*points)[point_i].p.y - aabb_min[1]) / m_spatialNormalization,
-                ((*points)[point_i].p.z - aabb_min[2]) / m_spatialNormalization
-            ;
-
-            m_samples->normals.col(point_i) <<
-                (*points)[point_i].n.x,
-                (*points)[point_i].n.y,
-                (*points)[point_i].n.z
-            ;
-            jmm::SphereSide side;
-            auto type = bsdfs[(*points)[point_i].shapeIndex]->getType();
-            if((type | BSDF::EFrontSide) && (type | BSDF::EBackSide)) {
-                sides[point_i] = jmm::SphereSide::Both;
-            } else if(type | BSDF::EFrontSide) {
-                sides[point_i] = jmm::SphereSide::Top;
-            } else if(type | BSDF::EBackSide) {
-                sides[point_i] = jmm::SphereSide::Bottom;
-            }
-        }
-
-        auto& bPriors = em.getBPriors();
-        auto& bDepthPriors = em.getBDepthPriors();
-        jmm::uniformHemisphereInit(
-            distribution,
-            bPriors,
-            bDepthPriors,
-            m_rng,
-            80,
-            // 1e-2,
-            // (MMScalar) std::sqrt(0.5) * radius / m_spatialNormalization,
-            1e-4,
-            samples,
-            sides,
-            true,
-            true
-        );
-    }
-    
-    void dumpScene(const fs::path& path) {
-        cout << "Dumping scene description to " << path.string() << endl;
-
-        auto& sceneShapes = m_scene->getShapes();
-        std::vector<Shape*> shapes;
-        for (size_t i = 0; i < sceneShapes.size(); ++i) {
-            Shape* shape = sceneShapes[i].get();
-            if (!shape || !shape->getBSDF()) {
-                continue;
-            }
-
-            auto bsdfType = shape->getBSDF()->getType();
-            if ((bsdfType & BSDF::EDiffuseReflection) || (bsdfType & BSDF::EGlossyReflection)) {
-                shapes.push_back(shape);
-            }
-        }
-
-        for (size_t i = 0; i < shapes.size(); ++i) {
-            Shape* s = shapes[i];
-            if (s->isCompound()) {
-                int j = 0;
-                Shape* child = s->getElement(j);
-                while (child != nullptr) {
-                    shapes.emplace_back(child);
-                    child = s->getElement(++j);
-                }
-            }
-        }
-
-        m_meshes.clear();
-        for (Shape* s : shapes) {
-            if (s->isCompound()) {
-                continue;
-            }
-            ref<TriMesh> mesh = s->createTriMesh();
-            if (mesh) {
-                m_meshes.emplace_back(mesh);
-            }
-        }
-
-        {
-            std::cout << "Generating blue noise m_samples->\n";
-            std::vector<Shape*> blueNoiseShapes;
-            blueNoiseShapes.insert(std::begin(blueNoiseShapes), std::begin(shapes), std::end(shapes));
-            m_blueNoisePoints = placePointsBlueNoise(m_scene, blueNoiseShapes);
-        }
-
-        BlobWriter blob(path.string());
-
-        blob << (float) m_fieldOfView;
-
-        for (int i = 0; i < 4; ++i) {
-            for (int j = 0; j < 4; ++j) {
-                blob << (float) m_cameraMatrix(i, j);
-            }
-        }
-
-        blob << (float) m_sceneAabb.min[0];
-        blob << (float) m_sceneAabb.min[1];
-        blob << (float) m_sceneAabb.min[2];
-
-        blob << (float) m_spatialNormalization;
-
-        blob << static_cast<uint64_t>(m_blueNoisePoints->size());
-        for (auto p : m_blueNoisePoints->get()) {
-            blob << p.p.x << p.p.y << p.p.z << p.n.x << p.n.y << p.n.z << p.shapeIndex;
-
-            Intersection its;
-            its.p = p.p;
-            its.shFrame.n = p.n;
-
-            Vectord sample;
-            createCondition(sample, its, 0);
-            for(int dim_i = 0; dim_i < t_conditionDims; ++dim_i) {
-                blob << sample(dim_i);
-            }
-        }
-
-        bool allMeshesHaveNormals = true;
-        for (auto& mesh : m_meshes) {
-            allMeshesHaveNormals = allMeshesHaveNormals && mesh->hasVertexNormals();
-        }
-        m_dumpMesh = m_dumpMesh && allMeshesHaveNormals;
-        blob << (int32_t)(m_dumpMesh ? 1 : 0);
-        if (m_dumpMesh) {
-            // _all_ indices
-            uint64_t totalTriangleCount = 0;
-            for (auto& mesh : m_meshes) {
-                totalTriangleCount += mesh->getTriangleCount();
-            }
-
-            blob << totalTriangleCount;
-
-            uint64_t currentVertex = 0;
-            for (auto& mesh : m_meshes) {
-                // Indices
-                size_t triangleCount = mesh->getTriangleCount();
-
-                const Triangle* triangles = mesh->getTriangles();
-                for (size_t i = 0; i < triangleCount; ++i) {
-                    blob
-                        << (triangles[i].idx[0] + currentVertex)
-                        << (triangles[i].idx[1] + currentVertex)
-                        << (triangles[i].idx[2] + currentVertex);
-                }
-
-                currentVertex += mesh->getVertexCount();
-            }
-
-            blob << currentVertex;
-
-            // _all_ vertices
-            for (auto& mesh : m_meshes) {
-                // Vertices
-                size_t vertexCount = mesh->getVertexCount();
-
-                SAssert(mesh->hasVertexNormals());
-                const Point* vertices = mesh->getVertexPositions();
-                const Normal* normals = mesh->getVertexNormals();
-                for (size_t i = 0; i < vertexCount; ++i) {
-                    blob
-                        << vertices[i].x << vertices[i].y << vertices[i].z
-                        << normals[i].x << normals[i].y << normals[i].z;
-                }
-            }
-        }
-    }
-
-    ref<PositionSampleVector> placePointsBlueNoise(const Scene *scene, const std::vector<Shape*> shapes) {
-        Log(EInfo, "Generating blue-noise points throughout the scene.");
-
-        ref<PositionSampleVector> points = new PositionSampleVector();
-
-        Float actualRadius = m_sceneAabb.getExtents().length() / 500;
-        if (m_dumpMesh) {
-            // Make points even higher-res when dumping meshed, because
-            // we want to _seriously_ visualize them.
-            actualRadius /= 4;
-        }
-
-        AABB aabb;
-        Float sa;
-        blueNoisePointSet(m_scene, shapes, actualRadius, points, sa, aabb, nullptr);
-
-        Log(EInfo, "Generated " SIZE_T_FMT " blue-noise points.", points->size());
-
-        return points;
-    }
-
 	ref<WorkProcessor> clone() const {
 		return new SDMMRenderer(
-            m_config, m_distribution, m_grid, m_diffuseDistribution, m_samples, m_iteration
+            m_config, m_grid, m_diffuseDistribution, m_iteration
         );
 	}
 
@@ -1647,7 +1139,7 @@ private:
 	ref<Scene> m_scene;
 	ref<Sensor> m_sensor;
 	ref<Sampler> m_sampler;
-    std::function<MMScalar()> m_rng;
+    std::function<Scalar()> m_rng;
 	ref<ReconstructionFilter> m_rfilter;
 	MemoryPool m_pool;
 	SDMMConfiguration m_config;
@@ -1664,22 +1156,20 @@ private:
     bool m_dumpMesh = true;
     ref<PositionSampleVector> m_blueNoisePoints;
 
-    static std::deque<jmm::Samples<t_dims, MMScalar>> prioritySamples;
-    static Eigen::Matrix<MMScalar, t_conditionDims, 1> m_sampleMean;
-    static Eigen::Matrix<MMScalar, t_conditionDims, 1> m_sampleStd;
+    static std::deque<jmm::Samples<t_dims, Scalar>> prioritySamples;
+    static Eigen::Matrix<Scalar, t_conditionDims, 1> m_sampleMean;
+    static Eigen::Matrix<Scalar, t_conditionDims, 1> m_sampleStd;
     static std::unique_ptr<StepwiseEMType> stepwiseEM;
 
-    std::shared_ptr<MM> m_distribution;
     std::shared_ptr<HashGridType> m_grid;
     std::shared_ptr<MMDiffuse> m_diffuseDistribution;
-    std::shared_ptr<RenderingSamplesType> m_samples;
 };
 
-std::deque<jmm::Samples<SDMMProcess::t_dims, SDMMRenderer::MMScalar>> SDMMRenderer::prioritySamples;
+std::deque<jmm::Samples<SDMMProcess::t_dims, SDMMRenderer::Scalar>> SDMMRenderer::prioritySamples;
 std::unique_ptr<typename SDMMRenderer::StepwiseEMType> SDMMRenderer::stepwiseEM;
 
-Eigen::Matrix<SDMMRenderer::MMScalar, SDMMProcess::t_conditionDims, 1> SDMMRenderer::m_sampleMean;
-Eigen::Matrix<SDMMRenderer::MMScalar, SDMMProcess::t_conditionDims, 1> SDMMRenderer::m_sampleStd;
+Eigen::Matrix<SDMMRenderer::Scalar, SDMMProcess::t_conditionDims, 1> SDMMRenderer::m_sampleMean;
+Eigen::Matrix<SDMMRenderer::Scalar, SDMMProcess::t_conditionDims, 1> SDMMRenderer::m_sampleStd;
 
 /* ==================================================================== */
 /*                           Parallel process                           */
@@ -1696,18 +1186,14 @@ SDMMProcess::SDMMProcess(
     const RenderJob *parent,
     RenderQueue *queue,
     const SDMMConfiguration &config,
-    std::shared_ptr<MM> distribution,
     std::shared_ptr<HashGridType> grid,
     std::shared_ptr<MMDiffuse> diffuseDistribution,
-    std::shared_ptr<RenderingSamplesType> samples,
     int iteration
 ) :
     BlockedRenderProcess(parent, queue, config.blockSize),
     m_config(config),
-    m_distribution(distribution),
     m_grid(grid),
     m_diffuseDistribution(diffuseDistribution),
-    m_samples(samples),
     m_iteration(iteration)
 {
     m_refreshTimer = new Timer();
@@ -1716,7 +1202,7 @@ SDMMProcess::SDMMProcess(
 
 ref<WorkProcessor> SDMMProcess::createWorkProcessor() const {
     ref<WorkProcessor> renderer = new SDMMRenderer(
-        m_config, m_distribution, m_grid, m_diffuseDistribution, m_samples, m_iteration
+        m_config, m_grid, m_diffuseDistribution, m_iteration
     );
     return renderer;
 }

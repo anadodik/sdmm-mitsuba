@@ -17,7 +17,7 @@ struct STreeNode  {
     using Normal = Eigen::Matrix<Scalar, 3, 1>;
     STreeNode() : isLeaf(true), axis(0), children{0, 0}, value(nullptr) { }
 
-    std::shared_ptr<Value> find(
+    Value* find(
         const Vectord& point,
         const jmm::aligned_vector<STreeNode>& nodes,
         AABB& foundAABB
@@ -28,7 +28,7 @@ struct STreeNode  {
 
         if(isLeaf) {
             foundAABB = aabb;
-            return value;
+            return value.get();
         }
 
         int foundChild = -1;
@@ -58,7 +58,7 @@ struct STreeNode  {
     uint32_t idx = 0;
     std::array<uint32_t, 2> children;
     // std::array<std::array<std::shared_ptr<Value>, 2>, 2> values;
-    std::shared_ptr<Value> value;
+    std::unique_ptr<Value> value;
     AABB aabb;
 };
 
@@ -83,15 +83,15 @@ public:
 
         m_nodes.emplace_back();
         m_nodes[0].aabb = m_aabb;
-        m_nodes[0].value = std::make_shared<Value>(value);
+        m_nodes[0].value = std::make_unique<Value>(value);
     }
 
-    std::shared_ptr<Value> find(const Vectord& point) const {
+    Value* find(const Vectord& point) const {
         AABB aabb;
         return m_nodes[0].find(point, m_nodes, aabb);
     }
 
-    std::shared_ptr<Value> find(const Vectord& point, AABB& aabb) const {
+    Value* find(const Vectord& point, AABB& aabb) const {
         return m_nodes[0].find(point, m_nodes, aabb);
     }
 
@@ -99,7 +99,7 @@ public:
         if(m_nodes[0].value != nullptr) {
             return;
         }
-        m_nodes[0].value = std::make_shared<Value>(value);
+        m_nodes[0].value = std::make_unique<Value>(value);
     }
 
     auto begin() {
@@ -170,12 +170,16 @@ public:
             child.aabb.max()(axis) -= (1.f - splitLocation) * child.aabb.diagonal()(axis);
         }
 
-        auto childValue = std::make_shared<Value>();
+        auto childValue = std::make_unique<Value>();
         childValue->distribution = m_nodes[node_i].value->distribution;
         childValue->optimizer = m_nodes[node_i].value->optimizer;
+        childValue->samples.reserve(m_nodes[node_i].value->samples.capacity());
+
         childValue->sdmm = m_nodes[node_i].value->sdmm;
         childValue->conditioner = m_nodes[node_i].value->conditioner;
-        childValue->samples.reserve(m_nodes[node_i].value->samples.capacity());
+        childValue->em = m_nodes[node_i].value->em;
+        childValue->data.reserve(m_nodes[node_i].value->data.capacity);
+
         for(int sample_i = 0; sample_i < m_nodes[node_i].value->samples.size(); ++sample_i) {
             Position position = 
                 m_nodes[node_i].value->samples.samples.col(sample_i).template topRows<3>();
@@ -191,9 +195,14 @@ public:
                 childValue->samples.push_back(
                     m_nodes[node_i].value->samples, sample_i
                 );
+                if(sample_i < m_nodes[node_i].value->data.capacity) {
+                    childValue->data.push_back(
+                        enoki::slice(m_nodes[node_i].value->data, sample_i)
+                    );
+                }
             }
         }
-        child.value = childValue;
+        child.value = std::move(childValue);
 
         return child;
     }
@@ -227,7 +236,7 @@ public:
                 // Insert child into vector
                 uint32_t child_idx = m_nodes.size();
                 child.idx = child_idx;
-                m_nodes.push_back(child);
+                m_nodes.push_back(std::move(child));
                 m_nodes[node_i].children[child_i] = child_idx;
             }
             m_nodes[node_i].value = nullptr;
@@ -261,7 +270,7 @@ public:
                 // Insert child into vector
                 uint32_t child_idx = m_nodes.size();
                 child.idx = child_idx;
-                m_nodes.push_back(child);
+                m_nodes.push_back(std::move(child));
                 m_nodes[node_i].children[child_i] = child_idx;
             }
             m_nodes[node_i].value = nullptr;

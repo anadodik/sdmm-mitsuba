@@ -119,34 +119,6 @@ public:
 		Scheduler::getInstance()->cancel(m_process);
     }
 
-    void initializeJMM() {
-        m_distribution->setNComponents(SDMMProcess::t_initComponents);
-        std::function<Scalar()> rng = 
-            [samplerCopy = m_sampler]() mutable -> Scalar {
-                return samplerCopy->next1D();
-            };
-        std::vector<jmm::SphereSide> sides(
-            m_samples->size(), jmm::SphereSide::Top
-        );
-        auto& bPriors = m_optimizer->getBPriors();
-        auto& bDepthPriors = m_optimizer->getBDepthPriors();
-        jmm::uniformHemisphereInit(
-            *m_distribution,
-            bPriors,
-            bDepthPriors,
-            rng,
-            1, // 80, 170, 250, 360
-            Scalar(3e-2),
-            Scalar(5e-4),
-            *m_samples,
-            sides,
-            true
-        );
-
-        bool success = m_distribution->configure();
-        assert(success);
-    }
-
     template<typename JMM, typename SDMM, size_t... Indices>
     void copy_means(JMM& jmm, SDMM& sdmm, std::index_sequence<Indices...>) {
         size_t NComponents = jmm.nComponents();
@@ -187,126 +159,13 @@ public:
         if(iteration == 0 && (!fs::is_directory(checkpointsDir) || !fs::exists(checkpointsDir))) {
             fs::create_directories(checkpointsDir);
         }
-        fs::path samplesPath = checkpointsDir / fs::path(
-            formatString("samples_%05i.jmms", iteration)
-        );
-        fs::path distributionPath = checkpointsDir / fs::path(
-            formatString("model_%05i.jmm", iteration)
-        );
-        m_samples->save(samplesPath.string());
-        m_distribution->save(distributionPath.string());
-    }
-
-    void mergeReplayBufferSamples(int iteration) {
-        m_mergedSamples.clear();
-        int prioritySampleCount = 0;
-        for(auto& samplesBatch : m_replayBuffer) {
-            prioritySampleCount += samplesBatch.size();
-        }
-        m_mergedSamples.reserve(m_samples->size() + prioritySampleCount);
-
-        m_mergedSamples.push_back(*m_samples);
-        for(auto& samplesBatch : m_replayBuffer) {
-            m_mergedSamples.push_back(samplesBatch);
-        }
-        
-        Scalar weightsSum = 0.f;
-        #pragma omp parallel for reduction(+: weightsSum)
-        for(int sample_i = 0; sample_i < m_mergedSamples.size(); ++sample_i) {
-            m_mergedSamples.weights(sample_i) =
-                std::min(Scalar(1e-3), m_mergedSamples.weights(sample_i));
-            weightsSum += m_mergedSamples.weights(sample_i);
-        }
-
-        #pragma omp parallel for 
-        for(int sample_i = 0; sample_i < m_mergedSamples.size(); ++sample_i) {
-            m_mergedSamples.weights(sample_i) /= weightsSum;
-        }
-    }
-
-    void resetEM() {
-        // if(m_iteration < m_config.batchIterations) {
-        //     std::unique_ptr<StepwiseEMType> resetEM = std::make_unique<StepwiseEMType>(
-        //         m_config.alpha, 1e-5, 1.f / (Scalar) t_initComponents
-        //     );
-
-        //     resetEM->getBPriors() = stepwiseEM->getBPriors();
-        //     resetEM->getBDepthPriors() = stepwiseEM->getBDepthPriors();
-        //     std::swap(stepwiseEM, resetEM);
-        // }
-    }
-
-    void addSamplesToReplayBuffer(int iteration, Float nIterations) {
-        if(!m_config.enablePER || iteration < m_config.initIterations || iteration > 7) {
-            return;
-        }
-        std::cerr << "Adding samples to replay buffer.\n";
-        int remainingSamplesCount =
-            (int) (m_samples->size() * m_config.resampleProportion);
-        Eigen::Matrix<Scalar, Eigen::Dynamic, 1> randomUniform(
-            remainingSamplesCount, 1
-        );
-        for(int sample_i = 0; sample_i < remainingSamplesCount; ++sample_i) {
-            randomUniform(sample_i) = m_sampler->next1D();
-        }
-        m_replayBuffer.emplace_back();
-        auto& sampleBatch = m_replayBuffer.back();
-        sampleBatch = std::move(m_samples->prioritizedSample(
-            jmm::sarsaError(*m_samples, *m_distribution),
-            randomUniform,
-            (iteration - m_config.initIterations) / 
-            (nIterations - m_config.initIterations)
-        ));
-        if(m_replayBuffer.size() > m_config.replayBufferLength) {
-            m_replayBuffer.pop_front();
-        }
-    }
-
-    // void initializeHashGrid() {
-    //     const int nPixels = m_config.cropSize.x * m_config.cropSize.y;
-    //     for(int sample_i = 0; sample_i < m_samples->size(); ++sample_i) {
-	// 		GridKeyVector key;
-	// 		jmm::buildKey(
-    //             m_samples->samples.col(sample_i),
-    //             m_samples->normals.col(sample_i),
-    //             key
-    //         );
-    //         if(auto found = m_grid->find(key); found == nullptr) {
-    //             m_grid->insert(key, initCell());
-    //         } else {
-    //             found->samples.push_back(*m_samples, sample_i);
-    //         }
-    //     }
-    //     std::cerr << "Number of grid cells: " << m_grid->size() << std::endl;
-    // }
-
-    void getShapesAndBsdfs(std::vector<Shape*>& shapes, std::vector<BSDF*>& bsdfs) {        
-        auto& sceneShapes = m_scene->getShapes();
-        for (size_t i = 0; i < sceneShapes.size(); ++i) {
-            Shape* shape = sceneShapes[i].get();
-            if (!shape || !shape->getBSDF()) {
-                continue;
-            }
-            BSDF* bsdf = shape->getBSDF();
-
-            auto bsdfType = shape->getBSDF()->getType();
-            if ((bsdfType & BSDF::EDiffuseReflection) || (bsdfType & BSDF::EGlossyReflection)) {
-                shapes.push_back(shape);
-                bsdfs.push_back(bsdf);
-            }
-        }
-
-        for (size_t i = 0; i < shapes.size(); ++i) {
-            Shape* s = shapes[i];
-            if (s->isCompound()) {
-                int j = 0;
-                Shape* child = s->getElement(j);
-                while (child != nullptr) {
-                    shapes.emplace_back(child);
-                    child = s->getElement(++j);
-                }
-            }
-        }        
+        // fs::path samplesPath = checkpointsDir / fs::path(
+        //     formatString("samples_%05i.jmms", iteration)
+        // );
+        // fs::path distributionPath = checkpointsDir / fs::path(
+        //     formatString("model_%05i.jmm", iteration)
+        // );
+        // m_samples->save(samplesPath.string());
     }
 
     GridCell initCell() {
@@ -316,53 +175,23 @@ public:
         cell.optimizer = SDMMProcess::StepwiseEMType(
             m_config.alpha, bPrior, 1e-3
         );
+        cell.data.reserve(m_maxSamplesSize / 10);
+        cell.em = enoki::zero<SDMMProcess::EM>(SDMMProcess::NComponents);
+        // TODO: set priors
+        using JointSDMM = typename SDMMProcess::JointSDMM;
+        constexpr static size_t NComponents = SDMMProcess::NComponents;
+        float weight_prior = 1.f / NComponents;
+        float cov_prior_strength = 100.f / NComponents;
+        sdmm::matrix_t<JointSDMM> cov_prior = 
+            sdmm::full_inner<sdmm::matrix_t<JointSDMM>, enoki::scalar_t<JointSDMM>, NComponents>(
+                2e-3, 0, 0, 0, 0,
+                0, 2e-3, 0, 0, 0,
+                0, 0, 2e-3, 0, 0,
+                0, 0, 0, 2e-4, 0,
+                0, 0, 0, 0, 2e-4
+            );
+        cell.em.set_priors(weight_prior, cov_prior_strength, cov_prior);
         return cell;
-    }
-
-    void blueNoiseHashGridInit() {
-        using ConditionVectord = typename SDMMProcess::MM::ConditionVectord;
-        const auto scene_aabb = m_scene->getAABBWithoutCamera();
-        const auto aabb_min = scene_aabb.min;
-        const auto aabb_extents = scene_aabb.getExtents();
-        Float spatialNormalization = std::min(
-            aabb_extents[0], std::min(aabb_extents[1], aabb_extents[2])
-        );
-        Float radius = spatialNormalization / 100.f;
-        std::cerr << "Spatial radius: " << radius << std::endl; 
-
-        std::vector<Shape*> shapes;
-        std::vector<BSDF*> bsdfs;
-        getShapesAndBsdfs(shapes, bsdfs);
-
-        AABB aabb;
-        Float sa;
-        ref<PositionSampleVector> points = new PositionSampleVector();
-        blueNoisePointSet(m_scene, shapes, radius, points, sa, aabb, nullptr);
-
-        Log(EInfo, "Generated " SIZE_T_FMT " blue-noise points.", points->size());
-
-        for(int point_i = 0; point_i < points->size(); ++point_i) {
-            // TODO: initialize on both sides if transmissive.
-            Eigen::Matrix<Scalar, 3, 1> position, normal;
-            position <<
-                ((*points)[point_i].p.x - aabb_min[0]) / spatialNormalization,
-                ((*points)[point_i].p.y - aabb_min[1]) / spatialNormalization,
-                ((*points)[point_i].p.z - aabb_min[2]) / spatialNormalization
-            ;
-            normal <<
-                (*points)[point_i].n.x,
-                (*points)[point_i].n.y,
-                (*points)[point_i].n.z
-            ;
-			GridKeyVector key;
-			jmm::buildKey(position, normal, key);
-            if(auto found = m_grid->find(key); found != nullptr) {
-                continue;
-            }
-            // std::cerr << "Inserting into grid: " << m_grid->size() << std::endl;
-            m_grid->insert(key, initCell());
-        }
-        std::cerr << "Number of grid cells: " << m_grid->size() << std::endl;
     }
 
     void initializeHashGridComponents() {
@@ -464,10 +293,22 @@ public:
                 cell->error = error;
                 cell->samples.clear();
 
-                // std::cerr << "Done optimizing. Copying " << cell->distribution.nComponents() << " components.\n";
+                // std::cerr << "Done optimizing JMM with " << cell->distribution.nComponents() << " components.\n";
+                // cell->em.compute_stats_model_parallel(cell->sdmm, cell->data);
+                // cell->em.interpolate_stats();
+                // std::cerr << "Data size=" << cell->data.size << "\n";
+                // assert(cell->em.normalize_stats(cell->data));
+                // enoki::vectorize_safe(
+                //     VECTORIZE_WRAP_MEMBER(update_model), cell->em, cell->sdmm
+                // );
+                // std::cerr << fmt::format("Optimized distribution={}\n", cell->sdmm.cov);
+                // assert(sdmm::prepare(cell->sdmm));
+
                 copy_sdmm(cell->distribution, cell->sdmm);
+
                 enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
                 sdmm::prepare(cell->conditioner, cell->sdmm);
+                cell->data.clear();
             }
         }
         /*
@@ -627,19 +468,8 @@ public:
         );
         m_grid->split_to_depth(2);
 
-        m_distribution = std::make_shared<SDMMProcess::MM>();
         m_diffuseDistribution = std::make_shared<SDMMProcess::MMDiffuse>();
         // m_diffuseDistribution->load("/home/anadodik/sdmm/scenes/cornell-box/diffuse.jmm");
-        m_optimizer = std::make_shared<SDMMProcess::StepwiseEMType>(
-            m_config.alpha,
-            Eigen::Matrix<Scalar, 5, 1>::Constant(1e-5),
-            1.f / Scalar(SDMMProcess::t_initComponents)
-        );
-
-        m_samples = std::make_shared<SDMMProcess::RenderingSamplesType>();
-        m_samples->reserve(m_maxSamplesSize);
-        m_samples->clear();
-        // blueNoiseHashGridInit();
 
         bool success = true;
         fs::path destinationFile = scene->getDestinationFile();
@@ -658,15 +488,12 @@ public:
             std::cerr << 
                 "Render iteration " + std::to_string(iteration) + ".\n";
 
-            m_samples->clear();
             ref<SDMMProcess> process = new SDMMProcess(
                 job,
                 queue,
                 m_config,
-                m_distribution,
                 m_grid,
                 m_diffuseDistribution,
-                m_samples,
                 iteration
             );
             m_process = process;
@@ -703,10 +530,8 @@ public:
             // }
 
             if(iteration == 0) {
-                // initializeJMM();
                 // saveCheckpoint(destinationFile.parent_path(), 0);
             }
-            // initializeHashGrid();
 
             if(samplesRendered + m_config.samplesPerIteration < sampleCount) {
                 optimizeHashGrid(iteration);
@@ -733,17 +558,6 @@ public:
                 destinationFile.parent_path(),
                 timer->lap()
             );
-
-            // mergeReplayBufferSamples(iteration);
-            // int emIterations = 1;
-            // if(iteration < m_config.initIterations) {
-            //     emIterations = 2;
-            // }
-            // m_optimizer->optimize(*m_distribution, *m_samples, emIterations);
-            // addSamplesToReplayBuffer(iteration, sampleCount / (Float) m_config.samplesPerIteration);
-            // saveCheckpoint(destinationFile.parent_path(), iteration + 1);
-            // m_distribution->resetSamplesRequested();
-            // m_distribution->resetComponentsPerSample();
         }
         std::ofstream statsOutFile(
             (destinationFile.parent_path() / "stats.json").string()
@@ -867,13 +681,7 @@ private:
 
     ref<Sampler> m_sampler;
     Scene* m_scene;
-    std::shared_ptr<typename SDMMProcess::MM> m_distribution;
     std::shared_ptr<typename SDMMProcess::MMDiffuse> m_diffuseDistribution;
-    std::shared_ptr<typename SDMMProcess::RenderingSamplesType> m_samples;
-    std::deque<SamplesType> m_replayBuffer;
-    SamplesType m_mergedSamples;
-
-    std::shared_ptr<typename SDMMProcess::StepwiseEMType> m_optimizer;
     std::shared_ptr<HashGridType> m_grid;
 };
 

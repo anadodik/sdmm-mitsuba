@@ -33,6 +33,7 @@
 
 #include "sdmm/distributions/sdmm.h"
 #include "sdmm/distributions/sdmm_conditioner.h"
+#include "sdmm/opt/em.h"
 
 #include <mitsuba/render/renderproc.h>
 #include <mitsuba/render/renderjob.h>
@@ -60,8 +61,8 @@ public:
     constexpr static int t_dims = 6;
     constexpr static int t_conditionalDims = 3;
     constexpr static int t_conditionDims = t_dims - t_conditionalDims;
-    constexpr static int t_initComponents = 36;
-    constexpr static int t_components = 36;
+    constexpr static int t_initComponents = 24;
+    constexpr static int t_components = 24;
     constexpr static bool USE_BAYESIAN = true;
     using Scalar = double;
 
@@ -108,6 +109,8 @@ public:
     constexpr static size_t MarginalSize = 3;
     constexpr static size_t ConditionalSize = 2;
     constexpr static int NSamples = 1;
+    constexpr static int NComponents = 24;
+    static_assert(NComponents == t_components);
     static_assert(JointSize == MarginalSize + ConditionalSize);
 
     using Packet = enoki::Packet<float, PacketSize>;
@@ -138,6 +141,20 @@ public:
 
     using RNG = enoki::PCG32<float, NSamples>;
 
+    using Data = sdmm::Data<JointSDMM>;
+
+    using EM = sdmm::EM<JointSDMM>;
+
+    struct MutexWrapper {
+        MutexWrapper() = default;
+        ~MutexWrapper() = default;
+        MutexWrapper(const MutexWrapper& mutex_wrapper) { };
+        MutexWrapper(MutexWrapper&& mutex_wrapper) { };
+        MutexWrapper& operator=(const MutexWrapper& mutex_wrapper) { };
+        MutexWrapper& operator=(MutexWrapper&& mutex_wrapper) { };
+        std::mutex mutex;
+    };
+
     struct GridCell {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -149,6 +166,10 @@ public:
         JointSDMM sdmm;
         Conditioner conditioner;
         RNG rng;
+
+        Data data;
+        EM em;
+        MutexWrapper mutex_wrapper;
     };
 
     using HashGridType = jmm::STree<
@@ -160,10 +181,8 @@ public:
         const RenderJob *parent,
         RenderQueue *queue,
         const SDMMConfiguration &config,
-        std::shared_ptr<MM> distribution,
         std::shared_ptr<HashGridType> grid,
         std::shared_ptr<MMDiffuse> diffuseDistribution,
-        std::shared_ptr<RenderingSamplesType> samples,
         int iteration
     );
 
@@ -189,10 +208,8 @@ private:
     ref<Timer> m_refreshTimer;
     SDMMConfiguration m_config;
 
-    std::shared_ptr<MM> m_distribution;
     std::shared_ptr<HashGridType> m_grid;
     std::shared_ptr<MMDiffuse> m_diffuseDistribution;
-    std::shared_ptr<RenderingSamplesType> m_samples;
     int m_iteration;
 };
 

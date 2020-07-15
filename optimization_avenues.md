@@ -1,4 +1,5 @@
 # Possible Ways of Opitmizing the Code
+- look for allocations. It seems that we are allocating unnecessarily.
 - `StepwiseTangentEM::optimize` is still 24.7% of the runtime. We should be able to bring it down by a large factor.
 - `Li` is 54% of the runtime.
     - `sampleSurface` is 19% of the runtime.
