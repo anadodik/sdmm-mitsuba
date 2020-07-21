@@ -169,19 +169,19 @@ public:
     }
 
     GridCell initCell() {
+        using JointSDMM = typename SDMMProcess::JointSDMM;
+        constexpr static size_t NComponents = SDMMProcess::NComponents;
         Eigen::Matrix<Scalar, 5, 1> bPrior;// bPrior << 1e-3, 1e-3, 1e-3, 1e-5, 1e-5;
         GridCell cell;
         cell.samples.reserve(m_maxSamplesSize);
         cell.optimizer = SDMMProcess::StepwiseEMType(
-            m_config.alpha, bPrior, 1e-3
+            m_config.alpha, bPrior, 1.f / NComponents
         );
-        cell.data.reserve(m_maxSamplesSize / 10);
+        cell.data.reserve(m_maxSamplesSize);
         cell.em = enoki::zero<SDMMProcess::EM>(SDMMProcess::NComponents);
         // TODO: set priors
-        using JointSDMM = typename SDMMProcess::JointSDMM;
-        constexpr static size_t NComponents = SDMMProcess::NComponents;
         float weight_prior = 1.f / NComponents;
-        float cov_prior_strength = 100.f / NComponents;
+        float cov_prior_strength = 5.f / NComponents;
         sdmm::matrix_t<JointSDMM> cov_prior = 
             sdmm::full_inner<sdmm::matrix_t<JointSDMM>, enoki::scalar_t<JointSDMM>, NComponents>(
                 2e-3, 0, 0, 0, 0,
@@ -237,6 +237,17 @@ public:
                     true
                 );
                 copy_sdmm(cell->distribution, cell->sdmm);
+                cell->em.depth_prior = enoki::zero<decltype(cell->em.depth_prior)>(
+                    cell->distribution.nComponents()
+                );
+                for(size_t prior_i = 0; prior_i < cell->distribution.nComponents(); ++prior_i) {
+                    for(size_t r = 0; r < 3; ++r) {
+                        for(size_t c = 0; c < 3; ++c) {
+                            enoki::slice(cell->em.depth_prior, prior_i)(r, c) =
+                                bDepthPriors[prior_i](r, c);
+                        }
+                    }
+                }
                 enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
                 sdmm::prepare(cell->conditioner, cell->sdmm);
             }
@@ -279,6 +290,7 @@ public:
                     
                 if(cell->distribution.nComponents() == 0) {
                     cell->samples.clear();
+                    cell->data.clear();
                     continue;
                 }
                 // Eigen::Matrix<Scalar, Eigen::Dynamic, 1> randomUniform(m_gridSamples[cell_i]->size(), 1);
@@ -287,28 +299,37 @@ public:
                 // }
                 // m_gridSamples[cell_i]->russianRoulette(randomUniform, 100, false);
                 // cell->samples.clear();
-                Scalar error;
-                // jmm::normalizeModel(cell->samples, cell->distribution);
-                cell->optimizer.optimize(cell->distribution, cell->samples, error);
-                cell->error = error;
-                cell->samples.clear();
+
+                // std::cerr << "jmm_weight_sum=" << cell->optimizer.sumWeights(cell->samples) << "\n";
+                // spdlog::info("weight_sum={}", cell->data.sum_weights());
+
+                // std::cerr << "jmm_samples_size=" << cell->samples.size() << "\n";
+                // spdlog::info("samples_size={}", cell->data.size);
+
+                // Scalar error;
+                // cell->optimizer.optimize(cell->distribution, cell->samples, error);
+                // cell->error = error;
+                // for(int i = 0; i < cell->distribution.nComponents(); ++i) {
+                //     std::cerr << fmt::format("JMM cov={}\n", cell->distribution.components()[i].cov());
+                // }
+                // // jmm::normalizeModel(cell->samples, cell->distribution);
 
                 // std::cerr << "Done optimizing JMM with " << cell->distribution.nComponents() << " components.\n";
-                // cell->em.compute_stats_model_parallel(cell->sdmm, cell->data);
-                // cell->em.interpolate_stats();
-                // std::cerr << "Data size=" << cell->data.size << "\n";
-                // assert(cell->em.normalize_stats(cell->data));
-                // enoki::vectorize_safe(
-                //     VECTORIZE_WRAP_MEMBER(update_model), cell->em, cell->sdmm
-                // );
-                // std::cerr << fmt::format("Optimized distribution={}\n", cell->sdmm.cov);
-                // assert(sdmm::prepare(cell->sdmm));
+                // std::cerr << "jmm_stats=[";
+                // for(auto& weight : cell->optimizer.getStatsGlobal().weights) {
+                //     std::cerr << weight << ", ";
+                // }
+                // std::cerr << "]\n";
 
-                copy_sdmm(cell->distribution, cell->sdmm);
-
+                sdmm::em_step(cell->sdmm, cell->em, cell->data);
+                // cell->em.step(cell->sdmm, cell->data);
+                // spdlog::info("stats={}", cell->em.stats.weight);
+                // copy_sdmm(cell->distribution, cell->sdmm);
                 enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
                 sdmm::prepare(cell->conditioner, cell->sdmm);
+
                 cell->data.clear();
+                cell->samples.clear();
             }
         }
         /*

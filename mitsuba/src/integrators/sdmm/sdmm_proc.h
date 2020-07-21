@@ -88,7 +88,7 @@ public:
         t_dims,
         t_components,
         t_conditionalDims,
-        typename MM::Scalar,
+        Scalar,
         jmm::MultivariateTangentNormal,
         jmm::MultivariateNormal
     >;

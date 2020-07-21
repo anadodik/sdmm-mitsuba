@@ -203,7 +203,7 @@ protected:
     Scalar epsilon;
     bool decreasePrior;
     Scalar trainingBatch = 0;
-    bool jacobianCorrection = true;
+    bool jacobianCorrection = false;
     int trainingCutoff = 32;
     
     Scalar minBPrior = 0; // 1e-8f;
@@ -257,6 +257,10 @@ public:
 
     jmm::aligned_vector<Matrixd>& getBPriors() {
         return bPriors;
+    }
+
+    auto& getStatsGlobal() {
+        return statsGlobal;
     }
 
     jmm::aligned_vector<Eigen::Matrix<Scalar, 3, 3>>& getBDepthPriors() {
@@ -624,9 +628,9 @@ public:
             jmm::aligned_vector<Scalar> samplesPerComponent(t_components);
 
             int iterations = 1;
-            if(iterationsRun < 3) {
-                iterations = 2;
-            }
+            // if(iterationsRun < 3) {
+            //     iterations = 2;
+            // }
 
             for(int emIt = 0; emIt < iterations; ++emIt) {
                 #pragma omp barrier
@@ -976,12 +980,14 @@ public:
                     }
 
                     // Copy new distributions
-                    #if TANGENT_DEBUG == 1
-                    std::cerr << "weakGaussiansCount=" << weakGaussiansCount << '\n';
-                    std::cerr << "degenerateWeightsCount=" << degenerateWeightsCount << '\n';
-                    std::cerr << "degenerateGaussiansCount=" << degenerateGaussiansCount << '\n';
-                    std::cerr << "untrainedGaussiansCount=" << untrainedGaussiansCount << '\n';
-                    #endif // TANGENT_DEBUG == 1
+                    // #if TANGENT_DEBUG == 1
+                    if(weakGaussiansCount > 0) {
+                        std::cerr << "weakGaussiansCount=" << weakGaussiansCount << '\n';
+                        std::cerr << "degenerateWeightsCount=" << degenerateWeightsCount << '\n';
+                        std::cerr << "degenerateGaussiansCount=" << degenerateGaussiansCount << '\n';
+                        std::cerr << "untrainedGaussiansCount=" << untrainedGaussiansCount << '\n';
+                    }
+                    // #endif // TANGENT_DEBUG == 1
                     
                     Scalar pdfNorm = std::accumulate(
                         std::begin(newParams.weights) + componentBegin,

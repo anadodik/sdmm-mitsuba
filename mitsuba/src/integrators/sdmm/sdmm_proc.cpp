@@ -983,8 +983,11 @@ public:
         };
 
         auto push_back_data = [&](SDMMProcess::GridCell& cell, int d) {
+            if(vertices[d].weight.average() == 0) {
+                return;
+            }
             std::lock_guard lock(cell.mutex_wrapper.mutex);
-            Float heuristic_pdf = vertices[d].isDiffuse ? vertices[d].heuristicPdf : 0;
+            Float heuristic_pdf = vertices[d].isDiffuse ? vertices[d].heuristicPdf : -1;
             cell.data.push_back(
                 vertices[d].point,
                 vertices[d].sdmm_normal,

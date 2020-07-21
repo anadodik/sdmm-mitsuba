@@ -1,6 +1,7 @@
 import re, sys, os, subprocess, shutil
 import argparse
 from colorama import Fore, Style
+import json
 import numpy as np
 
 from test_suite_utils import MITSUBA_PATH, SCENES
@@ -67,6 +68,19 @@ def render_experiment(scene_name, experiment_name, integrator, parameters, proce
                 print(f"{Fore.GREEN}{path_length_found.group(0).replace(' :', ':')} rays.{Style.RESET_ALL}")
                 path_length = float(path_length_found.group(1))
     print(f"{Fore.GREEN}Time per ray: {duration_s / path_length:0.2f}s.{Style.RESET_ALL}")
+
+    json_dir = os.path.join(experiment_path, "stats.json")
+    if os.path.exists(json_dir):
+        total_elapsed_seconds = None
+        with open(json_dir) as json_file:
+            stats_json = json.load(json_file)
+            last_stats = stats_json[-1]
+            total_elapsed_seconds=last_stats['total_elapsed_seconds']
+        print(
+            f"{Fore.YELLOW}"
+            f"Total time: {total_elapsed_seconds:.3f}s."
+            f"{Style.RESET_ALL}"
+        )
         
 
 def combine(scene_name, experiment_name, integrator, parameters):

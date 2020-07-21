@@ -107,7 +107,7 @@ inline size_t sampleDiscreteCdf(ForwardIterator begin, ForwardIterator end, Scal
     auto lower_it = std::lower_bound(begin, end, uniformSample);
     if(lower_it == end) {
         --lower_it;
-        while(*lower_it == *(lower_it - 1) && lower_it > begin) {
+        while(lower_it > begin && *lower_it == *(lower_it - 1)) {
             --lower_it;
         }
     }

@@ -286,7 +286,7 @@ namespace jmm {
         bool success = distribution.configure();
         assert(success);
         std::cerr << "Finished initializing.\n";
-        std::cerr << "Initialized " << distribution.nComponents() << " .\n";
+        std::cerr << "Initialized " << distribution.nComponents() << " components.\n";
     }
 
     template<int t_dims, typename Scalar>

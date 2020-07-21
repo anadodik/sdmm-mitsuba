@@ -17,6 +17,17 @@ struct STreeNode  {
     using Normal = Eigen::Matrix<Scalar, 3, 1>;
     STreeNode() : isLeaf(true), axis(0), children{0, 0}, value(nullptr) { }
 
+    template<typename Vector>
+    auto contains(const Vector& v) -> bool {
+        return 
+            v.x() > aabb.min()(0) &&
+            v.y() > aabb.min()(1) &&
+            v.z() > aabb.min()(2) &&
+            v.x() < aabb.max()(0) &&
+            v.y() < aabb.max()(1) &&
+            v.z() < aabb.max()(2);
+    }
+
     Value* find(
         const Vectord& point,
         const jmm::aligned_vector<STreeNode>& nodes,
@@ -195,11 +206,11 @@ public:
                 childValue->samples.push_back(
                     m_nodes[node_i].value->samples, sample_i
                 );
-                if(sample_i < m_nodes[node_i].value->data.capacity) {
-                    childValue->data.push_back(
-                        enoki::slice(m_nodes[node_i].value->data, sample_i)
-                    );
-                }
+            }
+            if(child.contains(enoki::slice(m_nodes[node_i].value->data.point, sample_i))) {
+                childValue->data.push_back(
+                    enoki::slice(m_nodes[node_i].value->data, sample_i)
+                );
             }
         }
         child.value = std::move(childValue);
@@ -226,24 +237,30 @@ public:
             return;
         }
 
-        if(depth < maxDepth) {
-            m_nodes[node_i].isLeaf = false;
-            for (int child_i = 0; child_i < 2; ++child_i) {
-                // Create node
-                STreeNode<Scalar, t_dims, Value> child =
-                    createChildNode(node_i, child_i, 0.5);
+        if(depth >= maxDepth) {
+            return;
+        }
 
-                // Insert child into vector
-                uint32_t child_idx = m_nodes.size();
-                child.idx = child_idx;
-                m_nodes.push_back(std::move(child));
-                m_nodes[node_i].children[child_i] = child_idx;
-            }
-            m_nodes[node_i].value = nullptr;
-            for (int child_i = 0; child_i < 2; ++child_i) {
-                int child_idx = m_nodes[node_i].children[child_i];
-                split_to_depth_recurse(child_idx, nextDepth, maxDepth);
-            }
+        m_nodes[node_i].isLeaf = false;
+        for (int child_i = 0; child_i < 2; ++child_i) {
+            // Create node
+            STreeNode<Scalar, t_dims, Value> child =
+                createChildNode(node_i, child_i, 0.5);
+
+            // Insert child into vector
+            uint32_t child_idx = m_nodes.size();
+            child.idx = child_idx;
+            m_nodes.push_back(std::move(child));
+            m_nodes[node_i].children[child_i] = child_idx;
+        }
+
+        m_nodes[node_i].value->data = enoki::zero<decltype(Value::data)>(0);
+        m_nodes[node_i].value->em = enoki::zero<decltype(Value::em)>(0);
+        m_nodes[node_i].value = nullptr;
+
+        for (int child_i = 0; child_i < 2; ++child_i) {
+            int child_idx = m_nodes[node_i].children[child_i];
+            split_to_depth_recurse(child_idx, nextDepth, maxDepth);
         }
     }
 

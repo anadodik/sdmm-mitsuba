@@ -159,7 +159,7 @@ public:
         }
         cosAngle = std::min(Scalar(1), cosAngle);
 
-        Scalar angle = approx_acos(cosAngle);
+        Scalar angle = std::acos(cosAngle);
 		Scalar sinAngle = tsqrtf(1 - cosAngle * cosAngle);
         Scalar angleOverSin = (sinAngle < 1e-3) ? 1 : (angle / sinAngle); // boost::math::sinc_pi(angle);
         // Scalar angleOverSin = 1.f / boost::math::sinc_pi(angle);
@@ -311,6 +311,7 @@ public:
         }
         return tangentMean;
     }
+
     const Matrixd& cov() const { return m_cov; }
     const TangentSpace<t_dims, t_conditionalDims, Scalar>& tangentSpace() const { return m_tangentSpace; }
     

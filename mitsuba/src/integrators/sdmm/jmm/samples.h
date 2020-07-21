@@ -288,8 +288,9 @@ public:
         meanSquareNormal.array() += normal.array().square();
 
         if(m_end == m_capacity) {
-            reserve(2 * m_end);
-            std::cerr << "WARNING: Resizing sample array.\n";
+            // reserve(2 * m_end);
+            // std::cerr << "WARNING: Resizing sample array.\n";
+            return false;
             // std::cerr << "m_end=" << m_end << " ... " << "samples.cols()=" << samples.cols() << "\n";
         }
         samples.col(m_end) = sample;
