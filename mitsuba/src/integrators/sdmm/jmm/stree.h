@@ -130,41 +130,31 @@ public:
     }
 
     std::pair<int, Scalar> getSplitLocation(int node_i) {
+        auto& data = m_nodes[node_i].value->data;
         auto& samples = m_nodes[node_i].value->samples;
-        Position meanPosition =
-            samples.meanPosition.template topRows<3>() / samples.nSamples;
-        Position meanSquarePosition =
-            samples.meanSquarePosition.template topRows<3>() / samples.nSamples;
-        Position varPosition = meanSquarePosition.array() - meanPosition.array().square();
+        auto mean_point = sdmm::Vector<Scalar, 3>{
+            data.mean_point.x(), data.mean_point.y(), data.mean_point.z()
+        };
+        auto mean_sqr_point = sdmm::Vector<Scalar, 3>{
+            data.mean_sqr_point.x(), data.mean_sqr_point.y(), data.mean_sqr_point.z()
+        };
+        mean_point /= data.size;
+        mean_sqr_point /= data.size;
+        auto var_point = mean_sqr_point - enoki::sqr(mean_point);
+        // std::cerr << "var=" << var_point << ", mean=" << mean_point << "\n";
 
-        Normal meanNormal = samples.meanNormal / samples.nSamples;
-        Normal meanSquareNormal = samples.meanSquareNormal / samples.nSamples;
-        Normal varNormal = meanSquareNormal.array() - meanNormal.array().square();
-
-        Vectord mean;
-        Vectord var; 
-        if constexpr(t_dims == 3) {
-            mean = meanPosition;
-            var = varPosition;
-        } else if(t_dims == 6) {
-            mean << meanPosition, meanNormal;
-            var << varPosition, varNormal;
-        }
-        std::cerr << "var=" << var.transpose() << ", mean=" << mean.transpose() << "\n";
-
-        int maxVar = 0;
-        for(int var_i = 0; var_i < 3; ++var_i) {
+        size_t max_var_i = 0;
+        for(size_t var_i = 0; var_i < 3; ++var_i) {
             assert(std::isfinite(var(var_i)));
-            if(var(var_i) > var(maxVar)) {
-                maxVar = var_i;
+            if(var_point.coeff(var_i) > var_point.coeff(max_var_i)) {
+                max_var_i = var_i;
             }
         }
 
         Vectord aabb_min = m_nodes[node_i].aabb.min();
         Vectord aabb_diagonal = m_nodes[node_i].aabb.diagonal();
-        Vectord splitLocation = (mean - aabb_min).array() / aabb_diagonal.array();
-        Scalar location = splitLocation(maxVar);
-        return {maxVar, location};
+        Scalar location = (mean_point.coeff(max_var_i) - aabb_min(max_var_i)) / aabb_diagonal(max_var_i);
+        return {max_var_i, location};
     }
 
     STreeNode<Scalar, t_dims, Value> createChildNode(int node_i, int child_i, Scalar splitLocation) {
@@ -191,7 +181,7 @@ public:
         childValue->em = m_nodes[node_i].value->em;
         childValue->data.reserve(m_nodes[node_i].value->data.capacity);
 
-        for(int sample_i = 0; sample_i < m_nodes[node_i].value->samples.size(); ++sample_i) {
+        for(int sample_i = 0; sample_i < m_nodes[node_i].value->data.size; ++sample_i) {
             Position position = 
                 m_nodes[node_i].value->samples.samples.col(sample_i).template topRows<3>();
             Normal normal =
@@ -276,7 +266,7 @@ public:
             return;
         }
 
-        if(m_nodes[node_i].value->samples.size() > splitThreshold) {
+        if(m_nodes[node_i].value->data.size > splitThreshold) {
             m_nodes[node_i].isLeaf = false;
             std::pair<int, Scalar> split = getSplitLocation(node_i);
             m_nodes[node_i].axis = split.first;

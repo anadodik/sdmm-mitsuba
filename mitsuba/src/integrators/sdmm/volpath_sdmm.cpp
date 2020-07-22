@@ -179,17 +179,19 @@ public:
         );
         cell.data.reserve(m_maxSamplesSize);
         cell.em = enoki::zero<SDMMProcess::EM>(SDMMProcess::NComponents);
-        // TODO: set priors
+
         float weight_prior = 1.f / NComponents;
         float cov_prior_strength = 5.f / NComponents;
-        sdmm::matrix_t<JointSDMM> cov_prior = 
-            sdmm::full_inner<sdmm::matrix_t<JointSDMM>, enoki::scalar_t<JointSDMM>, NComponents>(
+        sdmm::matrix_t<JointSDMM> cov_prior = enoki::zero<sdmm::matrix_t<JointSDMM>>(NComponents);
+        for(size_t slice_i = 0; slice_i < NComponents; ++slice_i) {
+            enoki::slice(cov_prior, slice_i) = sdmm::matrix_s_t<JointSDMM>(
                 2e-3, 0, 0, 0, 0,
                 0, 2e-3, 0, 0, 0,
                 0, 0, 2e-3, 0, 0,
                 0, 0, 0, 2e-4, 0,
                 0, 0, 0, 0, 2e-4
             );
+        }
         cell.em.set_priors(weight_prior, cov_prior_strength, cov_prior);
         return cell;
     }
@@ -255,22 +257,17 @@ public:
     }
 
     void optimizeHashGrid(int iteration) {
-        std::cerr << "Splitting samples.\n";
         using ConditionVectord = typename SDMMProcess::MM::ConditionVectord;
         constexpr static int t_conditionDims = SDMMProcess::t_conditionDims;
         int splitThreshold = 16000;
 
-        if(iteration * m_config.samplesPerIteration > m_config.sampleCount / 2) {
-            return;
-        }
-
+        std::cerr << "Splitting samples.\n";
         m_grid->split(splitThreshold);
 
         initializeHashGridComponents();
         auto& nodes = m_grid->data();
 
         std::cerr << "Optimizing guiding distribution: " << nodes.size() << " nodes in tree.\n";
-
         // TODO: TURN ON
         #pragma omp parallel for
         for(int cell_i = 0; cell_i < nodes.size(); ++cell_i) {
@@ -284,7 +281,7 @@ public:
                     continue;
                 }
 
-                if(cell->samples.size() < 20) {
+                if(cell->data.size < 20) {
                     continue;
                 }
                     
@@ -322,9 +319,12 @@ public:
                 // std::cerr << "]\n";
 
                 sdmm::em_step(cell->sdmm, cell->em, cell->data);
+                // spdlog::info("matrices after opt={}", cell->sdmm.cov);
                 // cell->em.step(cell->sdmm, cell->data);
                 // spdlog::info("stats={}", cell->em.stats.weight);
-                // copy_sdmm(cell->distribution, cell->sdmm);
+                // // copy_sdmm(cell->distribution, cell->sdmm);
+                // constexpr static size_t TangentSize = decltype(cell->sdmm)::Tangent::Size;
+                // copy_covs(cell->distribution, cell->sdmm, std::make_index_sequence<TangentSize * TangentSize>{});
                 enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
                 sdmm::prepare(cell->conditioner, cell->sdmm);
 
@@ -506,6 +506,7 @@ public:
             samplesRendered += m_config.samplesPerIteration
         ) {
             int iteration = samplesRendered / m_config.samplesPerIteration;
+            m_still_training = samplesRendered <= m_config.sampleCount / 2;
             std::cerr << 
                 "Render iteration " + std::to_string(iteration) + ".\n";
 
@@ -515,7 +516,8 @@ public:
                 m_config,
                 m_grid,
                 m_diffuseDistribution,
-                iteration
+                iteration,
+                m_still_training
             );
             m_process = process;
 
@@ -539,22 +541,7 @@ public:
                 break;
             }
 
-            // if(m_config.correctStateDensity) {
-            //     jmm::estimateStateDensity<
-            //         SDMMProcess::t_dims,
-            //         SDMMProcess::t_conditionDims,
-            //         Scalar
-            //     >(*m_samples);
-            //     // m_samples->stateDensities.topRows(m_samples->size()).setOnes();
-            // } else {
-            //     m_samples->stateDensities.topRows(m_samples->size()).setOnes();
-            // }
-
-            if(iteration == 0) {
-                // saveCheckpoint(destinationFile.parent_path(), 0);
-            }
-
-            if(samplesRendered + m_config.samplesPerIteration < sampleCount) {
+            if(m_still_training) {
                 optimizeHashGrid(iteration);
             }
 
@@ -699,6 +686,7 @@ private:
     SDMMConfiguration m_config;
 
     int m_maxSamplesSize;
+    bool m_still_training = false;
 
     ref<Sampler> m_sampler;
     Scene* m_scene;

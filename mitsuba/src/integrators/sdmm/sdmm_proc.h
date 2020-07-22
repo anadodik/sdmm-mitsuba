@@ -183,7 +183,8 @@ public:
         const SDMMConfiguration &config,
         std::shared_ptr<HashGridType> grid,
         std::shared_ptr<MMDiffuse> diffuseDistribution,
-        int iteration
+        int iteration,
+        bool collect_data
     );
 
     inline const SDMMWorkResult *getResult() const { return m_result.get(); }
@@ -211,6 +212,7 @@ private:
     std::shared_ptr<HashGridType> m_grid;
     std::shared_ptr<MMDiffuse> m_diffuseDistribution;
     int m_iteration;
+    bool m_collect_data;
 };
 
 MTS_NAMESPACE_END

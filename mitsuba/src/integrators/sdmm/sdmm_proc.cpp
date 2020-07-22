@@ -91,12 +91,14 @@ public:
         const SDMMConfiguration &config,
         std::shared_ptr<HashGridType> grid,
         std::shared_ptr<MMDiffuse> diffuseDistribution,
-        int iteration
+        int iteration,
+        bool collect_data
     ) :
         m_config(config),
         m_grid(grid),
         m_diffuseDistribution(diffuseDistribution),
-        m_iteration(iteration)
+        m_iteration(iteration),
+        m_collect_data(collect_data)
     { }
 
 	SDMMRenderer(Stream *stream, InstanceManager *manager)
@@ -952,11 +954,14 @@ public:
         avgPathLength.incrementBase();
         avgPathLength += rRec.depth;
 
-        if(depth == 0) {
+        if(depth == 0 || !m_collect_data) {
             return Li;
         }
 
         auto push_back_vertex = [&](RenderingSamplesType& samples, int d) {
+            if(m_iteration > 0) {
+                return;
+            }
             Eigen::Matrix<Scalar, 3, 1> color;
             color <<
                 vertices[d].weight[0],
@@ -983,17 +988,19 @@ public:
         };
 
         auto push_back_data = [&](SDMMProcess::GridCell& cell, int d) {
-            if(vertices[d].weight.average() == 0) {
+            if(!m_collect_data) {
                 return;
             }
-            std::lock_guard lock(cell.mutex_wrapper.mutex);
-            Float heuristic_pdf = vertices[d].isDiffuse ? vertices[d].heuristicPdf : -1;
-            cell.data.push_back(
-                vertices[d].point,
-                vertices[d].sdmm_normal,
-                vertices[d].weight.average(),
-                heuristic_pdf
-            );
+            {
+                std::lock_guard lock(cell.mutex_wrapper.mutex);
+                Float heuristic_pdf = vertices[d].isDiffuse ? vertices[d].heuristicPdf : -1;
+                cell.data.push_back(
+                    vertices[d].point,
+                    vertices[d].sdmm_normal,
+                    vertices[d].weight.average(),
+                    heuristic_pdf
+                );
+            }
         };
         
         typename MM::ConditionVectord offset;
@@ -1132,7 +1139,7 @@ public:
 
 	ref<WorkProcessor> clone() const {
 		return new SDMMRenderer(
-            m_config, m_grid, m_diffuseDistribution, m_iteration
+            m_config, m_grid, m_diffuseDistribution, m_iteration, m_collect_data
         );
 	}
 
@@ -1149,6 +1156,7 @@ private:
     int m_threadId = -1;
 	HilbertCurve2D<int> m_hilbertCurve;
     int m_iteration;
+    bool m_collect_data;
     ref<Timer> m_timer;
     Float m_spatialNormalization;
 
@@ -1191,13 +1199,15 @@ SDMMProcess::SDMMProcess(
     const SDMMConfiguration &config,
     std::shared_ptr<HashGridType> grid,
     std::shared_ptr<MMDiffuse> diffuseDistribution,
-    int iteration
+    int iteration,
+    bool collect_data
 ) :
     BlockedRenderProcess(parent, queue, config.blockSize),
     m_config(config),
     m_grid(grid),
     m_diffuseDistribution(diffuseDistribution),
-    m_iteration(iteration)
+    m_iteration(iteration),
+    m_collect_data(collect_data)
 {
     m_refreshTimer = new Timer();
     // barrier = std::make_unique<boost::barrier>(m_config.populations);
@@ -1205,7 +1215,7 @@ SDMMProcess::SDMMProcess(
 
 ref<WorkProcessor> SDMMProcess::createWorkProcessor() const {
     ref<WorkProcessor> renderer = new SDMMRenderer(
-        m_config, m_grid, m_diffuseDistribution, m_iteration
+        m_config, m_grid, m_diffuseDistribution, m_iteration, m_collect_data
     );
     return renderer;
 }
