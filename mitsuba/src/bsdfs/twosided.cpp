@@ -133,6 +133,10 @@ public:
         }
     }
 
+    DMM* getDMM() const final override {
+        return m_nestedBRDF[0]->getDMM();
+    }
+
     Spectrum sample(BSDFSamplingRecord &bRec, const Point2 &sample) const {
         bool flipped = false;
 

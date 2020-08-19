@@ -269,7 +269,7 @@ public:
 
                 if(!spec.isValid()) {
                     std::cerr << spec.toString() << " INVALID\n";
-                    return;
+                    continue;
                 }
                 result->putSample(samplePos, spec);
             }
@@ -423,13 +423,12 @@ public:
         MMCond& productConditional
     ) const {
         thread_local SDMMProcess::ConditionalSDMM conditional;
+        thread_local SDMMProcess::ConditionalSDMM rotated_bsdf;
+        thread_local SDMMProcess::ConditionalSDMM product;
         thread_local SDMMProcess::RNG sdmm_rng;
-        thread_local SDMMProcess::Value inv_jacobian;
+        thread_local float inv_jacobian;
         thread_local sdmm::replace_embedded_t<SDMMProcess::ConditionalSDMM, Scalar> embedded_sample;
         thread_local sdmm::replace_tangent_t<SDMMProcess::ConditionalSDMM, Scalar> tangent_sample;
-        if(enoki::slices(inv_jacobian) == 0) {
-            enoki::set_slices(inv_jacobian, 1);
-        }
 
         createCondition(sample, its, rRec.depth);
         gmmPdf = bsdfPdf = pdf = 0.f;
@@ -447,14 +446,14 @@ public:
 
 		Eigen::Matrix<Scalar, 3, 1> normal;
 		normal << its.shFrame.n.x, its.shFrame.n.y, its.shFrame.n.z;
-		if(Frame::cosTheta(its.wi) < 0) {
+		if(Frame::cosTheta(bRec.wi) < 0) {
 			normal = -normal;
 		}
 
 		GridKeyVector key;
 		jmm::buildKey(sample, normal, key);
         auto gridCell = m_grid->find(key);
-        if(m_iteration == 0 || gridCell == nullptr || gridCell->distribution.nComponents() == 0) {
+        if(m_iteration == 0 || gridCell == nullptr || enoki::slices(gridCell->sdmm) == 0) {
             heuristicConditionalWeight = 1.0f;
             Spectrum result = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
             pdf = bsdfPdf;
@@ -472,6 +471,29 @@ public:
         // );
         // MMCond* samplingConditional = &jmm_conditional;
 
+        bool usingProduct = bsdf->getDMM() != nullptr; // && m_config.sampleProduct;
+        if(usingProduct) {
+            auto* dmm = bsdf->getDMM();
+            size_t n_slices = enoki::slices(*dmm);
+            if(enoki::slices(rotated_bsdf) != n_slices) {
+                enoki::set_slices(rotated_bsdf, n_slices);
+            }
+            rotated_bsdf = *dmm;
+            for(size_t slice_i = 0; slice_i < n_slices; ++slice_i) {
+                // auto&& mean = enoki::slice(dmm->tangent_space.mean, slice_i);
+                // Vector mean_mts(mean.coeff(0), mean.coeff(1), mean.coeff(2));
+		        // if(Frame::cosTheta(bRec.wi) < 0) {
+                //     mean_mts = Vector(mean.coeff(0), mean.coeff(1), -mean.coeff(2));
+                // }
+                // Vector world_mean_mts = its.shFrame.toWorld(mean_mts);
+                // world_mean_mts = normalize(world_mean_mts);
+                sdmm::linalg::Vector<float, 3> world_mean(
+                    normal(0), normal(1), normal(2)
+                );
+                // world_mean_mts[0], world_mean_mts[1], world_mean_mts[2]
+                enoki::slice(rotated_bsdf.tangent_space, slice_i).set_mean(world_mean);
+            }
+        }
         if(
             m_config.sampleProduct &&
             validConditional &&
@@ -492,6 +514,14 @@ public:
             enoki::set_slices(conditional, enoki::slices(gridCell->conditioner));
         }
         validConditional = sdmm::create_conditional(gridCell->conditioner, condition, conditional);
+
+        if(validConditional && usingProduct) {
+            auto product_success = sdmm::product(conditional, rotated_bsdf, product);
+            // if(enoki::none(product_success)) {
+            //     spdlog::info("product unsuccessful={}", product_success);
+            //     usingProduct = false;
+            // }
+        }
         
         heuristicConditionalWeight = 0.5;
         if(!validConditional) {
@@ -501,6 +531,7 @@ public:
         if(rRec.nextSample1D() <= heuristicConditionalWeight) {
             bsdfWeight = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
             pdf = bsdfPdf;
+
             if(bsdfWeight.isZero()) {
                 return Spectrum{0.f};
             }
@@ -517,12 +548,20 @@ public:
         } else {
             // ConditionalVectord condVec = samplingConditional->sample(m_rng);
 
-            conditional.sample(
-                sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
-            );
-            if(inv_jacobian.coeff(0) == 0) {
+            if(!usingProduct) {
+                conditional.sample(
+                    sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
+                );
+            } else {
+                product.sample(
+                    sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
+                );
+            }
+
+            if(inv_jacobian == 0) {
                 return Spectrum(0.f);
             }
+
             ConditionalVectord condVec;
             condVec <<
                 embedded_sample.coeff(0),
@@ -551,16 +590,29 @@ public:
             bsdfWeight = bsdf->eval(bRec);
         }
         
-        pdf = pdfSurface(
-            bsdf,
-            bRec,
-            bsdfPdf,
-            gmmPdf,
-            // *samplingConditional,
-            conditional,
-            heuristicConditionalWeight,
-            sample.template bottomRows<t_conditionalDims>()
-        );
+        if(!usingProduct) {
+            pdf = pdfSurface(
+                bsdf,
+                bRec,
+                bsdfPdf,
+                gmmPdf,
+                // *samplingConditional,
+                conditional,
+                heuristicConditionalWeight,
+                sample.template bottomRows<t_conditionalDims>()
+            );
+        } else {
+            pdf = pdfSurface(
+                bsdf,
+                bRec,
+                bsdfPdf,
+                gmmPdf,
+                // *samplingConditional,
+                product,
+                heuristicConditionalWeight,
+                sample.template bottomRows<t_conditionalDims>()
+            );
+        }
         
         if(pdf == 0) {
             return Spectrum{0.f};
@@ -583,7 +635,7 @@ public:
             enoki::set_slices(posterior, enoki::slices(conditional));
         }
         auto type = bsdf->getType();
-        if ((type & BSDF::EDelta) == (type & BSDF::EAll)) {
+        if (heuristicConditionalWeight == 1.0f || (type & BSDF::EDelta) == (type & BSDF::EAll)) {
             return bsdf->pdf(bRec);
         }
 
@@ -803,7 +855,7 @@ public:
             );
 
             bool cacheable = !(bRec.sampledType & BSDF::EDelta);
-            if(Frame::cosTheta(its.wi) < 0) {
+            if(Frame::cosTheta(bRec.wi) < 0) {
                 normal = -normal;
             }
 
@@ -958,8 +1010,8 @@ public:
             return Li;
         }
 
-        auto push_back_vertex = [&](RenderingSamplesType& samples, int d) {
-            if(m_iteration > 0) {
+        auto push_back_vertex = [&](SDMMProcess::GridCell& cell, int d) {
+            if(enoki::slices(cell.sdmm) != 0) {
                 return;
             }
             Eigen::Matrix<Scalar, 3, 1> color;
@@ -968,7 +1020,7 @@ public:
                 vertices[d].weight[1],
                 vertices[d].weight[2];
             Scalar discount = 0;
-            samples.push_back_synchronized(
+            cell.samples.push_back_synchronized(
                 vertices[d].canonicalSample,
                 // vertices[d].functionValue.max() * canonicalToDirInvJacobian<t_conditionalDims>(),
                 vertices[d].samplingPdf * canonicalToDirInvJacobian<t_conditionalDims>(),
@@ -1013,7 +1065,7 @@ public:
             typename HashGridType::AABB sampleAABB;
             auto sampleCell = m_grid->find(key, sampleAABB);
             if(sampleCell != nullptr) {
-                push_back_vertex(sampleCell->samples, d);
+                push_back_vertex(*sampleCell, d);
                 push_back_data(*sampleCell, d);
             } else {
                 std::cerr << "ERROR: COULD NOT FIND CELL FOR SAMPLE." << std::endl;
@@ -1038,7 +1090,7 @@ public:
                 if(gridCell == nullptr || (aabb.min().array() == sampleAABB.min().array()).all()) {
                     continue;
                 } else {
-                    push_back_vertex(gridCell->samples, d);
+                    push_back_vertex(*gridCell, d);
                     push_back_data(*gridCell, d);
                 }
             }

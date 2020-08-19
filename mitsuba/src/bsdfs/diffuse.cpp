@@ -16,10 +16,16 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <memory>
+
 #include <mitsuba/render/bsdf.h>
 #include <mitsuba/render/texture.h>
 #include <mitsuba/hw/basicshader.h>
 #include <mitsuba/core/warp.h>
+#include <mitsuba/core/fresolver.h>
+
+#include <sdmm/distributions/sdmm.h>
+#include <sdmm/spaces/directional.h>
 
 MTS_NAMESPACE_BEGIN
 
@@ -74,6 +80,13 @@ MTS_NAMESPACE_BEGIN
  */
 class SmoothDiffuse : public BSDF {
 public:
+    using DMM = typename BSDF::DMM;
+    std::unique_ptr<DMM> m_dmm = nullptr;
+
+    DMM* getDMM() const final override {
+        return m_dmm.get();
+    }
+
     SmoothDiffuse(const Properties &props)
         : BSDF(props) {
         /* For better compatibility with other models, support both
@@ -81,6 +94,23 @@ public:
         m_reflectance = new ConstantSpectrumTexture(props.getSpectrum(
             props.hasProperty("reflectance") ? "reflectance"
                 : "diffuseReflectance", Spectrum(.5f)));
+        if(props.hasProperty("sdmmFilename")) {
+            std::cerr << "Loading DiffuseDMM.\n";
+            FileResolver *fResolver = Thread::getThread()->getFileResolver();
+            fs::path path = fResolver->resolve(
+                props.getString("sdmmFilename", "diffuse.sdmm")
+            );
+            if (!fs::exists(path)) {
+                Log(EError, "Diffuse SDMM file \"%s\" could not be found!",
+                    path.string().c_str());
+            }
+            
+            m_dmm = std::make_unique<DMM>();
+            sdmm::load_json(*m_dmm, path.string().c_str());
+            std::cerr << "Succesfully loaded DiffuseDMM.\n";
+        } else {
+            std::cerr << "Cannot load DiffuseDMM.\n";
+        }
     }
 
     SmoothDiffuse(Stream *stream, InstanceManager *manager)

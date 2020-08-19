@@ -16,6 +16,16 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <enoki/array.h>
+#include <enoki/dynamic.h>
+
+#include <fmt/ostream.h>
+#include <spdlog/spdlog.h>
+
+#ifndef Q_MOC_RUN
+#include <sdmm/core/sdmm_fwd.h>
+#endif // Q_MOC_RUN
+
 #pragma once
 #if !defined(__MITSUBA_RENDER_BSDF_H_)
 #define __MITSUBA_RENDER_BSDF_H_
@@ -39,6 +49,7 @@ MTS_NAMESPACE_BEGIN
  */
 struct MTS_EXPORT_RENDER BSDFSamplingRecord {
 public:
+
     /**
      * \brief Given a surface interaction and an incident direction,
      * construct a query record which can be used to sample an outgoing
@@ -283,6 +294,18 @@ public:
         /// Any kind of scattering
         EAll          = EDiffuse | EGlossy | EDelta | EDelta1D
     };
+
+    constexpr static size_t PacketSize = 8;
+    using Packet = enoki::Packet<float, PacketSize>;
+    using Value = enoki::DynamicArray<Packet>;
+    using TangentSpace = sdmm::DirectionalTangentSpace<
+        sdmm::Vector<Value, 3>, sdmm::Vector<Value, 2>
+    >;
+    using DMM = sdmm::SDMM<sdmm::Matrix<Value, 2>, TangentSpace>;
+
+    virtual DMM* getDMM() const {
+        return nullptr;
+    }
 
     /// Return the number of components of this BSDF
     inline int getComponentCount() const {

@@ -289,10 +289,7 @@ public:
     MultivariateTangentNormal(const Vectord& mean, const Matrixd& cov) {
         set(mean, cov);
     }
-
-    MultivariateTangentNormal() {
-        set(Vectord::Ones().normalized(), Matrixd::Identity());
-    }
+    MultivariateTangentNormal() { }
     
     ~MultivariateTangentNormal() = default;
     MultivariateTangentNormal(const MultivariateTangentNormal& other) = default;

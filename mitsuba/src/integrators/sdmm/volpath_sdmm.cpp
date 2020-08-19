@@ -23,8 +23,8 @@
 #include "jmm/mixture_model_init.h"
 #include "jmm/mixture_model_opt.h"
 // #include "jmm/outlier_detection.h"
-//
-#include "jmm/nlohmann/json.hpp"
+
+#include <nlohmann/json.hpp>
 
 #include "jmm/kdtree-eigen/kdtree_eigen.h"
 
@@ -150,7 +150,7 @@ public:
         for(size_t component_i = 0; component_i < NComponents; ++component_i) {
             enoki::slice(sdmm.weight.pmf, component_i) = jmm.weights()[component_i];
         }
-        bool prepare_success = sdmm::prepare(sdmm);
+        bool prepare_success = sdmm::prepare_vectorized(sdmm);
         assert(prepare_success);
     }
 
@@ -213,10 +213,11 @@ public:
                 }
                 if(
                     cell->samples.size() < 2 * nSpatialComponents ||
-                    cell->distribution.nComponents() > 0
+                    enoki::slices(cell->sdmm) > 0
                 ) {
                     continue;
                 }
+                std::cerr << "Initializing grid cell.\n";
                 std::function<Scalar()> rng = 
                     [samplerCopy = m_sampler]() mutable -> Scalar {
                         return samplerCopy->next1D();
@@ -280,15 +281,10 @@ public:
                 continue;
             }
 
-            if(cell->data.size < 20) {
+            if(cell->data.size < 20 || enoki::slices(cell->sdmm) == 0) {
                 continue;
             }
-                
-            if(cell->distribution.nComponents() == 0) {
-                cell->samples.clear();
-                cell->data.clear();
-                continue;
-            }
+
             // Eigen::Matrix<Scalar, Eigen::Dynamic, 1> randomUniform(m_gridSamples[cell_i]->size(), 1);
             // for(int sample_i = 0; sample_i < m_gridSamples[cell_i]->size(); ++sample_i) {
             //     randomUniform(sample_i) = m_sampler->next1D();
@@ -328,7 +324,6 @@ public:
             sdmm::prepare(cell->conditioner, cell->sdmm);
 
             cell->data.clear();
-            cell->samples.clear();
         }
         /*
         std::ofstream gridOut("grid.csv");

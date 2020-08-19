@@ -31,9 +31,13 @@
 
 #pragma GCC diagnostic pop
 
-#include "sdmm/distributions/sdmm.h"
-#include "sdmm/distributions/sdmm_conditioner.h"
-#include "sdmm/opt/em.h"
+#include <sdmm/distributions/sdmm.h>
+#include <sdmm/distributions/sdmm_conditioner.h>
+#include <sdmm/opt/em.h>
+#include <sdmm/spaces/directional.h>
+#include <sdmm/spaces/euclidian.h>
+#include <sdmm/spaces/spatio_directional.h>
+#include <enoki/random.h>
 
 #include <mitsuba/render/renderproc.h>
 #include <mitsuba/render/renderjob.h>

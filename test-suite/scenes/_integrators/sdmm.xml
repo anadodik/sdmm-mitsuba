@@ -9,5 +9,6 @@
         <integer name="maxDepth" value="$maxDepth"/>
         <integer name="rrDepth" value="$maxDepth"/>
         <integer name="blockSize" value="$blockSize"/>
+        <integer name="samplesPerIteration" value="$samplesPerIteration"/>
 	</integrator>
 </scene>

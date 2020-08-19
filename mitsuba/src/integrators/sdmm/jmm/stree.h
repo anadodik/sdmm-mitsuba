@@ -131,17 +131,11 @@ public:
 
     std::pair<int, Scalar> getSplitLocation(int node_i) {
         auto& data = m_nodes[node_i].value->data;
-        auto& samples = m_nodes[node_i].value->samples;
-        auto mean_point = sdmm::Vector<Scalar, 3>{
-            data.mean_point.x(), data.mean_point.y(), data.mean_point.z()
-        };
-        auto mean_sqr_point = sdmm::Vector<Scalar, 3>{
-            data.mean_sqr_point.x(), data.mean_sqr_point.y(), data.mean_sqr_point.z()
-        };
+        auto mean_point = data.mean_point;
+        auto mean_sqr_point = data.mean_sqr_point;
+        auto var_point = (mean_sqr_point - enoki::sqr(mean_point / data.size) * data.size) / (float) (data.size - 1);
         mean_point /= data.size;
         mean_sqr_point /= data.size;
-        auto var_point = mean_sqr_point - enoki::sqr(mean_point);
-        // std::cerr << "var=" << var_point << ", mean=" << mean_point << "\n";
 
         size_t max_var_i = 0;
         for(size_t var_i = 0; var_i < 3; ++var_i) {
@@ -153,6 +147,13 @@ public:
 
         Vectord aabb_min = m_nodes[node_i].aabb.min();
         Vectord aabb_diagonal = m_nodes[node_i].aabb.diagonal();
+        // std::cerr <<
+        // "var=" << var_point << 
+        // ", mean=" << mean_point <<
+        // ", data size=" << data.size << 
+        // ", aabb_min=" << aabb_min.transpose() << 
+        // ", aabb_diag=" << aabb_diagonal.transpose() <<
+        // "\n";
         Scalar location = (mean_point.coeff(max_var_i) - aabb_min(max_var_i)) / aabb_diagonal(max_var_i);
         return {max_var_i, location};
     }
@@ -172,9 +173,12 @@ public:
         }
 
         auto childValue = std::make_unique<Value>();
-        childValue->distribution = m_nodes[node_i].value->distribution;
-        childValue->optimizer = m_nodes[node_i].value->optimizer;
-        childValue->samples.reserve(m_nodes[node_i].value->samples.capacity());
+
+        if(enoki::slices(m_nodes[node_i].value->sdmm) == 0) {
+            childValue->distribution = m_nodes[node_i].value->distribution;
+            childValue->optimizer = m_nodes[node_i].value->optimizer;
+            childValue->samples.reserve(m_nodes[node_i].value->samples.capacity());
+        }
 
         childValue->sdmm = m_nodes[node_i].value->sdmm;
         childValue->conditioner = m_nodes[node_i].value->conditioner;
@@ -182,20 +186,22 @@ public:
         childValue->data.reserve(m_nodes[node_i].value->data.capacity);
 
         for(int sample_i = 0; sample_i < m_nodes[node_i].value->data.size; ++sample_i) {
-            Position position = 
-                m_nodes[node_i].value->samples.samples.col(sample_i).template topRows<3>();
-            Normal normal =
-                m_nodes[node_i].value->samples.normals.col(sample_i);
-            Vectord point;
-            if(dims == 3) {
-                point << position;
-            } else {
-                point << position, normal;
-            }
-            if(child.aabb.contains(point)) {
-                childValue->samples.push_back(
-                    m_nodes[node_i].value->samples, sample_i
-                );
+            if(enoki::slices(m_nodes[node_i].value->sdmm) == 0) {
+                Position position = 
+                    m_nodes[node_i].value->samples.samples.col(sample_i).template topRows<3>();
+                Normal normal =
+                    m_nodes[node_i].value->samples.normals.col(sample_i);
+                Vectord point;
+                if(dims == 3) {
+                    point << position;
+                } else {
+                    point << position, normal;
+                }
+                if(child.aabb.contains(point)) {
+                    childValue->samples.push_back(
+                        m_nodes[node_i].value->samples, sample_i
+                    );
+                }
             }
             if(child.contains(enoki::slice(m_nodes[node_i].value->data.point, sample_i))) {
                 childValue->data.push_back(
@@ -209,7 +215,6 @@ public:
     }
 
     void split_to_depth(int maxDepth) {
-        std::cerr << "Samples capacity: " << m_nodes[0].value->samples.capacity() << std::endl;
         split_to_depth_recurse(0, 0, maxDepth);
     }
 
@@ -289,9 +294,12 @@ public:
         // std::cerr << "Split node " << idx << ", children ids = " << children[0] << ", " << children[1] << std::endl;
     }
 
+    void set_initialized(bool initialized_) { initialized = initialized_; }
+
 private:
     jmm::aligned_vector<STreeNode<Scalar, t_dims, Value>> m_nodes;
     AABB m_aabb;
+    bool initialized = false;
 };
 
 }
