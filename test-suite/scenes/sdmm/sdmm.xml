@@ -1,0 +1,118 @@
+<scene version="0.6.0">
+
+<!-- Defaults, these can be set via the command line: -Darg=value -->
+
+	<default name="sampleCount" value="64"/>
+	<default name="resx" value="960"/>
+	<default name="resy" value="540"/>
+
+<!-- Camera and Rendering Parameters -->
+
+	<integrator type="path">
+		<integer name="maxDepth" value="12"/>
+	</integrator>
+	<sensor type="perspective">
+		<string name="fovAxis" value="x"/>
+		<float name="fov" value="39.597752"/>
+		<float name="nearClip" value="0.100000"/>
+		<float name="farClip" value="1000.000000"/>
+		<transform name="toWorld">
+			<rotate x="1" angle="-169.32818960064824"/>
+			<rotate y="1" angle="29.078802976182683"/>
+			<rotate z="1" angle="-179.99990938630796"/>
+			<translate x="-3.751353" y="1.976539" z="6.143896"/>
+		</transform>
+		<sampler type="independent">
+			<integer name="sampleCount" value="$sampleCount"/>
+		</sampler>
+		<film type="hdrfilm">
+			<integer name="width" value="$resx"/>
+			<integer name="height" value="$resy"/>
+            <boolean name="banner" value="false"/>
+            <rfilter type="box"/>
+		</film>
+	</sensor>
+
+<!-- Materials -->
+
+    <bsdf type="blendbsdf" id="mat-sdmm-material">
+        <texture type="bitmap" name="weight">
+            <string name="filename" value="textures/Metal022_2K_Metalness.jpg"/>
+        </texture>
+        <bsdf type="twosided">
+            <bsdf type="roughconductor">
+                <float name="alpha" value="0.209482"/>
+                <string name="distribution" value="beckmann"/>
+                <string name="material" value="Ag"/>
+                <!--<string name="material" value="Au"/>-->
+                <rgb value="1 1 1" name="specularReflectance"/>
+                <!--
+                <texture type="bitmap" name="specularReflectance">
+                    <string name="filename" value="textures/Metal007_2K_Color.jpg"/>
+                </texture>
+                -->
+            </bsdf>
+        </bsdf>
+        <bsdf type="twosided">
+            <bsdf type="diffuse">
+                <rgb value="0.218435 0.218435 0.218435" name="reflectance"/>
+            </bsdf>
+        </bsdf>
+    </bsdf>
+    <bsdf type="diffuse" id="empty-emitter-bsdf">
+        <rgb value="0.000000" name="reflectance"/>
+    </bsdf>
+    <bsdf type="twosided" id="mat-ground-material">
+        <bsdf type="diffuse">
+            <texture type="bitmap" name="reflectance">
+                <string name="filename" value="textures/Wood045_2K_Color.jpg"/>
+            </texture>
+        </bsdf>
+    </bsdf>
+    <bsdf type="twosided" id="mat-stand-material">
+        <bsdf type="diffuse">
+            <texture type="bitmap" name="reflectance">
+                <string name="filename" value="textures/Concrete019_2K_Color.jpg"/>
+            </texture>
+        </bsdf>
+    </bsdf>
+
+<!-- Emitters -->
+
+	<emitter type="envmap">
+		<string name="filename" value="textures/industrial_fixed.exr"/>
+		<float name="scale" value="0.500000"/>
+		<transform name="to_world">
+			<matrix value="-0.173648 0.000000 -0.492404 0.000000 0.000000 0.500000 0.000000 0.000000 0.492404 0.000000 -0.173648 0.000000 0.000000 0.000000 0.000000 1.000000"/>
+		</transform>
+	</emitter>
+	<shape type="ply">
+		<string name="filename" value="meshes/front-light.ply"/>
+		<ref id="empty-emitter-bsdf" name="bsdf"/>
+		<emitter type="area">
+			<rgb value="1000.000000 1000.000000 1000.000000" name="radiance"/>
+		</emitter>
+	</shape>
+	<shape type="ply">
+		<string name="filename" value="meshes/back-light.ply"/>
+		<ref id="empty-emitter-bsdf" name="bsdf"/>
+		<emitter type="area">
+			<rgb value="1000.000000 1000.000000 1000.000000" name="radiance"/>
+		</emitter>
+	</shape>
+
+<!-- Shapes -->
+
+	<shape type="ply">
+		<string name="filename" value="meshes/SDMM.ply"/>
+		<ref id="mat-sdmm-material" name="bsdf"/>
+	</shape>
+	<shape type="ply">
+		<string name="filename" value="meshes/ground.ply"/>
+		<ref id="mat-ground-material" name="bsdf"/>
+	</shape>
+	<shape type="ply">
+		<string name="filename" value="meshes/stand.ply"/>
+		<ref id="mat-stand-material" name="bsdf"/>
+	</shape>
+</scene>
