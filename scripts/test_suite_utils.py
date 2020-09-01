@@ -12,18 +12,21 @@ RESULTS_PATH = os.path.join(ROOT_PATH, 'test-suite', 'results')
 
 SCENES = [
     'cornell-box',
-    'torus',
     'glossy-cbox',
-    'bookshelf', # NEW
+    'torus',
     'pool',
-    'bathroom2',
     'bedroom',
+    'bookshelf', # NEW
     'glossy-kitchen', # NEW
     'veach-door', # NEW
-    'water-caustic', # NEW
-    'hairball',
     'necklace', # NEW
-    'glossy-bathroom2', # NEW
+    'glossy-bathroom2', # NEW (if it's the same as Thomas')
+    'sdmm', # NEW
+    'bottle', # maybe? conditioned on the number of fireflies. NEW
+    'water-caustic', # maybe? conditioned on the number of fireflies. NEW
+    # 'hairball',
+    # 'bathroom2',
+    # 'glossy-cbox-textured', # NEW
     # 'living-room-2',
     # 'cbox',
     # 'cbox-white',

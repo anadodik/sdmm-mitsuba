@@ -9,6 +9,7 @@ import subprocess
 from glob import glob
 import json
 import numpy as np
+import skimage as ski
 import os
 import re
 import smartexr as exr
@@ -20,9 +21,10 @@ from test_suite_utils import get_gt_path, MrSE, MAPE, SMAPE, aggregate
 from test_suite_utils import SCENES, SCENE_TITLES, RESULTS_PATH
 
 from matplotlib import rc
-rc('font',**{'family':'serif'})
+rc('interactive') == False
 # rc('text', usetex=True)
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
         
 def tonemap_exrs(experiment_path):
     image_files = [os.path.join(experiment_path, filename) for filename in os.listdir(experiment_path)
@@ -125,6 +127,9 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
         image_variance = spp / (spp - 1) * (
             combined_square_image / spp - (combined_image / spp) ** 2
         )
+        # image_variance = ski.filters.gaussian(
+        #     image_variance, sigma=5, multichannel=True
+        # )
         image_variance = np.clip(image_variance, 0, 2000)
         per_channel_variance = np.mean(image_variance, axis=(0,1))
         max_variance = np.maximum(image_variance, per_channel_variance)
@@ -425,7 +430,7 @@ def compare_all_runs():
             plt.savefig(plot_file, format=os.path.splitext(plot_filename)[-1][1:], dpi=fig.dpi)
 
 if __name__ == "__main__": 
-    parser = argparse.ArgumentParser(description='Combine UMM Runs!')
+    parser = argparse.ArgumentParser(description='Combine SDMM Runs!')
     parser.add_argument('-t', '--tonemap', action='store_true')
     parser.add_argument('-c', '--combine_type', type=str, default='var')
     parser.add_argument('-o', '--comparison_out_file', type=str, nargs='?')

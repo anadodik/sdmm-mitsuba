@@ -20,6 +20,9 @@
 #include <mitsuba/render/texture.h>
 #include <mitsuba/hw/gpuprogram.h>
 
+#include <sdmm/distributions/sdmm.h>
+#include <sdmm/spaces/directional.h>
+
 MTS_NAMESPACE_BEGIN
 
 /*!\plugin{twosided}{Two-sided BRDF adapter}
@@ -133,8 +136,31 @@ public:
         }
     }
 
-    DMM* getDMM() const final override {
-        return m_nestedBRDF[0]->getDMM();
+    bool getDMM(BSDFSamplingRecord &bRec, DMM& dmm) const final override {
+        bool flipped = Frame::cosTheta(bRec.wi) < 0;
+
+        if(flipped) {
+            bRec.wi.z *= -1;
+        }
+
+        bool success = m_nestedBRDF[0]->getDMM(bRec, dmm);
+
+        if(flipped) {
+            bRec.wi.z *= -1;
+            if(success) {
+                dmm.tangent_space.coordinate_system.from(2, 0) *= -1;
+                dmm.tangent_space.coordinate_system.from(2, 1) *= -1;
+                dmm.tangent_space.coordinate_system.from(2, 2) *= -1;
+
+                dmm.tangent_space.coordinate_system.to(0, 2) *= -1;
+                dmm.tangent_space.coordinate_system.to(1, 2) *= -1;
+                dmm.tangent_space.coordinate_system.to(2, 2) *= -1;
+                
+                dmm.tangent_space.mean.coeff(2) *= -1;
+            }
+        }
+
+        return success;
     }
 
     Spectrum sample(BSDFSamplingRecord &bRec, const Point2 &sample) const {

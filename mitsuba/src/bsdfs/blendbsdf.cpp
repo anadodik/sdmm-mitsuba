@@ -20,6 +20,13 @@
 #include <mitsuba/render/texture.h>
 #include <mitsuba/hw/gpuprogram.h>
 #include <mitsuba/hw/basicshader.h>
+#include <mitsuba/core/fresolver.h>
+
+#include <sdmm/distributions/sdmm.h>
+#include <sdmm/distributions/sdmm_conditioner.h>
+#include <sdmm/spaces/euclidian.h>
+#include <sdmm/spaces/directional.h>
+#include <sdmm/spaces/spatio_directional.h>
 
 MTS_NAMESPACE_BEGIN
 
@@ -69,9 +76,48 @@ MTS_NAMESPACE_BEGIN
 
 class BlendBSDF : public BSDF {
 public:
+    using DMM = typename BSDF::DMM;
+    using GMM2 = typename BSDF::GMM2;
+    using SDMM4 = typename BSDF::SDMM4;
+    using SDMM4Conditioner = typename BSDF::SDMM4Conditioner;
+
+    std::unique_ptr<SDMM4> m_sdmm = nullptr;
+    mutable SDMM4Conditioner conditioner;
+
+    bool getDMM(BSDFSamplingRecord &bRec, DMM& dmm) const final override {
+        if(m_sdmm == nullptr || Frame::cosTheta(bRec.wi) <= 0) {
+            return false;
+        }
+        Float theta = std::acos(std::min((Float) 1.0f, Frame::cosTheta(bRec.wi)));
+        Float weight = std::min((Float) 1.0f, std::max((Float) 0.0f,
+            m_weight->eval(bRec.its).average()));
+        sdmm::embedded_s_t<GMM2> condition({theta, weight});
+        if(enoki::slices(dmm) != enoki::slices(*m_sdmm)) {
+            enoki::set_slices(dmm, enoki::slices(*m_sdmm));
+        }
+        bool validConditional = sdmm::create_conditional(conditioner, condition, dmm);
+        return validConditional;
+    }
+
     BlendBSDF(const Properties &props)
         : BSDF(props) {
         m_weight = new ConstantFloatTexture(props.getFloat("weight", 0.5f));
+        if(props.hasProperty("sdmmFilename")) {
+            std::cerr << "Loading BlendedSDMM.\n";
+            FileResolver *fResolver = Thread::getThread()->getFileResolver();
+            fs::path path = fResolver->resolve(
+                props.getString("sdmmFilename", "blend.sdmm")
+            );
+            if (!fs::exists(path)) {
+                Log(EError, "BlendedSDMM file \"%s\" could not be found!",
+                    path.string().c_str());
+            }
+            
+            m_sdmm = std::make_unique<SDMM4>();
+            sdmm::load_json(*m_sdmm, path.string().c_str());
+            enoki::set_slices(conditioner, enoki::slices(*m_sdmm));
+            sdmm::prepare(conditioner, *m_sdmm);
+        }
     }
 
     BlendBSDF(Stream *stream, InstanceManager *manager)

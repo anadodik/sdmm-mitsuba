@@ -61,11 +61,13 @@ public:
 		m_config.maxDepth = props.getInteger("maxDepth", -1);
 		m_config.blockSize = props.getInteger("blockSize", -1);
 		m_config.rrDepth = props.getInteger("rrDepth", 5);
+		m_config.strictNormals = props.getBoolean("strictNormals", true);
 		m_config.sampleDirect = props.getBoolean("sampleDirect", true);
 		m_config.showWeighted = props.getBoolean("showWeighted", false);
 		m_config.samplesPerIteration = props.getInteger("samplesPerIteration", 8);
 		m_config.useHierarchical = props.getBoolean("useHierarchical", true);
 		m_config.sampleProduct = props.getBoolean("sampleProduct", false);
+		m_config.bsdfOnly = props.getBoolean("bsdfOnly", false);
 		m_config.alpha = props.getFloat("alpha", 0.5f);
 		m_config.batchIterations = props.getInteger("batchIterations", 0);
 		m_config.initIterations = props.getInteger("initIterations", 3);
@@ -260,7 +262,7 @@ public:
     void optimizeHashGrid(int iteration) {
         using ConditionVectord = typename SDMMProcess::MM::ConditionVectord;
         constexpr static int t_conditionDims = SDMMProcess::t_conditionDims;
-        int splitThreshold = 16000;
+        int splitThreshold = 32000;
 
         std::cerr << "Splitting samples.\n";
         m_grid->split(splitThreshold);
@@ -281,7 +283,7 @@ public:
                 continue;
             }
 
-            if(cell->data.size < 20 || enoki::slices(cell->sdmm) == 0) {
+            if(cell->data.size < 35 || enoki::slices(cell->sdmm) == 0) {
                 continue;
             }
 

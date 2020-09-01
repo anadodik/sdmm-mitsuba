@@ -83,8 +83,12 @@ public:
     using DMM = typename BSDF::DMM;
     std::unique_ptr<DMM> m_dmm = nullptr;
 
-    DMM* getDMM() const final override {
-        return m_dmm.get();
+    bool getDMM(BSDFSamplingRecord &bRec, DMM& dmm) const final override {
+        if(m_dmm == nullptr || Frame::cosTheta(bRec.wi) <= 0) {
+            return false;
+        }
+        dmm = *m_dmm;
+        return true;
     }
 
     SmoothDiffuse(const Properties &props)
@@ -107,9 +111,6 @@ public:
             
             m_dmm = std::make_unique<DMM>();
             sdmm::load_json(*m_dmm, path.string().c_str());
-            std::cerr << "Succesfully loaded DiffuseDMM.\n";
-        } else {
-            std::cerr << "Cannot load DiffuseDMM.\n";
         }
     }
 

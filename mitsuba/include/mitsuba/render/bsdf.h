@@ -298,13 +298,25 @@ public:
     constexpr static size_t PacketSize = 8;
     using Packet = enoki::Packet<float, PacketSize>;
     using Value = enoki::DynamicArray<Packet>;
-    using TangentSpace = sdmm::DirectionalTangentSpace<
+    using DMMTangentSpace = sdmm::DirectionalTangentSpace<
         sdmm::Vector<Value, 3>, sdmm::Vector<Value, 2>
     >;
-    using DMM = sdmm::SDMM<sdmm::Matrix<Value, 2>, TangentSpace>;
+    using DMM = sdmm::SDMM<sdmm::Matrix<Value, 2>, DMMTangentSpace>;
 
-    virtual DMM* getDMM() const {
-        return nullptr;
+    using GMM2TangentSpace = sdmm::EuclidianTangentSpace<
+        sdmm::Vector<Value, 2>, sdmm::Vector<Value, 2>
+    >;
+    using GMM2 = sdmm::SDMM<sdmm::Matrix<Value, 2>, GMM2TangentSpace>;
+
+    using SDMM4TangentSpace = sdmm::SpatioDirectionalTangentSpace<
+        sdmm::Vector<Value, 5>, sdmm::Vector<Value, 4>
+    >;
+    using SDMM4 = sdmm::SDMM<sdmm::Matrix<Value, 4>, SDMM4TangentSpace>;
+
+    using SDMM4Conditioner = sdmm::SDMMConditioner<SDMM4, GMM2, DMM>;
+
+    virtual bool getDMM(BSDFSamplingRecord &bRec, DMM& dmm) const {
+        return false;
     }
 
     /// Return the number of components of this BSDF

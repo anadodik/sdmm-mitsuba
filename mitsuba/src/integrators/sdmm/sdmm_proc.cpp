@@ -422,13 +422,15 @@ public:
         MMCond& rotatedMaterialConditional,
         MMCond& productConditional
     ) const {
+        using RotationMatrix = SDMMProcess::ConditionalSDMM::TangentSpace::MatrixS;
+
         thread_local SDMMProcess::ConditionalSDMM conditional;
-        thread_local SDMMProcess::ConditionalSDMM rotated_bsdf;
+        thread_local SDMMProcess::ConditionalSDMM learned_bsdf;
         thread_local SDMMProcess::ConditionalSDMM product;
         thread_local SDMMProcess::RNG sdmm_rng;
         thread_local float inv_jacobian;
-        thread_local sdmm::replace_embedded_t<SDMMProcess::ConditionalSDMM, Scalar> embedded_sample;
-        thread_local sdmm::replace_tangent_t<SDMMProcess::ConditionalSDMM, Scalar> tangent_sample;
+        thread_local sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM> embedded_sample;
+        thread_local sdmm::tangent_s_t<SDMMProcess::ConditionalSDMM> tangent_sample;
 
         createCondition(sample, its, rRec.depth);
         gmmPdf = bsdfPdf = pdf = 0.f;
@@ -463,72 +465,82 @@ public:
             return result;
         }
 
-        bool validConditional = true;
-        // validConditional = gridCell->distribution.conditional(
-        //     sample.template topRows<t_conditionDims>(),
-        //     jmm_conditional,
-        //     heuristicConditionalWeight
-        // );
-        // MMCond* samplingConditional = &jmm_conditional;
+        bool validConditional = false;
+        bool learnedBSDFFound = false;
+        if(m_config.sampleProduct || m_config.bsdfOnly) {
+            learnedBSDFFound = bsdf->getDMM(bRec, learned_bsdf);
+        }
+        bool usingProduct = !m_config.bsdfOnly && m_config.sampleProduct && learnedBSDFFound;
+        bool usingLearnedBSDF = m_config.bsdfOnly && learnedBSDFFound;
 
-        bool usingProduct = bsdf->getDMM() != nullptr; // && m_config.sampleProduct;
-        if(usingProduct) {
-            auto* dmm = bsdf->getDMM();
-            size_t n_slices = enoki::slices(*dmm);
-            if(enoki::slices(rotated_bsdf) != n_slices) {
-                enoki::set_slices(rotated_bsdf, n_slices);
-            }
-            rotated_bsdf = *dmm;
-            for(size_t slice_i = 0; slice_i < n_slices; ++slice_i) {
-                // auto&& mean = enoki::slice(dmm->tangent_space.mean, slice_i);
-                // Vector mean_mts(mean.coeff(0), mean.coeff(1), mean.coeff(2));
-		        // if(Frame::cosTheta(bRec.wi) < 0) {
-                //     mean_mts = Vector(mean.coeff(0), mean.coeff(1), -mean.coeff(2));
-                // }
-                // Vector world_mean_mts = its.shFrame.toWorld(mean_mts);
-                // world_mean_mts = normalize(world_mean_mts);
-                sdmm::linalg::Vector<float, 3> world_mean(
-                    normal(0), normal(1), normal(2)
+        if(usingProduct || usingLearnedBSDF) {
+            size_t n_slices = enoki::slices(learned_bsdf);
+            if((type & BSDF::EDiffuseReflection) == (type & BSDF::EAll)) {
+                for(size_t slice_i = 0; slice_i < n_slices; ++slice_i) {
+                    sdmm::linalg::Vector<float, 3> world_mean(
+                        normal(0), normal(1), normal(2)
+                    );
+                    enoki::slice(learned_bsdf.tangent_space, slice_i).set_mean(world_mean);
+                }
+            } else {
+                sdmm::linalg::Vector<float, 3> wi(
+                    bRec.wi[0], bRec.wi[1], bRec.wi[2]
                 );
-                // world_mean_mts[0], world_mean_mts[1], world_mean_mts[2]
-                enoki::slice(rotated_bsdf.tangent_space, slice_i).set_mean(world_mean);
+                RotationMatrix to_world_space(
+                    its.shFrame.s[0], its.shFrame.t[0], its.shFrame.n[0],
+                    its.shFrame.s[1], its.shFrame.t[1], its.shFrame.n[1],
+                    its.shFrame.s[2], its.shFrame.t[2], its.shFrame.n[2]
+                );
+                for(size_t slice_i = 0; slice_i < n_slices; ++slice_i) {
+                    auto&& ts = enoki::slice(learned_bsdf.tangent_space, slice_i);
+                    auto&& cs = ts.coordinate_system;
+                    ts.rotate_to_wo(wi);
+                    cs.from = to_world_space * cs.from;
+                    cs.to = cs.to * sdmm::linalg::transpose(to_world_space);
+                    auto old_ts_mean = ts.mean;
+                    ts.mean = to_world_space * ts.mean;
+                    if(!enoki::all(enoki::isfinite(ts.mean))) {
+                        std::cerr << fmt::format(
+                            "mean={}, "
+                            "old_mean={}, "
+                            "to_world_space={}, "
+                            "wi={}\n",
+                            ts.mean,
+                            old_ts_mean,
+                            to_world_space,
+                            wi
+                        );
+                    }
+                }
             }
         }
-        if(
-            m_config.sampleProduct &&
-            validConditional &&
-            (type & BSDF::EDiffuseReflection) == (type & BSDF::EAll)
-        ) {
-            std::cerr << "Calculating product!\n";
-            // materialConditional.rotateTo(normal, rotatedMaterialConditional);
-            // conditional.multiply(rotatedMaterialConditional, productConditional);
-            // samplingConditional = &productConditional;
-        } else {
-            // samplingConditional = &conditional;
+
+        if(!usingLearnedBSDF) {
+            sdmm::embedded_s_t<SDMMProcess::MarginalSDMM> condition({
+                sample(0), sample(1), sample(2)
+            });
+            if(enoki::slices(conditional) != enoki::slices(gridCell->conditioner)) {
+                enoki::set_slices(conditional, enoki::slices(gridCell->conditioner));
+            }
+            validConditional = sdmm::create_conditional(gridCell->conditioner, condition, conditional);
         }
 
-        sdmm::embedded_s_t<SDMMProcess::MarginalSDMM> condition({
-            sample(0), sample(1), sample(2)
-        });
-        if(enoki::slices(conditional) != enoki::slices(gridCell->conditioner)) {
-            enoki::set_slices(conditional, enoki::slices(gridCell->conditioner));
-        }
-        validConditional = sdmm::create_conditional(gridCell->conditioner, condition, conditional);
-
-        if(validConditional && usingProduct) {
-            auto product_success = sdmm::product(conditional, rotated_bsdf, product);
-            // if(enoki::none(product_success)) {
-            //     spdlog::info("product unsuccessful={}", product_success);
-            //     usingProduct = false;
-            // }
+        if(!usingLearnedBSDF && validConditional && usingProduct) {
+            auto product_success = sdmm::product(conditional, learned_bsdf, product);
+            if(enoki::none(product_success)) {
+                spdlog::info("product unsuccessful={}", product_success);
+                usingProduct = false;
+            }
         }
         
         heuristicConditionalWeight = 0.5;
-        if(!validConditional) {
+        if(usingLearnedBSDF) {
+            heuristicConditionalWeight = 0.f;
+        } else if(!validConditional) {
             heuristicConditionalWeight = 1.0f;
         }
 
-        if(rRec.nextSample1D() <= heuristicConditionalWeight) {
+        if(!usingLearnedBSDF && rRec.nextSample1D() <= heuristicConditionalWeight) {
             bsdfWeight = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
             pdf = bsdfPdf;
 
@@ -548,13 +560,28 @@ public:
         } else {
             // ConditionalVectord condVec = samplingConditional->sample(m_rng);
 
-            if(!usingProduct) {
-                conditional.sample(
+            if(usingLearnedBSDF) {
+                learned_bsdf.sample(
+                    sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
+                );
+            } else if(usingProduct) {
+                product.sample(
                     sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
                 );
             } else {
-                product.sample(
+                conditional.sample(
                     sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
+                );
+            }
+
+            auto length = enoki::norm(enoki::tail<3>(embedded_sample));
+            if(inv_jacobian != 0 && enoki::any(enoki::abs(length - 1) >= 1e-5)) {
+                std::cerr << fmt::format(
+                    "length=({}, {}, {})\nfrom={}\n",
+                    embedded_sample,
+                    tangent_sample,
+                    inv_jacobian,
+                    conditional.tangent_space.coordinate_system.from
                 );
             }
 
@@ -590,14 +617,25 @@ public:
             bsdfWeight = bsdf->eval(bRec);
         }
         
-        if(!usingProduct) {
+        if(usingLearnedBSDF) {
             pdf = pdfSurface(
                 bsdf,
                 bRec,
                 bsdfPdf,
                 gmmPdf,
-                // *samplingConditional,
-                conditional,
+                learned_bsdf,
+                gridCell->conditioner,
+                heuristicConditionalWeight,
+                sample.template bottomRows<t_conditionalDims>()
+            );
+        } else if(usingProduct) {
+            pdf = pdfSurface(
+                bsdf,
+                bRec,
+                bsdfPdf,
+                gmmPdf,
+                product,
+                gridCell->conditioner,
                 heuristicConditionalWeight,
                 sample.template bottomRows<t_conditionalDims>()
             );
@@ -607,8 +645,8 @@ public:
                 bRec,
                 bsdfPdf,
                 gmmPdf,
-                // *samplingConditional,
-                product,
+                conditional,
+                gridCell->conditioner,
                 heuristicConditionalWeight,
                 sample.template bottomRows<t_conditionalDims>()
             );
@@ -627,11 +665,12 @@ public:
         Float& gmmPdf,
         // const MMCond& conditional,
         SDMMProcess::ConditionalSDMM& conditional,
+        SDMMProcess::Conditioner& conditioner,
         const Float heuristicConditionalWeight,
         const ConditionalVectord& sample
     ) const {
         thread_local SDMMProcess::Value posterior;
-        if(enoki::slices(posterior) == 0) {
+        if(enoki::slices(posterior) != enoki::slices(conditional)) {
             enoki::set_slices(posterior, enoki::slices(conditional));
         }
         auto type = bsdf->getType();
@@ -654,6 +693,43 @@ public:
         );
         gmmPdf = enoki::hsum_nested(posterior);
         // gmmPdf = conditional.pdf(sample) * dirToCanonicalInvJacobian<t_conditionalDims>();
+        if(!std::isfinite(gmmPdf)) {
+            std::cerr << fmt::format(
+                "pdf={}\n"
+                "posterior={}\n"
+                "gmmPdf={}\n"
+                "bsdfPdf={}\n"
+                "sample={}\n"
+
+                "distribution=\n"
+
+                "marginal_weight={}\n"
+                "marginal_cov={}\n"
+                "marginal_cov_sqrt={}\n"
+
+                "cond_weight={}\n"
+                "to={}\n"
+                "mean={}\n"
+                "cond_cov={}\n"
+                "cov_sqrt={}\n"
+                "",
+                gmmPdf,
+                posterior,
+                gmmPdf,
+                bsdfPdf,
+                sample.transpose(),
+
+                conditioner.marginal.weight.pmf,
+                conditioner.marginal.cov,
+                conditioner.marginal.cov_sqrt,
+
+                conditional.weight.pmf,
+                conditional.tangent_space.coordinate_system.to,
+                conditional.tangent_space.mean,
+                conditional.cov,
+                conditional.cov_sqrt
+            );
+        }
 
         return
             heuristicConditionalWeight * bsdfPdf +
@@ -783,7 +859,7 @@ public:
             /* Prevent light leaks due to the use of shading normals */
             Float wiDotGeoN = -dot(its.geoFrame.n, ray.d),
                     wiDotShN  = Frame::cosTheta(its.wi);
-            if (wiDotGeoN * wiDotShN < 0 && false)
+            if (wiDotGeoN * wiDotShN < 0 && m_config.strictNormals)
                 break;
 
             /* ==================================================================== */
@@ -853,6 +929,10 @@ public:
                 rotatedMaterialConditional,
                 productConditional
             );
+            if(!bsdfWeight.isValid()) {
+                std::cerr << "!bsdfWeight.isValid()\n";
+                return Li;
+            }
 
             bool cacheable = !(bRec.sampledType & BSDF::EDelta);
             if(Frame::cosTheta(bRec.wi) < 0) {
@@ -890,7 +970,7 @@ public:
             /* Prevent light leaks due to the use of shading normals */
             const Vector wo = its.toWorld(bRec.wo);
             Float woDotGeoN = dot(its.geoFrame.n, wo);
-            if (woDotGeoN * Frame::cosTheta(bRec.wo) <= 0 && false)
+            if (woDotGeoN * Frame::cosTheta(bRec.wo) <= 0 && m_config.strictNormals)
                 break;
 
             /* Trace a ray in this direction */

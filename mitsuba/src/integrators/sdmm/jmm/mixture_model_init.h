@@ -323,12 +323,13 @@ namespace jmm {
         const Scalar minAllowedDistance = 2e-2;
         for(int position_i = 0; position_i < nComponents; ++position_i) {
             // Make sampling CDF
+            int remainingPositions = cdf.size();
             if(position_i == 0) {
 				assert(cdf.rows() == metric.rows());
                 cdf = metric;
             } else {
                 cdf = minDistances.array().pow(5);
-                int remainingPositions = 0;
+                remainingPositions = 0;
                 for(int sample_i = 0; sample_i < samples.size(); ++sample_i) {
                     if(
                         minSpatialNormalDistances(sample_i) < NORMAL_DISTANCE_TRHESHOLD &&
@@ -339,13 +340,15 @@ namespace jmm {
                         ++remainingPositions;
                     }
                 }
+                std::cerr << "Reminaining positions: " << remainingPositions << "/" << cdf.size() << ".\n";
+            }
+            bool cdfSuccess = remainingPositions > 0;
+            if(cdfSuccess) {
                 jmm::normalizePdf(cdf);
                 cdf.array() *= metric.array();
-                std::cerr << "Reminaining positions: " << remainingPositions << "\n";
+                cdfSuccess = cdfSuccess && jmm::createCdfEigen(cdf, cdf, true);
             }
-            bool success = jmm::createCdfEigen(cdf, cdf, true);
-			Scalar rngSample = rng();
-            if(!success) {
+            if(!cdfSuccess) {
                 std::cerr <<
 					"Could not create discrete CDF for initialization, "
 					"using uniform CDF.\n";
@@ -353,6 +356,8 @@ namespace jmm {
 				cdf /= (Scalar) cdf.rows();
             	jmm::createCdfEigen(cdf, cdf, true);
             }
+
+			Scalar rngSample = rng();
             int sampled = jmm::sampleDiscreteCdf(cdf, rngSample);
             positions.col(position_i) = samples.samples.col(sampled).topRows(3); 
             normals.col(position_i) = samples.normals.col(sampled);

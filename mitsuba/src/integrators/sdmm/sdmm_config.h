@@ -36,11 +36,13 @@ MTS_NAMESPACE_BEGIN
 struct SDMMConfiguration {
 	int maxDepth, blockSize, borderSize;
     int sampleCount;
+	bool strictNormals;
 	bool sampleDirect;
 	bool showWeighted;
 	size_t samplesPerIteration;
     bool useHierarchical;
     bool sampleProduct;
+    bool bsdfOnly;
     Float alpha;
     int batchIterations;
     int initIterations;
@@ -66,6 +68,7 @@ struct SDMMConfiguration {
 	inline SDMMConfiguration(Stream *stream) {
 		maxDepth = stream->readInt();
 		blockSize = stream->readInt();
+		strictNormals = stream->readBool();
 		sampleDirect = stream->readBool();
 		sampleCount = stream->readInt();
 		showWeighted = stream->readBool();
@@ -74,6 +77,7 @@ struct SDMMConfiguration {
 		rrDepth = stream->readInt();
         useHierarchical = stream->readBool();
         sampleProduct = stream->readBool();
+        bsdfOnly = stream->readBool();
         alpha = stream->readFloat();
         batchIterations = stream->readInt();
         initIterations = stream->readInt();
@@ -95,6 +99,7 @@ struct SDMMConfiguration {
 	inline void serialize(Stream *stream) const {
 		stream->writeInt(maxDepth);
 		stream->writeInt(blockSize);
+		stream->writeBool(strictNormals);
 		stream->writeBool(sampleDirect);
 		stream->writeInt(sampleCount);
 		stream->writeBool(showWeighted);
@@ -102,6 +107,7 @@ struct SDMMConfiguration {
 		stream->writeInt(rrDepth);
         stream->writeBool(useHierarchical);
         stream->writeBool(sampleProduct);
+        stream->writeBool(bsdfOnly);
         stream->writeFloat(alpha);
         stream->writeInt(batchIterations);
         stream->writeInt(initIterations);
@@ -127,6 +133,8 @@ struct SDMMConfiguration {
 		SLog(LOG_TYPE, "   Maximum path depth          : %i", maxDepth);
 		SLog(LOG_TYPE, "   Image size                  : %ix%i",
 			cropSize.x, cropSize.y);
+		SLog(LOG_TYPE, "   Use strict normals          : %s",
+			strictNormals ? "yes" : "no");
 		SLog(LOG_TYPE, "   Direct sampling strategies  : %s",
 			sampleDirect ? "yes" : "no");
 		SLog(LOG_TYPE, "   Sample count                : %i", sampleCount);
@@ -137,6 +145,8 @@ struct SDMMConfiguration {
 			useHierarchical ? "yes" : "no");
 		SLog(LOG_TYPE, "   Use product sampling        : %s",
 			sampleProduct ? "yes" : "no");
+		SLog(LOG_TYPE, "   Only sample learned BSDF    : %s",
+			bsdfOnly ? "yes" : "no");
 		SLog(LOG_TYPE, "   Decrease prior              : %s",
 			decreasePrior ? "yes" : "no");
 		SLog(LOG_TYPE, "   Correct state density       : %s",
