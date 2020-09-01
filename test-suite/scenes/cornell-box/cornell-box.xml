@@ -9,7 +9,7 @@
 
 	<default name="sampleCount" value="8"/>
 
-	<default name="integrator" value="pmc"/>
+	<default name="integrator" value="sdmm"/>
 	<include filename="../_integrators/$integrator.xml"/>
 
 	<sensor type="perspective">

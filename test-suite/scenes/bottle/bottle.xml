@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The "Bootle" scene has been created by Tiziano Portenier on base of the "Kitchen" scene. -->
 
-<scene version="0.5.0">
+<scene version="0.6.0">
 	<default name="budget" value="1023"/>
 	<default name="budgetType" value="spp"/>
 

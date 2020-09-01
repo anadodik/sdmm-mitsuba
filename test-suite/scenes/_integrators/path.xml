@@ -1,4 +1,9 @@
 <scene version="0.6.0">
+    <integer name="maxDepth" value="10"/>
+    <integer name="rrDepth" value="10"/>
+    <default name="blockSize" value="-1"/>
+    <integer name="blockSize" value="$blockSize"/>
+
 	<integrator type="volpath">
 		<integer name="maxDepth" value="$maxDepth"/>
 		<integer name="rrDepth" value="$rrDepth"/>

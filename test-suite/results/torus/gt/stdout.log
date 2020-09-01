@@ -1,37 +1,89 @@
-2020-05-04 16:47:49 INFO  main [mitsuba.cpp:274] Mitsuba version 0.6.0 (Linux, 64 bit), Copyright (c) 2017 Wenzel Jakob
-2020-05-04 16:47:49 INFO  main [mitsuba.cpp:377] Parsing scene description from "/home/anadodik/pmc/scenes/torus/torus.xml" ..
-2020-05-04 16:47:49 INFO  main [scenehandler.cpp:675] In file "/home/anadodik/pmc/scenes/torus/torus.xml" (near line 16): Parsing included file "gt.xml" ..
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/volpath.so" ..
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/independent.so" ..
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/box.so" ..
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/hdrfilm.so" ..
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/perspective.so" ..
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/sunsky.so" ..
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/sky.so" ..
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/envmap.so" ..
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/lanczos.so" ..
-2020-05-04 16:47:49 INFO  main [EnvironmentMap] Precomputing data structures for environment map sampling (515.0 KiB)
-2020-05-04 16:47:49 INFO  main [EnvironmentMap] Done (took 0 ms)
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/diffuse.so" ..
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/conductor.so" ..
-2020-05-04 16:47:49 INFO  main [spectrum.cpp:599] "Al.eta.spd": loaded a spectral power distribution with 56 entries (between 298.757050 and 885.601257 nm)
-2020-05-04 16:47:49 INFO  main [spectrum.cpp:599] "Al.k.spd": loaded a spectral power distribution with 56 entries (between 298.757050 and 885.601257 nm)
-2020-05-04 16:47:49 WARN  main [scenehandler.cpp:795] In file "/home/anadodik/pmc/scenes/torus/torus.xml" (near line 61): Unqueried attribute "alpha" in element "bsdf"
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/dielectric.so" ..
-2020-05-04 16:47:49 WARN  main [scenehandler.cpp:795] In file "/home/anadodik/pmc/scenes/torus/torus.xml" (near line 68): Unqueried attribute "alpha" in element "bsdf"
-2020-05-04 16:47:49 INFO  main [PluginManager] Loading plugin "plugins/serialized.so" ..
-2020-05-04 16:47:49 INFO  main [SerializedMesh] Loading shape 1 from "meshes.serialized" ..
-2020-05-04 16:47:49 INFO  main [SerializedMesh] Loading shape 2 from "meshes.serialized" ..
-2020-05-04 16:47:49 INFO  main [SerializedMesh] Loading shape 3 from "meshes.serialized" ..
-2020-05-04 16:47:49 INFO  main [SerializedMesh] Loading shape 4 from "meshes.serialized" ..
-2020-05-04 16:47:49 INFO  main [SerializedMesh] Loading shape 5 from "meshes.serialized" ..
-2020-05-04 16:47:49 INFO  ren0 [KDTreeBase] Constructing a SAH kd-tree (23614 primitives) ..
-2020-05-04 16:47:49 INFO  ren0 [KDTreeBase] Finished -- took 92 ms.
-2020-05-04 16:47:49 INFO  ren0 [PluginManager] Loading plugin "plugins/sphere.so" ..
-2020-05-04 16:47:49 INFO  ren0 [SamplingIntegrator] Starting render job (512x384, 131072 samples, 128 cores, SSE2 enabled) ..
-2020-05-04 17:06:56 INFO  ren0 [RenderJob] Render time: 19.1177m
-2020-05-04 17:06:56 INFO  ren0 [HDRFilm] Writing image to "/home/anadodik/pmc/scenes/gt/torus/gt/torus.exr" ..
-2020-05-04 17:06:56 INFO  main [statistics.cpp:142] Statistics:
+2020-08-29 18:55:15 INFO  main [mitsuba.cpp:274] Mitsuba version 0.6.0 (Linux, 64 bit), Copyright (c) 2017 Wenzel Jakob
+2020-08-29 18:55:15 INFO  main [mitsuba.cpp:377] Parsing scene description from "/home/anadodik/sdmm-mitsuba/test-suite/scenes/torus/torus.xml" ..
+2020-08-29 18:55:15 INFO  main [scenehandler.cpp:675] In file "/home/anadodik/sdmm-mitsuba/test-suite/scenes/torus/torus.xml" (near line 16): Parsing included file "gt.xml" ..
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/volpath.so" ..
+2020-08-29 18:55:15 WARN  main [scenehandler.cpp:795] In file "/home/anadodik/sdmm-mitsuba/test-suite/scenes/torus/../_integrators/gt.xml" (near line 12): Unqueried attribute "blockSize" in element "integrator"
+2020-08-29 18:55:15 WARN  main [scenehandler.cpp:795] In file "/home/anadodik/sdmm-mitsuba/test-suite/scenes/torus/../_integrators/gt.xml" (near line 13): Unqueried attribute "maxDepth" in element "scene"
+2020-08-29 18:55:15 WARN  main [scenehandler.cpp:795] In file "/home/anadodik/sdmm-mitsuba/test-suite/scenes/torus/../_integrators/gt.xml" (near line 13): Unqueried attribute "rrDepth" in element "scene"
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/independent.so" ..
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/box.so" ..
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/hdrfilm.so" ..
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/perspective.so" ..
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/sunsky.so" ..
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/sky.so" ..
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/envmap.so" ..
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/lanczos.so" ..
+2020-08-29 18:55:15 INFO  main [EnvironmentMap] Precomputing data structures for environment map sampling (515.0 KiB)
+2020-08-29 18:55:15 INFO  main [EnvironmentMap] Done (took 0 ms)
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/diffuse.so" ..
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/conductor.so" ..
+2020-08-29 18:55:15 INFO  main [spectrum.cpp:599] "Al.eta.spd": loaded a spectral power distribution with 56 entries (between 298.757050 and 885.601257 nm)
+2020-08-29 18:55:15 INFO  main [spectrum.cpp:599] "Al.k.spd": loaded a spectral power distribution with 56 entries (between 298.757050 and 885.601257 nm)
+2020-08-29 18:55:15 WARN  main [scenehandler.cpp:795] In file "/home/anadodik/sdmm-mitsuba/test-suite/scenes/torus/torus.xml" (near line 61): Unqueried attribute "alpha" in element "bsdf"
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/dielectric.so" ..
+2020-08-29 18:55:15 WARN  main [scenehandler.cpp:795] In file "/home/anadodik/sdmm-mitsuba/test-suite/scenes/torus/torus.xml" (near line 68): Unqueried attribute "alpha" in element "bsdf"
+2020-08-29 18:55:15 INFO  main [PluginManager] Loading plugin "plugins/serialized.so" ..
+2020-08-29 18:55:15 INFO  main [SerializedMesh] Loading shape 1 from "meshes.serialized" ..
+2020-08-29 18:55:15 INFO  main [SerializedMesh] Loading shape 2 from "meshes.serialized" ..
+2020-08-29 18:55:15 INFO  main [SerializedMesh] Loading shape 3 from "meshes.serialized" ..
+2020-08-29 18:55:15 INFO  main [SerializedMesh] Loading shape 4 from "meshes.serialized" ..
+2020-08-29 18:55:15 INFO  main [SerializedMesh] Loading shape 5 from "meshes.serialized" ..
+2020-08-29 18:55:15 INFO  ren0 [KDTreeBase] Constructing a SAH kd-tree (23614 primitives) ..
+2020-08-29 18:55:15 INFO  ren0 [KDTreeBase] Finished -- took 89 ms.
+2020-08-29 18:55:15 INFO  ren0 [PluginManager] Loading plugin "plugins/sphere.so" ..
+2020-08-29 18:55:15 INFO  ren0 [SamplingIntegrator] Starting render job (640x360, 4640000 samples, 128 cores, SSE2 enabled) ..
+2020-08-29 19:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-29 19:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-29 20:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-29 20:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-29 21:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-29 21:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-29 22:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-29 22:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-29 23:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-29 23:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 00:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 00:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 01:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 01:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 02:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 02:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 03:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 03:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 04:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 04:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 05:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 05:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 06:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 06:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 07:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 07:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 08:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 08:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 09:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 09:55:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 10:25:15 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 10:55:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 11:25:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 11:55:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 12:25:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 12:55:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 13:25:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 13:55:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 14:25:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 14:55:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 15:25:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 15:55:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 16:25:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 16:55:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 17:25:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 17:55:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 18:25:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 18:55:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 19:25:16 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 19:34:37 INFO  ren0 [RenderJob] Render time: 2.0547d
+2020-08-30 19:34:37 INFO  ren0 [HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/torus/gt/torus.exr" ..
+2020-08-30 19:34:37 INFO  main [statistics.cpp:142] Statistics:
 ------------------------------------------------------------
  * Loaded plugins :
     -  plugins/box.so [Box filter]
@@ -50,14 +102,14 @@
     -  plugins/volpath.so [Volumetric path tracer]
 
   * General :
-    -  Normal rays traced : 95.448 G
-    -  Shadow rays traced : 28.996 G
+    -  Normal rays traced : 4.261 T
+    -  Shadow rays traced : 1.218 T
 
   * Texture system :
     -  Cumulative MIP map memory allocations : 1 MiB
-    -  Filtered texture lookups : 0.00 % (495.57 K of 70.88 G)
-    -  Lookups with clamped anisotropy : 0.00 % (0.00 of 495.57 K)
+    -  Filtered texture lookups : 0.00 % (876.00 of 2.89 T)
+    -  Lookups with clamped anisotropy : 0.00 % (0.00 of 876.00)
 
   * Volumetric path tracer :
-    -  Average path length : 3.70 (95.45 G / 25.77 G)
+    -  Average path length : 3.99 (4.26 T / 1069056000000.00)
 ------------------------------------------------------------
