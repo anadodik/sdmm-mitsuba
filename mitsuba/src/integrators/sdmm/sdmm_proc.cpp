@@ -424,14 +424,6 @@ public:
     ) const {
         using RotationMatrix = SDMMProcess::ConditionalSDMM::TangentSpace::MatrixS;
 
-        thread_local SDMMProcess::ConditionalSDMM conditional;
-        thread_local SDMMProcess::ConditionalSDMM learned_bsdf;
-        thread_local SDMMProcess::ConditionalSDMM product;
-        thread_local SDMMProcess::RNG sdmm_rng;
-        thread_local float inv_jacobian;
-        thread_local sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM> embedded_sample;
-        thread_local sdmm::tangent_s_t<SDMMProcess::ConditionalSDMM> tangent_sample;
-
         createCondition(sample, its, rRec.depth);
         gmmPdf = bsdfPdf = pdf = 0.f;
 
@@ -559,7 +551,7 @@ public:
             bsdfWeight *= pdf;
         } else {
             // ConditionalVectord condVec = samplingConditional->sample(m_rng);
-
+            float inv_jacobian;
             if(usingLearnedBSDF) {
                 learned_bsdf.sample(
                     sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
@@ -624,6 +616,7 @@ public:
                 bsdfPdf,
                 gmmPdf,
                 learned_bsdf,
+                bsdf_posterior,
                 gridCell->conditioner,
                 heuristicConditionalWeight,
                 sample.template bottomRows<t_conditionalDims>()
@@ -635,6 +628,7 @@ public:
                 bsdfPdf,
                 gmmPdf,
                 product,
+                posterior,
                 gridCell->conditioner,
                 heuristicConditionalWeight,
                 sample.template bottomRows<t_conditionalDims>()
@@ -646,6 +640,7 @@ public:
                 bsdfPdf,
                 gmmPdf,
                 conditional,
+                posterior,
                 gridCell->conditioner,
                 heuristicConditionalWeight,
                 sample.template bottomRows<t_conditionalDims>()
@@ -658,18 +653,19 @@ public:
         return bsdfWeight / pdf;
     }
 
+    template<typename DMM, typename Value>
     Float pdfSurface(
         const BSDF* bsdf,
         const BSDFSamplingRecord& bRec,
         Float& bsdfPdf,
         Float& gmmPdf,
         // const MMCond& conditional,
-        SDMMProcess::ConditionalSDMM& conditional,
+        DMM& conditional,
+        Value& posterior,
         SDMMProcess::Conditioner& conditioner,
         const Float heuristicConditionalWeight,
         const ConditionalVectord& sample
     ) const {
-        thread_local SDMMProcess::Value posterior;
         if(enoki::slices(posterior) != enoki::slices(conditional)) {
             enoki::set_slices(posterior, enoki::slices(conditional));
         }
@@ -1303,6 +1299,16 @@ private:
     static Eigen::Matrix<Scalar, t_conditionDims, 1> m_sampleMean;
     static Eigen::Matrix<Scalar, t_conditionDims, 1> m_sampleStd;
     static std::unique_ptr<StepwiseEMType> stepwiseEM;
+
+    mutable SDMMProcess::ConditionalSDMM conditional;
+    mutable BSDF::DMM learned_bsdf;
+    mutable SDMMProcess::ConditionalSDMM product;
+    mutable SDMMProcess::RNG sdmm_rng;
+    mutable sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM> embedded_sample;
+    mutable sdmm::tangent_s_t<SDMMProcess::ConditionalSDMM> tangent_sample;
+
+    mutable SDMMProcess::Value posterior;
+    mutable BSDF::Value bsdf_posterior;
 
     std::shared_ptr<HashGridType> m_grid;
     std::shared_ptr<MMDiffuse> m_diffuseDistribution;

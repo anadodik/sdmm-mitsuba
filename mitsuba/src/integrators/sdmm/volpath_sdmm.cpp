@@ -199,7 +199,7 @@ public:
     }
 
     void initializeHashGridComponents() {
-        constexpr static int nSpatialComponents = 3;
+        constexpr static int nSpatialComponents = SDMMProcess::NComponents / 8;
         constexpr static Scalar depthPrior = 3e-2;
         // Scalar cellSize = m_grid->cellPositionSize()(0);
         for(auto& node : *m_grid) {
@@ -262,7 +262,7 @@ public:
     void optimizeHashGrid(int iteration) {
         using ConditionVectord = typename SDMMProcess::MM::ConditionVectord;
         constexpr static int t_conditionDims = SDMMProcess::t_conditionDims;
-        int splitThreshold = 32000;
+        int splitThreshold = 16000;
 
         std::cerr << "Splitting samples.\n";
         m_grid->split(splitThreshold);
@@ -287,41 +287,7 @@ public:
                 continue;
             }
 
-            // Eigen::Matrix<Scalar, Eigen::Dynamic, 1> randomUniform(m_gridSamples[cell_i]->size(), 1);
-            // for(int sample_i = 0; sample_i < m_gridSamples[cell_i]->size(); ++sample_i) {
-            //     randomUniform(sample_i) = m_sampler->next1D();
-            // }
-            // m_gridSamples[cell_i]->russianRoulette(randomUniform, 100, false);
-            // cell->samples.clear();
-
-            // std::cerr << "jmm_weight_sum=" << cell->optimizer.sumWeights(cell->samples) << "\n";
-            // spdlog::info("weight_sum={}", cell->data.sum_weights());
-
-            // std::cerr << "jmm_samples_size=" << cell->samples.size() << "\n";
-            // spdlog::info("samples_size={}", cell->data.size);
-
-            // Scalar error;
-            // cell->optimizer.optimize(cell->distribution, cell->samples, error);
-            // cell->error = error;
-            // for(int i = 0; i < cell->distribution.nComponents(); ++i) {
-            //     std::cerr << fmt::format("JMM cov={}\n", cell->distribution.components()[i].cov());
-            // }
-            // // jmm::normalizeModel(cell->samples, cell->distribution);
-
-            // std::cerr << "Done optimizing JMM with " << cell->distribution.nComponents() << " components.\n";
-            // std::cerr << "jmm_stats=[";
-            // for(auto& weight : cell->optimizer.getStatsGlobal().weights) {
-            //     std::cerr << weight << ", ";
-            // }
-            // std::cerr << "]\n";
-
             sdmm::em_step(cell->sdmm, cell->em, cell->data);
-            // spdlog::info("matrices after opt={}", cell->sdmm.cov);
-            // cell->em.step(cell->sdmm, cell->data);
-            // spdlog::info("stats={}", cell->em.stats.weight);
-            // // copy_sdmm(cell->distribution, cell->sdmm);
-            // constexpr static size_t TangentSize = decltype(cell->sdmm)::Tangent::Size;
-            // copy_covs(cell->distribution, cell->sdmm, std::make_index_sequence<TangentSize * TangentSize>{});
             enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
             sdmm::prepare(cell->conditioner, cell->sdmm);
 
@@ -405,6 +371,7 @@ public:
         int sensorResID,
         int samplerResID
     ) override {
+	spdlog::info("Max packet size={}", enoki::max_packet_size);
         m_scene = scene;
 		ref<Scheduler> scheduler = Scheduler::getInstance();
 		ref<Sensor> sensor = scene->getSensor();

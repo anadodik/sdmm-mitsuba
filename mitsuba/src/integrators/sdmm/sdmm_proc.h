@@ -45,7 +45,7 @@
 #include "sdmm_wr.h"
 #include "sdmm_config.h"
 
-#include "jmm/hash_grid.h"
+// #include "jmm/hash_grid.h"
 #include "jmm/stree.h"
 #include "jmm/sntree.h"
 
@@ -66,7 +66,7 @@ public:
     constexpr static int t_conditionalDims = 3;
     constexpr static int t_conditionDims = t_dims - t_conditionalDims;
     constexpr static int t_initComponents = 24;
-    constexpr static int t_components = 24;
+    constexpr static int t_components = 32;
     constexpr static bool USE_BAYESIAN = true;
     using Scalar = double;
 
@@ -108,12 +108,12 @@ public:
     using ConditionalVectord = typename MMCond::Vectord;
     using ConditionalMatrixd = typename MMCond::Matrixd;
 
-    constexpr static size_t PacketSize = 8;
+    constexpr static size_t PacketSize = 16;
     constexpr static size_t JointSize = 5;
     constexpr static size_t MarginalSize = 3;
     constexpr static size_t ConditionalSize = 2;
     constexpr static int NSamples = 1;
-    constexpr static int NComponents = 24;
+    constexpr static int NComponents = t_components;
     static_assert(NComponents == t_components);
     static_assert(JointSize == MarginalSize + ConditionalSize);
 
