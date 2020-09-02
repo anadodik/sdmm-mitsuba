@@ -502,6 +502,11 @@ public:
         ) {
             int iteration = samplesRendered / m_config.samplesPerIteration;
             m_still_training = samplesRendered <= m_config.sampleCount / 2;
+
+            if(!m_still_training) {
+                m_config.samplesPerIteration = sampleCount - samplesRendered;
+            }
+
             std::cerr << 
                 "Render iteration " + std::to_string(iteration) + ".\n";
 

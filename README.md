@@ -11,6 +11,7 @@ These instructions will get you a copy of the project up and running on your loc
 This library depends on other projects, and they have to be available first.
 
 ```
+TODO: explain usage of conan, remind to use profile compiler.libcxx=libcstd++11
 git submodule update --init --recursive
 sudo apt install libboost-all-dev libspdlog-dev libfmt-dev libbenchmark-dev
 ```

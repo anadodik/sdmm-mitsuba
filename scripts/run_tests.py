@@ -101,8 +101,10 @@ def render_gt(scene_name, parameters):
     stderr_path = os.path.join(output_directory, 'stderr.log')
 
     with open(stdout_path, 'wb+', 0) as stdout_file, open(stderr_path, 'wb+', 0) as stderr_file:
+        mts_call_list = ['mitsuba', '-z', '-r', '1800', *mts_arguments, '-o', output_path, scene_path]
+        print('Calling ' + ' '.join(mts_call_list))
         process = subprocess.Popen(
-            ['mitsuba', '-z', *mts_arguments, '-o', output_path, scene_path],
+            mts_call_list,
             stdout=stdout_file, stderr=stderr_file, cwd=MITSUBA_PATH)
         process.wait()
 

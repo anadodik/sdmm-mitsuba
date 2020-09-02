@@ -1145,7 +1145,9 @@ public:
             typename HashGridType::AABB sampleAABB;
             auto sampleCell = m_grid->find(key, sampleAABB);
             if(sampleCell != nullptr) {
-                push_back_vertex(*sampleCell, d);
+                if(enoki::slices(sampleCell->sdmm) == 0) {
+                    push_back_vertex(*sampleCell, d);
+                }
                 push_back_data(*sampleCell, d);
             } else {
                 std::cerr << "ERROR: COULD NOT FIND CELL FOR SAMPLE." << std::endl;
@@ -1170,7 +1172,9 @@ public:
                 if(gridCell == nullptr || (aabb.min().array() == sampleAABB.min().array()).all()) {
                     continue;
                 } else {
-                    push_back_vertex(*gridCell, d);
+                    if(enoki::slices(gridCell->sdmm) == 0) {
+                        push_back_vertex(*gridCell, d);
+                    }
                     push_back_data(*gridCell, d);
                 }
             }
@@ -1375,14 +1379,18 @@ void SDMMProcess::processResult(const WorkResult *wr, bool cancelled) {
         return;
     const SDMMWorkResult *result = static_cast<const SDMMWorkResult *>(wr);
     ImageBlock *block = const_cast<ImageBlock *>(result->getImageBlock());
-    LockGuard lock(m_resultMutex);
-    m_progress->update(++m_resultCount);
 
     m_result->put(result);
     m_result->averagePathLength += result->averagePathLength;
     m_result->pathCount += result->pathCount;
 
     m_queue->signalWorkEnd(m_parent, result->getImageBlock(), false);
+
+    {
+        LockGuard lock(m_resultMutex);
+        m_progress->update(++m_resultCount);
+    }
+
 }
 
 void SDMMProcess::bindResource(const std::string &name, int id) {
