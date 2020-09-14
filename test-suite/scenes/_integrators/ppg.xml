@@ -27,5 +27,6 @@
         <string name="directionalFilter" value="box"/>
         <integer name="sTreeThreshold" value="4000"/>
         <integer name="sppPerPass" value="1"/>
+        <!-- <integer name="blockSize" value="8"/> -->
     </integrator>
 </scene>

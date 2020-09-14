@@ -189,7 +189,7 @@ public:
         if(enoki::slices(dmm) != enoki::slices(*m_sdmm)) {
             enoki::set_slices(dmm, enoki::slices(*m_sdmm));
         }
-        bool validConditional = sdmm::create_conditional(conditioner, condition, dmm);
+        bool validConditional = sdmm::create_conditional_pruned(conditioner, condition, dmm, 2);
         return validConditional;
     }
 
@@ -231,7 +231,7 @@ public:
             std::cerr << "Loading RoughConductorSDMM.\n";
             FileResolver *fResolver = Thread::getThread()->getFileResolver();
             fs::path path = fResolver->resolve(
-                props.getString("sdmmFilename", "conductor_Cu.sdmm")
+                props.getString("sdmmFilename", "conductor_Cu_beckmann.sdmm")
             );
             if (!fs::exists(path)) {
                 Log(EError, "RoughConductorSDMM file \"%s\" could not be found!",

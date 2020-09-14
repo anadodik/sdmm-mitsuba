@@ -65,8 +65,7 @@ public:
     constexpr static int t_dims = 6;
     constexpr static int t_conditionalDims = 3;
     constexpr static int t_conditionDims = t_dims - t_conditionalDims;
-    constexpr static int t_initComponents = 24;
-    constexpr static int t_components = 32;
+    constexpr static int t_components = 24;
     constexpr static bool USE_BAYESIAN = true;
     using Scalar = double;
 
@@ -108,7 +107,7 @@ public:
     using ConditionalVectord = typename MMCond::Vectord;
     using ConditionalMatrixd = typename MMCond::Matrixd;
 
-    constexpr static size_t PacketSize = 16;
+    constexpr static size_t PacketSize = 8;
     constexpr static size_t JointSize = 5;
     constexpr static size_t MarginalSize = 3;
     constexpr static size_t ConditionalSize = 2;
@@ -176,9 +175,8 @@ public:
         MutexWrapper mutex_wrapper;
     };
 
-    using HashGridType = jmm::STree<
-        Scalar, 3, GridCell
-    >;
+    using HashGridType = jmm::STree<Scalar, 3, GridCell>;
+    using NodeType = typename HashGridType::Node;
 	using GridKeyVector = typename HashGridType::Vectord;
 
     SDMMProcess(
@@ -186,7 +184,6 @@ public:
         RenderQueue *queue,
         const SDMMConfiguration &config,
         std::shared_ptr<HashGridType> grid,
-        std::shared_ptr<MMDiffuse> diffuseDistribution,
         int iteration,
         bool collect_data
     );
@@ -214,7 +211,6 @@ private:
     SDMMConfiguration m_config;
 
     std::shared_ptr<HashGridType> m_grid;
-    std::shared_ptr<MMDiffuse> m_diffuseDistribution;
     int m_iteration;
     bool m_collect_data;
 };

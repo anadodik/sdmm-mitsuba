@@ -13,7 +13,7 @@
 	<include filename="../_integrators/$integrator.xml"/>
 
 	<sensor type="perspective">
-		<float name="fov" value="19.5"/>
+		<float name="fov" value="35"/>
 		<transform name="toWorld">
 			<matrix value="-1 0 0 0 0 1 0 1 0 0 -1 6.8 0 0 0 1"/>
 		</transform>
@@ -24,8 +24,8 @@
 		</sampler>
 
 		<film type="hdrfilm">
-			<integer name="width" value="256"/>
-			<integer name="height" value="256"/>
+			<integer name="width" value="640"/>
+			<integer name="height" value="360"/>
 			<boolean name="banner" value="false"/>
             <string name="pixelFormat" value="rgb"/>
 

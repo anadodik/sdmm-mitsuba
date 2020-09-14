@@ -2,47 +2,19 @@
 <!-- By Ondrej Karlik; Only for research purposes -->
 
 <scene version="0.6.0">
-	<!--<integrator type="pmc">
-		<float name="alpha" value="0.5"/>
-		<integer name="batchIterations" value="8"/>
-		<boolean name="decreasePrior" value="true"/>
-		<float name="initKMeansSwapTolerance" value="1"/>
-		<integer name="iterations" value="32"/>
-		<integer name="maxDepth" value="2"/>
-		<integer name="populations" value="8"/>
-		<integer name="rrDepth" value="2"/>
-		<boolean name="standardizeGMMSpace" value="false"/>
-		<boolean name="strictNormals" value="true"/>
-		<boolean name="useHierarchical" value="true"/>
-		<boolean name="useInit" value="true"/>
-		<boolean name="useInitCovar" value="true"/>
-		<boolean name="useInitWeightsForMeans" value="true"/>
-		<boolean name="useInitWeightsForMixture" value="true"/>
-		<boolean name="visualizeGaussians" value="true"/>
-	</integrator>-->
-	<!-- <integrator type="guided_path">
-		<integer name="maxDepth" value="40"/>
-		<integer name="nImportons" value="300000"/>
-		<integer name="nPhotons" value="300000"/>
-		<integer name="passes" value="30"/>
-		<boolean name="showVisualization" value="false"/>
-		<boolean name="strictNormals" value="true"/>
-		<boolean name="useEnvSampler" value="true"/>
-	</integrator> -->
-
-        <default name="seed" value="1234"/>
+    <default name="seed" value="1234"/>
 
 	<default name="budget" value="1023"/>
 
 	<default name="budgetType" value="spp"/>
 
-	<default name="maxDepth" value="2"/>
+	<default name="maxDepth" value="10"/>
 
-	<default name="rrDepth" value="2"/>
+	<default name="rrDepth" value="10"/>
 
 	<default name="sampleCount" value="8"/>
 
-	<default name="integrator" value="pmc"/>
+	<default name="integrator" value="sdmm"/>
 
 	<include filename="../_integrators/$integrator.xml"/>
 
@@ -82,6 +54,7 @@
 	</emitter>
 
 	<bsdf type="diffuse" id="poolinside">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<rgb name="reflectance" value="0.031373 0.478431 0.760784"/>
 	</bsdf>
 
@@ -99,8 +72,9 @@
 	</texture>
 
 	<bsdf type="phong" id="poolframe">
-		<ref name="diffuseReflectance" id="poolframe-image"/>
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
 
+		<ref name="diffuseReflectance" id="poolframe-image"/>
 		<ref name="specularReflectance" id="poolframe-image"/>
 		<float name="exponent" value="1"/>
 	</bsdf>
@@ -114,18 +88,23 @@
 	</texture>
 
 	<bsdf type="phong" id="stonefloor">
-		<ref name="diffuseReflectance" id="stonefloor-image"/>
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
 
+		<ref name="diffuseReflectance" id="stonefloor-image"/>
 		<ref name="specularReflectance" id="stonefloor-image-spec"/>
 		<float name="exponent" value="104.601"/>
 	</bsdf>
 
 	<bsdf type="phong" id="_02-Default">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<rgb name="diffuseReflectance" value="0.023529 0.023529 0.023529"/>
 		<rgb name="specularReflectance" value="0.5832 0.5832 0.5832"/>
 		<float name="exponent" value="2000"/>
 	</bsdf>
 	<!--<bsdf type="phong" id="glass">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<rgb name="diffuseReflectance" value="0 0 0"/>
 		<rgb name="specularReflectance" value="2 2 2"/>
 		<float name="exponent" value="6000"/>
@@ -139,40 +118,53 @@
 	</bsdf>
 
 	<bsdf type="phong" id="cr">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<rgb name="diffuseReflectance" value="0.015686 0.015686 0.015686"/>
 		<rgb name="specularReflectance" value="9.216 9.216 9.216"/>
 		<float name="exponent" value="6000"/>
 	</bsdf>
 
 	<bsdf type="diffuse" id="clay">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<rgb name="reflectance" value="0 0 0"/>
 	</bsdf>
 
 	<bsdf type="phong" id="Arch_056_053_02">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<rgb name="diffuseReflectance" value="1 0.858824 0.129412"/>
 		<rgb name="specularReflectance" value="0.5832 0.5832 0.5832"/>
 		<float name="exponent" value="1"/>
 	</bsdf>
 
 	<bsdf type="phong" id="Arch_056_053_12">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<rgb name="diffuseReflectance" value="0.015686 0.015686 0.015686"/>
 		<rgb name="specularReflectance" value="0.5832 0.5832 0.5832"/>
 		<float name="exponent" value="1"/>
 	</bsdf>
 
 	<bsdf type="phong" id="towel">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<rgb name="diffuseReflectance" value="0.67451 0.67451 0.67451"/>
 		<rgb name="specularReflectance" value="0.2592 0.2592 0.2592"/>
 		<float name="exponent" value="1"/>
 	</bsdf>
 
 	<bsdf type="phong" id="Arch_056_053_14">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<rgb name="diffuseReflectance" value="1 0.564706 0"/>
 		<rgb name="specularReflectance" value="0.5832 0.5832 0.5832"/>
 		<float name="exponent" value="1"/>
 	</bsdf>
 
 	<bsdf type="phong" id="_01-Default">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<rgb name="diffuseReflectance" value="0.67451 0.67451 0.67451"/>
 		<rgb name="specularReflectance" value="0.0128 0.0128 0.0128"/>
 		<float name="exponent" value="4"/>
@@ -184,10 +176,13 @@
 	</bsdf>-->
 
 	<bsdf type="diffuse" id="Arch_056_035_13">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<rgb name="reflectance" value="0.5 0.5 0.5"/>
 	</bsdf>
 
 	<bsdf type="phong" id="Arch_056_035_14">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<rgb name="diffuseReflectance" value="0.094118 0.301961 0.431373"/>
 		<rgb name="specularReflectance" value="0.5832 0.5832 0.5832"/>
 		<float name="exponent" value="1"/>
@@ -202,6 +197,8 @@
 	</texture>
 
 	<bsdf type="phong" id="Arch_056_049_02">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<ref name="diffuseReflectance" id="arch-image"/>
 
 		<ref name="specularReflectance" id="arch-image-spec"/>

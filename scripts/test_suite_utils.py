@@ -11,19 +11,22 @@ SCENES_PATH = os.path.join(ROOT_PATH, 'test-suite', 'scenes')
 RESULTS_PATH = os.path.join(ROOT_PATH, 'test-suite', 'results')
 
 SCENES = [
+    # TODO: retrain all conductor BSDFs
     'cornell-box',
     'glossy-cbox',
     'torus',
     'pool',
-    'bedroom',
+    'bedroom', # Missing: Mask
     'bookshelf', # NEW
-    'glossy-kitchen', # NEW
-    'veach-door', # NEW
-    'necklace', # NEW
-    'glossy-bathroom2', # NEW (if it's the same as Thomas')
-    'sdmm', # NEW
-    'bottle', # maybe? conditioned on the number of fireflies. NEW
-    'water-caustic', # maybe? conditioned on the number of fireflies. NEW
+    'glossy-kitchen',
+    'veach-door', # NEW, Missing: BumpMap, Coating
+    'necklace', # NEW, noisy reference
+    'bottle', # maybe? conditioned on the number of fireflies. NEW, noisy reference
+    'glossy-bathroom',
+    # 'sdmm', # add when scene finalized. NEW
+
+    # 'water-caustic',
+
     # 'hairball',
     # 'bathroom2',
     # 'glossy-cbox-textured', # NEW
@@ -44,26 +47,23 @@ SCENES = [
 ]
 
 SCENE_TITLES = {
-    # 'cbox',
     'cornell-box': 'Cornell Box',
-    # 'cornell-box-big',
-    'bathroom2': 'Salle de Bain',
+    # 'bathroom2': 'Salle de Bain',
     'living-room-2': 'White Room',
     'bedroom': 'Bedroom',
     # 'glass-of-water': 'Glass of Water',
     'pool': 'Swimming Pool',
-    # 'pool-rerendering',
     'torus': 'Torus',
     'hairball': 'Hairball',
     'glossy-cbox': 'Glossy Cornell Box',
-    # 'lucy',
-    # 'lucy-flipped',
-    # 'cornell-box-motion',
-    # 'cornell-box-moving-emitter',
-    # 'floor',
-    # 'pool-diffuse',
-    # 'floor-constant-sky',
-    # 'floor-zoom-out',
+    'bookshelf': 'Bookshelf',
+    'glossy-kitchen': 'Glossy Kitchen',
+    'veach-door': 'Veach Ajar Door',
+    'necklace': 'Necklace',
+    'bottle': 'Bottle',
+    'glossy-bathroom': 'Bathroom',
+    'water-caustic': 'Water Caustic',
+    # 'sdmm: 'SDMM',
 }
 
 def get_experiment_path(scene_name, experiment_name, integrator, parameters):

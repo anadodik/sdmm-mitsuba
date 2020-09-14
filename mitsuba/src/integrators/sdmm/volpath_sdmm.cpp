@@ -198,64 +198,72 @@ public:
         return cell;
     }
 
-    void initializeHashGridComponents() {
+    void initializeGridCell(SDMMProcess::GridCell* cell, Scalar maxDiagonal) {
         constexpr static int nSpatialComponents = SDMMProcess::NComponents / 8;
         constexpr static Scalar depthPrior = 3e-2;
-        // Scalar cellSize = m_grid->cellPositionSize()(0);
+
+        if(
+            cell->samples.size() < 2 * nSpatialComponents ||
+            enoki::slices(cell->sdmm) > 0
+        ) {
+            return;
+        }
+        std::cerr << "Initializing grid cell.\n";
+        std::function<Scalar()> rng = 
+            [samplerCopy = m_sampler]() mutable -> Scalar {
+                return samplerCopy->next1D();
+            };
+        std::vector<jmm::SphereSide> sides(
+            cell->samples.size(), jmm::SphereSide::Top
+        );
+        auto& bPriors = cell->optimizer.getBPriors();
+        auto& bDepthPriors = cell->optimizer.getBDepthPriors();
+        jmm::uniformHemisphereInit(
+            cell->distribution,
+            bPriors,
+            bDepthPriors,
+            rng,
+            nSpatialComponents,
+            depthPrior,
+            3 * maxDiagonal / nSpatialComponents,
+            cell->samples,
+            sides,
+            true
+        );
+        copy_sdmm(cell->distribution, cell->sdmm);
+        cell->em.depth_prior = enoki::zero<decltype(cell->em.depth_prior)>(
+            cell->distribution.nComponents()
+        );
+        for(size_t prior_i = 0; prior_i < cell->distribution.nComponents(); ++prior_i) {
+            for(size_t r = 0; r < 3; ++r) {
+                for(size_t c = 0; c < 3; ++c) {
+                    enoki::slice(cell->em.depth_prior, prior_i)(r, c) =
+                        bDepthPriors[prior_i](r, c);
+                }
+            }
+        }
+        enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
+        sdmm::prepare(cell->conditioner, cell->sdmm);
+    }
+
+    bool canBeOptimized(const SDMMProcess::NodeType& node) {
+        const auto& cell = node.value;
+        return (
+            node.isLeaf &&
+            // node.depth >= 8 &&
+            cell != nullptr &&
+            cell->data.size >= 32
+        );
+    }
+
+    void initializeHashGridComponents() {
         for(auto& node : *m_grid) {
-            if(!node.isLeaf) {
+            if(!canBeOptimized(node)) {
                 continue;
             }
             HashGridType::AABB aabb = node.aabb;
-            // for(std::shared_ptr<GridCell> cell : node.normalsGrid) {
             auto& cell = node.value;
-            {
-                if(cell == nullptr) {
-                    continue;
-                }
-                if(
-                    cell->samples.size() < 2 * nSpatialComponents ||
-                    enoki::slices(cell->sdmm) > 0
-                ) {
-                    continue;
-                }
-                std::cerr << "Initializing grid cell.\n";
-                std::function<Scalar()> rng = 
-                    [samplerCopy = m_sampler]() mutable -> Scalar {
-                        return samplerCopy->next1D();
-                    };
-                std::vector<jmm::SphereSide> sides(
-                    cell->samples.size(), jmm::SphereSide::Top
-                );
-                auto& bPriors = cell->optimizer.getBPriors();
-                auto& bDepthPriors = cell->optimizer.getBDepthPriors();
-                jmm::uniformHemisphereInit(
-                    cell->distribution,
-                    bPriors,
-                    bDepthPriors,
-                    rng,
-                    nSpatialComponents,
-                    depthPrior,
-                    3 * node.aabb.diagonal().maxCoeff() / (Scalar) nSpatialComponents,
-                    cell->samples,
-                    sides,
-                    true
-                );
-                copy_sdmm(cell->distribution, cell->sdmm);
-                cell->em.depth_prior = enoki::zero<decltype(cell->em.depth_prior)>(
-                    cell->distribution.nComponents()
-                );
-                for(size_t prior_i = 0; prior_i < cell->distribution.nComponents(); ++prior_i) {
-                    for(size_t r = 0; r < 3; ++r) {
-                        for(size_t c = 0; c < 3; ++c) {
-                            enoki::slice(cell->em.depth_prior, prior_i)(r, c) =
-                                bDepthPriors[prior_i](r, c);
-                        }
-                    }
-                }
-                enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
-                sdmm::prepare(cell->conditioner, cell->sdmm);
-            }
+            initializeGridCell(cell.get(), enoki::hmax(node.aabb.diagonal()));
         }
     }
 
@@ -270,97 +278,53 @@ public:
         initializeHashGridComponents();
         auto& nodes = m_grid->data();
 
-        std::cerr << "Optimizing guiding distribution: " << nodes.size() << " nodes in tree.\n";
+        std::vector<size_t> node_idcs;
+        node_idcs.reserve(nodes.size());
 
-        #pragma omp parallel for
-        for(int cell_i = 0; cell_i < nodes.size(); ++cell_i) {
-            if(!nodes[cell_i].isLeaf) {
-                continue;
-            }
-
+        for(size_t cell_i = 0; cell_i < nodes.size(); ++cell_i) {
             auto& cell = nodes[cell_i].value;
-            if(cell == nullptr) {
+            if(
+                !canBeOptimized(nodes[cell_i]) || enoki::slices(cell->sdmm) == 0
+            ) {
                 continue;
             }
-
-            if(cell->data.size < 35 || enoki::slices(cell->sdmm) == 0) {
-                continue;
-            }
-
-            sdmm::em_step(cell->sdmm, cell->em, cell->data);
-            enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
-            sdmm::prepare(cell->conditioner, cell->sdmm);
-
-            cell->data.clear();
+            node_idcs.push_back(cell_i);
         }
-        /*
-        std::ofstream gridOut("grid.csv");
-        for(int cell_i = 0; cell_i < nodes.size(); ++cell_i) {
-            if(nodes[cell_i].value == nullptr) {
-                continue;
+
+        std::cerr << "Optimizing guiding distribution: " << node_idcs.size() << " distributions in tree.\n";
+
+        #pragma omp parallel shared(node_idcs, nodes)
+        {
+            #pragma omp for schedule(guided)
+            for(size_t cell_i : node_idcs) {
+                auto& cell = nodes[cell_i].value;
+                sdmm::em_step(cell->sdmm, cell->em, cell->data);
+                enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
+                sdmm::prepare(cell->conditioner, cell->sdmm);
+
+                cell->data.clear();
             }
-            Eigen::Matrix<Scalar, 3, 1> center = nodes[cell_i].aabb.center();
-            gridOut <<
-                center(0) <<
-                "," <<
-                center(1) <<
-                "," <<
-                center(2) <<
-                "," <<
-                nodes[cell_i].value->error <<
-                "\n";
         }
-        gridOut.close();
-        */
     }
 
-    template<typename AABBVec, int dims>
+    template<typename AABB>
     void getAABB(
-        Eigen::AlignedBox<Scalar, dims>& aabb,
-        const AABBVec& aabb_min,
-        const AABBVec& aabb_max,
-        Scalar spatialNormalization
-    );
-
-    template<typename AABBVec>
-    void getAABB(
-        Eigen::AlignedBox<Scalar, 3>& aabb,
-        const AABBVec& aabb_min,
-        const AABBVec& aabb_max,
+        AABB& aabb,
+        const Point& aabb_min,
+        const Point& aabb_max,
         Scalar spatialNormalization
     ) {
-        Eigen::Matrix<Scalar, 3, 1> epsilon;
-        epsilon.setConstant(Eigen::NumTraits<Scalar>::dummy_precision());
-        aabb.min() << 0, 0, 0;
-        aabb.max() <<
+        using PointAABB = typename AABB::Point;
+        PointAABB epsilon = enoki::full<PointAABB>(1e-5f);
+        aabb.min = enoki::zero<PointAABB>();
+        aabb.max = PointAABB(
             aabb_max[0] - aabb_min[0],
             aabb_max[1] - aabb_min[1],
-            aabb_max[2] - aabb_min[2];
-        aabb.max().template topRows<3>() /= spatialNormalization;
-        aabb.min() -= epsilon;
-        aabb.max() += epsilon;
-    }
-
-    template<typename AABBVec>
-    void getAABB(
-        Eigen::AlignedBox<Scalar, 6>& aabb,
-        const AABBVec& aabb_min,
-        const AABBVec& aabb_max,
-        Scalar spatialNormalization
-    ) {
-        Eigen::Matrix<Scalar, 6, 1> epsilon;
-        epsilon.setConstant(Eigen::NumTraits<Scalar>::dummy_precision());
-        aabb.min() << 0, 0, 0, -1, -1, -1;
-        aabb.max() <<
-            aabb_max[0] - aabb_min[0],
-            aabb_max[1] - aabb_min[1],
-            aabb_max[2] - aabb_min[2],
-            1,
-            1,
-            1;
-        aabb.max().template topRows<3>() /= spatialNormalization;
-        aabb.min() -= epsilon;
-        aabb.max() += epsilon;
+            aabb_max[2] - aabb_min[2]
+        );
+        aabb.max /= spatialNormalization;
+        aabb.min -= epsilon;
+        aabb.max += epsilon;
     }
 
 	bool render(
@@ -406,7 +370,7 @@ public:
 
         Properties props("independent");
         props.setInteger(
-            "sampleCount", SDMMProcess::t_initComponents * SDMMProcess::t_dims
+            "sampleCount", SDMMProcess::t_components * SDMMProcess::t_dims
         );
         props.setInteger("dimension", SDMMProcess::t_dims);
         props.setInteger("seed", m_config.rngSeed);
@@ -424,55 +388,31 @@ public:
             aabb_extents[0], std::min(aabb_extents[1], aabb_extents[2])
         );
 
-        Eigen::AlignedBox<Scalar, HashGridType::dims> aabb;
+        typename HashGridType::AABB aabb;
         getAABB(aabb, aabb_min, aabb_max, spatialNormalization);
-
-		// GridKeyVector cellSize;
-		// Eigen::Matrix<Scalar, 3, 1> cellPositionSize;
-		// cellPositionSize << 2e-1, 2e-1, 2e-1;
-		// // cellPositionSize << aabb_extents[0], aabb_extents[1], aabb_extents[2];
-		// // cellPositionSize *= 2e-1 / spatialNormalization;
-		// Eigen::Matrix<Scalar, 2, 1> cellNormalsSize;
-		// cellNormalsSize << 0.2, 0.2; // 0.3333334; // 0.5;
-		// // Eigen::Matrix<Scalar, 3, 1> cellNormalsSize;
-		// // cellNormalsSize << 1.1, 2.2, 2.2; // 1, 1, 1;
-		// jmm::buildKey(cellPositionSize, cellNormalsSize, cellSize);
-		// GridKeyVector gridOrigin;
-		// gridOrigin.setZero();
-        // // gridOrigin.template bottomRows<3>() << -1.1, -1.1, -1.1;
-        // // m_grid = std::make_shared<HashGridType>(
-        // //     cellSize,
-        // //     gridOrigin
-        // // );
-        std::cerr << "Making SNTree.\n";
-        m_grid = std::make_shared<HashGridType>(
-            aabb,
-            initCell()
-        );
+        m_grid = std::make_shared<HashGridType>(aabb, initCell());
         m_grid->split_to_depth(2);
-
-        m_diffuseDistribution = std::make_shared<SDMMProcess::MMDiffuse>();
-        // m_diffuseDistribution->load("/home/anadodik/sdmm/scenes/cornell-box/diffuse.jmm");
 
         bool success = true;
         fs::path destinationFile = scene->getDestinationFile();
         
-        dumpScene(destinationFile.parent_path() / "scene.vio");
+        // dumpScene(destinationFile.parent_path() / "scene.vio");
 
         Float totalElapsedSeconds = 0.f;
         using json = nlohmann::json;
         auto stats = json::array();
+
         for(
             int samplesRendered = 0;
             samplesRendered < sampleCount;
             samplesRendered += m_config.samplesPerIteration
         ) {
             int iteration = samplesRendered / m_config.samplesPerIteration;
-            m_still_training = samplesRendered <= m_config.sampleCount / 2;
+            m_still_training = samplesRendered < m_config.sampleCount / 2;
 
-            if(!m_still_training) {
-                m_config.samplesPerIteration = sampleCount - samplesRendered;
-            }
+            // if(!m_still_training) {
+            //     m_config.samplesPerIteration = sampleCount - samplesRendered;
+            // }
 
             std::cerr << 
                 "Render iteration " + std::to_string(iteration) + ".\n";
@@ -482,7 +422,6 @@ public:
                 queue,
                 m_config,
                 m_grid,
-                m_diffuseDistribution,
                 iteration,
                 m_still_training
             );
@@ -657,7 +596,6 @@ private:
 
     ref<Sampler> m_sampler;
     Scene* m_scene;
-    std::shared_ptr<typename SDMMProcess::MMDiffuse> m_diffuseDistribution;
     std::shared_ptr<HashGridType> m_grid;
 };
 

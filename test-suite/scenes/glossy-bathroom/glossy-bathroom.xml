@@ -45,6 +45,8 @@
 		<float name="gamma" value="3.2"/>
 	</texture>
 	<bsdf type="roughdielectric" id="envLightTextureMaterial">
+        <string name="sdmmFilename" value="dielectric_4c.sdmm"/>
+
 		<float name="alpha" value="0.1"/>
 		<float name="intIOR" value="1.0"/>
 		<ref name="specularTransmittance" id="envLightTexture"/>
@@ -55,6 +57,8 @@
 		<string name="filename" value="textures/floor_tile.png"/>
 	</texture>
 	<bsdf type="phong" id="floorTilesMat">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<ref name="diffuseReflectance" id="floorTilesDiff"/>
 		<spectrum name="specularReflectance" value="0.1"/>
@@ -65,6 +69,8 @@
 		<string name="filename" value="textures/decor3.png"/>
 	</texture>
 	<bsdf type="phong" id="thinTilesMat">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<ref name="diffuseReflectance" id="thinTilesDiff"/>
 		<spectrum name="specularReflectance" value="0.1"/>
@@ -75,6 +81,8 @@
 		<string name="filename" value="textures/tile1.png"/>
 	</texture>
 	<bsdf type="phong" id="wallTilesMat">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<ref name="diffuseReflectance" id="wallTilesDiff"/>
 		<spectrum name="specularReflectance" value="0.1"/>
@@ -85,6 +93,8 @@
 		<string name="filename" value="textures/tile2.png"/>
 	</texture>
 	<bsdf type="phong" id="wallTilesDecorMat">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<ref name="diffuseReflectance" id="wallTilesDecorDiff"/>
 		<spectrum name="specularReflectance" value="0.1"/>
@@ -95,6 +105,8 @@
 		<string name="filename" value="textures/decor1.png"/>
 	</texture>
 	<bsdf type="phong" id="wallTilesDecor1Mat">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<ref name="diffuseReflectance" id="wallTilesDecor1Diff"/>
 		<spectrum name="specularReflectance" value="0.1"/>
@@ -102,6 +114,8 @@
 	
 	<!-- white glossy -->
 	<bsdf type="phong" id="whiteGlossy">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<spectrum name="specularReflectance" value="0.1"/>
 		<spectrum name="diffuseReflectance" value="0.9"/>
@@ -109,6 +123,8 @@
 	
 	<!-- black glossy -->
 	<bsdf type="phong" id="blackGlossy">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<spectrum name="specularReflectance" value="0.1"/>
 		<spectrum name="diffuseReflectance" value="0.2"/>
@@ -116,6 +132,8 @@
 	
 	<!-- yellow glossy -->
 	<bsdf type="phong" id="yellowGlossy">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<spectrum name="specularReflectance" value="0.1"/>
 		<rgb name="diffuseReflectance" value="#ffff6a"/>
@@ -123,16 +141,22 @@
 	
 	<!-- white diffuse -->
 	<bsdf type="diffuse" id="whiteDiff">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 		<rgb name="reflectance" value="1"/>
 	</bsdf>
 	
 	<!-- light blue diffuse -->
 	<bsdf type="diffuse" id="blueDiff">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 		<rgb name="reflectance" value="#d9e7f1"/>
 	</bsdf>
 	
 	<!-- light blue glossy -->
 	<bsdf type="phong" id="blueGlossy">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<spectrum name="specularReflectance" value="0.1"/>
 		<rgb name="diffuseReflectance" value="#d9e7f1"/>
@@ -140,6 +164,8 @@
 	
 	<!-- green glossy -->
 	<bsdf type="phong" id="greenGlossy">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<spectrum name="specularReflectance" value="0.1"/>
 		<rgb name="diffuseReflectance" value="#1fac84"/>
@@ -147,6 +173,8 @@
 	
 	<!-- orange glossy -->
 	<bsdf type="phong" id="orangeGlossy">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<spectrum name="specularReflectance" value="0.1"/>
 		<rgb name="diffuseReflectance" value="#ffbf8b"/>
@@ -154,6 +182,8 @@
 	
 	<!-- windows -->
 	<bsdf type="roughdielectric" id="windowMat">
+        <string name="sdmmFilename" value="dielectric_4c.sdmm"/>
+
 		<string name="distribution" value="phong"/>
 		<float name="alpha" value="0.5"/>
 		<float name="intIOR" value="1.7"/>
@@ -161,6 +191,8 @@
 	
 	<!-- ceramics -->
 	<bsdf type="phong" id="ceramicsMat">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="5000"/>
 		<spectrum name="specularReflectance" value="0.2"/>
 		<spectrum name="diffuseReflectance" value="0.8"/>
@@ -180,6 +212,8 @@
 	
 	<!-- rough aluminium -->
 	<bsdf type="roughconductor" id="roughAluMat">
+        <string name="sdmmFilename" value="conductor_Al_phong_4c.sdmm"/>
+
 		<string name="material" value="Al"/>
 		<float name="alpha" value="0.15"/>
 		<string name="distribution" value="phong"/>
@@ -190,6 +224,8 @@
 		<string name="filename" value="textures/roller_mat.jpg"/>
 	</texture>
 	<bsdf type="roughdielectric" id="shutterTissueMat">
+        <string name="sdmmFilename" value="dielectric_4c.sdmm"/>
+
 		<string name="distribution" value="phong"/>
 		<float name="alpha" value="0.9"/>
 		<float name="intIOR" value="1.2"/>
@@ -204,6 +240,8 @@
 	
 	<!-- cotton bud sticks -->
 	<bsdf type="diffuse" id="cottonBudSticksMat">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 		<rgb name="reflectance" value="#3f9fa3"/>
 	</bsdf>
 	
@@ -212,6 +250,8 @@
 		<string name="filename" value="textures/dish_pattern.png"/>
 	</texture>
 	<bsdf type="phong" id="dishMat">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="128"/>
 		<ref name="diffuseReflectance" id="dishDiff"/>
 		<spectrum name="specularReflectance" value="0.2"/>
@@ -219,6 +259,8 @@
 	
 	<!-- red glossy -->
 	<bsdf type="phong" id="redGlossy">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<spectrum name="specularReflectance" value="0.1"/>
 		<spectrum name="diffuseReflectance" value="0.5, 0, 0"/>
@@ -250,6 +292,8 @@
 		<string name="filename" value="textures/paper.jpg"/>
 	</texture>
 	<bsdf type="diffuse" id="lavatoryPaperMat">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 		<ref name="reflectance" id="lavatoryPaperDiff"/>
 	</bsdf>
 	
@@ -258,6 +302,8 @@
 		<string name="filename" value="textures/sponge.jpg"/>
 	</texture>
 	<bsdf type="diffuse" id="spongeMat">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 		<ref name="reflectance" id="spongeDiff"/>
 	</bsdf>
 	
@@ -270,6 +316,8 @@
 	
 	<!-- soap -->
 	<bsdf type="diffuse" id="soapMat">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 		<spectrum name="reflectance" value="0.1, 0.1, 0.5"/>
 	</bsdf>
 	

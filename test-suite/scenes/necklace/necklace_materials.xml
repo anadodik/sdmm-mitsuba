@@ -9,10 +9,14 @@
 
 
 	<bsdf type="roughconductor" id="gold_material">
+        <string name="sdmmFilename" value="conductor_Au_as_4c.sdmm"/>
+
 		<string name="material" value="Au"/>
 	</bsdf>
 
 	<bsdf type="roughconductor" id="silver_material">
+        <string name="sdmmFilename" value="conductor_Au_as_4c.sdmm"/>
+
 		<string name="material" value="Ag"/>
 	</bsdf>
 
@@ -37,6 +41,8 @@
   -->
 
 	<bsdf type="roughplastic" id="ground_material">
+        <string name="sdmmFilename" value="plastic_beckmann_4c.sdmm"/>
+
 		<string name="distribution" value="beckmann"/>
 		<float name="intIOR" value="2.31"/>
 		<rgb name="diffuseReflectance" value=".04, .04, .04"/>

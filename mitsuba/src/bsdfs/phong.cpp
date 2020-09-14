@@ -16,9 +16,16 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <mitsuba/core/fresolver.h>
 #include <mitsuba/render/bsdf.h>
 #include <mitsuba/hw/basicshader.h>
 #include <mitsuba/core/warp.h>
+
+#include <sdmm/distributions/sdmm.h>
+#include <sdmm/distributions/sdmm_conditioner.h>
+#include <sdmm/spaces/euclidian.h>
+#include <sdmm/spaces/directional.h>
+#include <sdmm/spaces/spatio_directional.h>
 
 MTS_NAMESPACE_BEGIN
 
@@ -57,6 +64,31 @@ MTS_NAMESPACE_BEGIN
  */
 class Phong : public BSDF {
 public:
+    using DMM = typename BSDF::DMM;
+    using GMM2 = typename BSDF::GMM2;
+    using SDMM5 = typename BSDF::SDMM5;
+    using SDMM5Conditioner = typename BSDF::SDMM5Conditioner;
+
+    std::unique_ptr<SDMM5> m_sdmm = nullptr;
+    mutable SDMM5Conditioner conditioner;
+
+    bool getDMM(BSDFSamplingRecord &bRec, DMM& dmm) const final override {
+        constexpr size_t diffuse_component = 1; // This is hard-coded for the model we use in the paper.
+
+        if(m_sdmm == nullptr || Frame::cosTheta(bRec.wi) <= 0) {
+            return false;
+        }
+        Float theta = std::acos(std::min((Float) 1.0f, Frame::cosTheta(bRec.wi)));
+        Float exponent = std::max(Float(1), m_exponent->eval(bRec.its).average());
+        Float specWeight = m_specularReflectance->eval(bRec.its).max();
+        sdmm::embedded_s_t<GMM3> condition({theta, specWeight, std::log(exponent)});
+        if(enoki::slices(dmm) != enoki::slices(*m_sdmm)) {
+            enoki::set_slices(dmm, enoki::slices(*m_sdmm));
+        }
+        bool validConditional = sdmm::create_conditional_pruned(conditioner, condition, dmm, 2, diffuse_component);
+        return validConditional;
+    }
+
     Phong(const Properties &props)
         : BSDF(props) {
         m_diffuseReflectance = new ConstantSpectrumTexture(
@@ -66,6 +98,23 @@ public:
         m_exponent = new ConstantFloatTexture(
             props.getFloat("exponent", 30.0f));
         m_specularSamplingWeight = 0.0f;
+
+        if(props.hasProperty("sdmmFilename")) {
+            std::cerr << "Loading PhongSDMM.\n";
+            FileResolver *fResolver = Thread::getThread()->getFileResolver();
+            fs::path path = fResolver->resolve(
+                props.getString("sdmmFilename", "phong_4c.sdmm")
+            );
+            if (!fs::exists(path)) {
+                Log(EError, "PhongSDMM file \"%s\" could not be found!",
+                    path.string().c_str());
+            }
+            
+            m_sdmm = std::make_unique<SDMM5>();
+            sdmm::load_json(*m_sdmm, path.string().c_str());
+            enoki::set_slices(conditioner, enoki::slices(*m_sdmm));
+            sdmm::prepare(conditioner, *m_sdmm);
+        }
     }
 
     Phong(Stream *stream, InstanceManager *manager)

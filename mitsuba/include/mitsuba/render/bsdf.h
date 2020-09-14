@@ -295,7 +295,7 @@ public:
         EAll          = EDiffuse | EGlossy | EDelta | EDelta1D
     };
 
-    constexpr static size_t PacketSize = 8;
+    constexpr static size_t PacketSize = 4;
     using Packet = enoki::Packet<float, PacketSize>;
     using Value = enoki::DynamicArray<Packet>;
     using DMMTangentSpace = sdmm::DirectionalTangentSpace<
@@ -307,13 +307,21 @@ public:
         sdmm::Vector<Value, 2>, sdmm::Vector<Value, 2>
     >;
     using GMM2 = sdmm::SDMM<sdmm::Matrix<Value, 2>, GMM2TangentSpace>;
-
     using SDMM4TangentSpace = sdmm::SpatioDirectionalTangentSpace<
         sdmm::Vector<Value, 5>, sdmm::Vector<Value, 4>
     >;
     using SDMM4 = sdmm::SDMM<sdmm::Matrix<Value, 4>, SDMM4TangentSpace>;
-
     using SDMM4Conditioner = sdmm::SDMMConditioner<SDMM4, GMM2, DMM>;
+
+    using GMM3TangentSpace = sdmm::EuclidianTangentSpace<
+        sdmm::Vector<Value, 3>, sdmm::Vector<Value, 3>
+    >;
+    using GMM3 = sdmm::SDMM<sdmm::Matrix<Value, 3>, GMM3TangentSpace>;
+    using SDMM5TangentSpace = sdmm::SpatioDirectionalTangentSpace<
+        sdmm::Vector<Value, 6>, sdmm::Vector<Value, 5>
+    >;
+    using SDMM5 = sdmm::SDMM<sdmm::Matrix<Value, 5>, SDMM5TangentSpace>;
+    using SDMM5Conditioner = sdmm::SDMMConditioner<SDMM5, GMM3, DMM>;
 
     virtual bool getDMM(BSDFSamplingRecord &bRec, DMM& dmm) const {
         return false;

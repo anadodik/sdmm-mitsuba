@@ -36,6 +36,8 @@
 	</sensor>
 
 	<bsdf type="roughconductor" id="copper">
+        <string name="sdmmFilename" value="conductor_Al_as_4c.sdmm"/>
+
 		<string name="material" value="Al"/>
 		<spectrum name="specularReflectance" value=".9 .7 .5"/>
 		<float name="alpha" value="0.8"/>
@@ -53,6 +55,8 @@
 		</texture>
 
 		<bsdf type="roughconductor">
+            <string name="sdmmFilename" value="conductor_Al_as_4c.sdmm"/>
+
 			<string name="material" value="Al"/>
 			<float name="alpha" value="0.15"/>
 			<spectrum name="specularReflectance" value=".8 .8 .8"/>
@@ -60,28 +64,35 @@
 	</bsdf>
 
 	<bsdf type="diffuse" id="white">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 		<spectrum name="reflectance" value=".73"/>
 	</bsdf>
 
 	<bsdf type="diffuse" id="table_leg">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<spectrum name="reflectance" value=".65 .65 .47"/>
 	</bsdf>
 
 	<bsdf type="diffuse" id="door_frame">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<spectrum name="reflectance" value=".3 .2 .1"/>
 	</bsdf>
 
 	<bsdf type="diffuse" id="picture_frame">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<spectrum name="reflectance" value=".2 .1 .05"/>
 	</bsdf>
 
 	<bsdf type="diffuse" id="picture_image">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<texture name="reflectance" type="bitmap">
 			<string name="filename" value="data/pic.jpg"/>
 		</texture>
 	</bsdf>
 
 	<bsdf type="diffuse" id="marble">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<texture name="reflectance" type="bitmap">
 			<string name="filename" value="data/marble.jpg"/>
 			<float name="uvscale" value="0.4"/>
@@ -108,6 +119,7 @@
 	</bsdf>
 -->	
 	<bsdf type="diffuse" id="wood1">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<texture name="reflectance" type="bitmap">
 			<string name="filename" value="data/72cf.jpg"/>
 			<float name="uvscale" value="0.95"/>
@@ -115,6 +127,7 @@
 	</bsdf>
 
 	<bsdf type="diffuse" id="wood2">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<texture name="reflectance" type="bitmap">
 			<string name="filename" value="data/72rdf.jpg"/>
 			<float name="uvscale" value="0.95"/>

@@ -128,7 +128,7 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
             combined_square_image / spp - (combined_image / spp) ** 2
         )
         # image_variance = ski.filters.gaussian(
-        #     image_variance, sigma=5, multichannel=True
+        #     image_variance, sigma=3, multichannel=True
         # )
         image_variance = np.clip(image_variance, 0, 2000)
         per_channel_variance = np.mean(image_variance, axis=(0,1))
@@ -138,7 +138,6 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
 
         total_spp += spp
         spp_data.append(total_spp)
-
         # print('Iteration {} spp={}.'.format(iteration, spp))
 
         var_data.append(aggregate(image_variance))
@@ -151,15 +150,6 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
         if combination_type == 'var':
             weight = per_channel_variance
         elif combination_type == 'max_var':
-            weight = max_variance
-        elif combination_type == 'rel_var':
-            image_variance /= combined_image + 1e-10
-            variance = np.mean(image_variance, axis=(0,1))
-            weight = variance
-        elif combination_type == 'coeff_var':
-            image_variance /= combined_square_image + 1e-10
-            variance = np.mean(image_variance, axis=(0,1))
-            max_variance = np.maximum(image_variance, variance)
             weight = max_variance
         elif combination_type == 'uniform':
             weight = 1 / spp
@@ -254,20 +244,10 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
 def get_all_subdirs(directory):
     return [f.path for f in os.scandir(directory) if f.is_dir()]
 
-PER_RUNS = {
-    'comp-no-per': "Without PER",
-    'comp-per-only-7': "With PER",
-}
-
 N_COMP_RUNS = OrderedDict([
     ('comp-80-spatial-48-directional-fixed-init', "$80$ spatial locations"),
     ('comp-170-spatial-48-directional-fixed-init', "$170$ spatial locations"),
     ('comp-360-spatial-48-directional-fixed-init', "$360$ spatial locations"),
-])
-
-CYLINDRICAL_COMP = OrderedDict([
-    ('comp-cylindrical', "Cylindrical Mapping"),
-    ('comp-170-spatial-48-directional-fixed-init', "SDMMs"),
 ])
 
 PRODUCT = OrderedDict([
@@ -277,12 +257,21 @@ PRODUCT = OrderedDict([
     ('comp-product-no-jac', "Diffuse Product"),
 ])
 
-def make_per_figure(allowed_runs, name_prefix, error_type):
+RUNS = OrderedDict([
+    ('radiance', "Radiance Guiding"),
+    # ('radiance_32c', "Radiance Guiding (32 Components)"),
+    ('product', "Product Guiding"),
+    # ('product_01_bsdf', "Product Guiding (0.1 BSDF Sampling)"),
+    # ('product', "Product Guiding"),
+    # ('product_32c', "Product Guiding (32 Components)"),
+])
+
+def make_comparison_figure(allowed_runs, name_prefix, error_type):
     scene_errors = {}
     for scene in SCENES:
         # if not scene in ['cornell-box', 'torus', 'glossy-cbox']:
         #     continue
-        # if scene in ['cornell-box', 'glossy-cbox']:
+        # if scene not in ['glossy-cbox', 'torus']:
         #     continue
         all_errors = {}
         scene_path = os.path.join(RESULTS_PATH, scene, 'sdmm')
@@ -292,7 +281,7 @@ def make_per_figure(allowed_runs, name_prefix, error_type):
             if not os.path.basename(experiment) in allowed_runs.keys():
                 continue
             runs = get_all_subdirs(experiment)
-            # print(f'Found runs: {runs}.')
+            print(f'Found runs: {runs}.')
             assert(len(runs) == 1)
             for run in runs:
                 # print(f'Combining renders: {run}.')
@@ -307,7 +296,7 @@ def make_per_figure(allowed_runs, name_prefix, error_type):
     }
     for plot_filename, allowed_errors in plots.items():
         result_path = os.path.join(RESULTS_PATH, name_prefix + plot_filename)
-        fig, ax = plt.subplots(nrows=2, ncols=len(scene_errors) // 2, sharex=True, sharey=False, figsize=(2 * len(scene_errors), 6))
+        fig, ax = plt.subplots(nrows=2, ncols=int(np.ceil(len(scene_errors) / 2)), sharex=True, sharey=False, figsize=(2 * len(scene_errors), 6))
         ax = ax.flatten()
         for scene_i, (scene_name, all_errors) in enumerate(sorted(scene_errors.items())):
             ax[scene_i].set_axisbelow(True)
@@ -339,28 +328,19 @@ def make_per_figure(allowed_runs, name_prefix, error_type):
             fontsize="xx-large",
         )
         fig.tight_layout(rect=[0,0.1,1,1])
+        print(f"Saving figure to {result_path}.")
         plt.savefig(result_path, format=os.path.splitext(plot_filename)[-1][1:], dpi=fig.dpi)
 
 
 def compare_all_runs():
     allowed_runs = {
-        # 'comp-aprior-01-stable',
-        # 'comp-aprior-05-stable',
-        # 'comp-tb-15',
-        # 'comp-per-ii3',
-        # 'comp-per-ii3-tb-0',
-        # 'comp-per-ii3-tb-0-rp005',
-        # 'comp-tb-30',
-        # 'comp-per-default',
-
-        # 'comp-no-per': "Without PER",
-        # 'comp-per-only-7': "With PER",
-        'comp-170-spatial-48-directional-fixed-init': "No Product",
-        'comp-product-per': "Product",
-        'comp-product-no-jac': "Product No Jacobian",
+        'radiance': "Radiance Guiding",
+        'radiance_32c': "Radiance Guiding (32 Components)",
+        'product': "Product Guiding",
+        'product_32c': "Product Guiding (32 Components)",
     }
     for scene in SCENES:
-        if scene not in ['pool', 'bedroom']:
+        if scene not in ['glossy-bathroom']:
             continue
         all_errors = {}
         scene_path = os.path.join(RESULTS_PATH, scene, 'sdmm')
@@ -436,16 +416,13 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--comparison_out_file', type=str, nargs='?')
     parser.add_argument('-a', '--all', action='store_true')
 
-    parser.add_argument('run_dirs', type=str, nargs='+')
+    parser.add_argument('run_dirs', type=str, nargs='*')
 
     args = parser.parse_args()
 
     if args.all:
         # compare_all_runs()
-        # make_per_figure(N_COMP_RUNS, 'n_comp_', ErrorType.CUMULATIVE)
-        # make_per_figure(PER_RUNS, 'per_', ErrorType.CUMULATIVE)
-        # make_per_figure(CYLINDRICAL_COMP, 'cylindrical_', ErrorType.CUMULATIVE)
-        make_per_figure(PRODUCT, 'product_', ErrorType.CUMULATIVE)
+        make_comparison_figure(RUNS, 'runs_', ErrorType.CUMULATIVE)
         quit()
 
     all_errors = {}

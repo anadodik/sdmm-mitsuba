@@ -39,6 +39,8 @@
 	</texture>
 
 	<bsdf type="phong" id="tinyPicMaterial">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="5000"/>
 
 		<ref name="diffuseReflectance" id="tiny_picture"/>
@@ -47,6 +49,8 @@
 	<!-- black finished -->
 
 	<bsdf type="phong" id="blackFinished">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="5000"/>
 		<spectrum name="specularReflectance" value="0.1"/>
 		<spectrum name="diffuseReflectance" value="0.005"/>
@@ -54,6 +58,8 @@
 	<!-- rough aluminium -->
 
 	<bsdf type="roughconductor" id="roughAlu">
+        <string name="sdmmFilename" value="conductor_Al_phong_4c.sdmm"/>
+
 		<string name="material" value="Al"/>
 		<float name="alpha" value="0.15"/>
 		<string name="distribution" value="phong"/>
@@ -61,6 +67,8 @@
 	<!-- white diffuse -->
 
 	<bsdf type="diffuse" id="whiteDiff">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 		<rgb name="reflectance" value="0.5"/>
 	</bsdf>
 	<!-- polished chromium -->
@@ -72,6 +80,8 @@
 	<!-- ceramics -->
 
 	<bsdf type="phong" id="ceramics">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="5000"/>
 		<spectrum name="specularReflectance" value="0.2"/>
 		<spectrum name="diffuseReflectance" value="0.8"/>
@@ -85,6 +95,8 @@
 	<!-- glass teapot -->
 
 	<bsdf type="roughdielectric" id="glass_teapot">
+        <string name="sdmmFilename" value="dielectric_4c.sdmm"/>
+
 		<float name="intIOR" value="1.5"/>
 		<float name="extIOR" value="1.0"/>
 		<float name="alpha" value="0.001"/>
@@ -92,6 +104,8 @@
 	<!-- diffuse glass -->
 
 	<bsdf type="roughdielectric" id="glassDiff">
+        <string name="sdmmFilename" value="dielectric_4c.sdmm"/>
+
 		<string name="distribution" value="phong"/>
 		<float name="alpha" value="0.5"/>
 		<float name="intIOR" value="1.7"/>
@@ -99,6 +113,8 @@
 	<!-- silver -->
 
 	<bsdf type="roughconductor" id="silver">
+        <string name="sdmmFilename" value="conductor_Ag_phong_4c.sdmm"/>
+
 		<string name="material" value="Ag"/>
 		<float name="alpha" value="0.03"/>
 		<string name="distribution" value="phong"/>
@@ -117,10 +133,13 @@
 		<spectrum name="specularReflectance" value="0.3"/>
 
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<ref name="reflectance" id="wood_floor"/>
 		</bsdf>
 	</bsdf>-->
 	<bsdf type="phong" id="floorMaterial">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="256"/>
 		<spectrum name="specularReflectance" value="0.3"/>
 		<ref name="diffuseReflectance" id="wood_floor"/>
@@ -132,6 +151,7 @@
 	</texture>
 
 	<bsdf type="diffuse" id="booksLeftMaterial">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<ref name="reflectance" id="books1"/>
 	</bsdf>
 	<!-- booksTop -->
@@ -141,6 +161,7 @@
 	</texture>
 
 	<bsdf type="diffuse" id="booksTopMaterial">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<ref name="reflectance" id="books2"/>
 	</bsdf>
 	<!-- booksAlistair -->
@@ -150,6 +171,7 @@
 	</texture>
 
 	<bsdf type="diffuse" id="booksAlistairMaterial">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<ref name="reflectance" id="book_alistair"/>
 	</bsdf>
 	<!-- booksHistoria -->
@@ -159,6 +181,7 @@
 	</texture>
 
 	<bsdf type="diffuse" id="booksHistoriaMaterial">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<ref name="reflectance" id="book_historia"/>
 	</bsdf>
 	<!-- booksDictionary -->
@@ -168,6 +191,7 @@
 	</texture>
 
 	<bsdf type="diffuse" id="booksDictionaryMaterial">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<ref name="reflectance" id="book_dictionary"/>
 	</bsdf>
 	<!-- furniture -->
@@ -177,6 +201,8 @@
 	</texture>
 
 	<bsdf type="phong" id="furnitureMaterial">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="32"/>
 		<spectrum name="specularReflectance" value="0.1"/>
 
@@ -185,6 +211,8 @@
 	<!-- gold -->
 
 	<bsdf type="roughconductor" id="gold">
+        <string name="sdmmFilename" value="conductor_Au_phong_4c.sdmm"/>
+
 		<string name="material" value="Au"/>
 		<float name="alpha" value="0.1"/>
 		<string name="distribution" value="phong"/>
@@ -192,6 +220,7 @@
 	<!-- brown diffuse -->
 
 	<bsdf type="diffuse" id="brownDiff">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<rgb name="reflectance" value="#0e0701"/>
 	</bsdf>
 	<!-- wallpapaer -->
@@ -201,6 +230,7 @@
 	</texture>
 
 	<bsdf type="diffuse" id="wallpaperMaterial">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<ref name="reflectance" id="wallpaper"/>
 	</bsdf>
 	<!-- mirror -->
@@ -216,6 +246,8 @@
 	</texture>
 
 	<bsdf type="phong" id="largePicMaterial">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<float name="exponent" value="5000"/>
 
 		<ref name="diffuseReflectance" id="snow_flowers"/>
@@ -224,6 +256,7 @@
 	<!-- red diffuse -->
 
 	<bsdf type="diffuse" id="redDiff">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<rgb name="reflectance" value="0.5 0.05 0.05"/>
 	</bsdf>
 	<!-- thin glass -->

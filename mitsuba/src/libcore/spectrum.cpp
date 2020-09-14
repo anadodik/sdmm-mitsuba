@@ -596,9 +596,9 @@ InterpolatedSpectrum::InterpolatedSpectrum(const fs::path &path) {
         SLog(EError, "\"%s\": unable to parse any entries!",
                 path.string().c_str());
 
-    SLog(EInfo, "\"%s\": loaded a spectral power distribution with " SIZE_T_FMT
-            " entries (between %f and %f nm)", path.filename().string().c_str(), m_wavelengths.size(),
-            m_wavelengths[0], m_wavelengths[m_wavelengths.size()-1]);
+    // SLog(EInfo, "\"%s\": loaded a spectral power distribution with " SIZE_T_FMT
+    //         " entries (between %f and %f nm)", path.filename().string().c_str(), m_wavelengths.size(),
+    //         m_wavelengths[0], m_wavelengths[m_wavelengths.size()-1]);
 }
 
 InterpolatedSpectrum::InterpolatedSpectrum(const Float *wavelengths, const Float *values, size_t nEntries) {

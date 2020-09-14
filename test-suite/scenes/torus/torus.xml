@@ -51,6 +51,7 @@
 	</emitter>
 
 	<bsdf type="diffuse" id="mat_donut">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<rgb name="reflectance" value=".8,.8,.4"/>
 		<!-- Rhino object 'Donut' -->
 	</bsdf>
@@ -68,10 +69,12 @@
 	</bsdf>
 
 	<bsdf type="diffuse" id="mat_floor">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<!-- Rhino object 'Floor' -->
 	</bsdf>
 
 	<bsdf type="diffuse" id="mat_lamp">
+        <string name="sdmmFilename" value="diffuse.sdmm"/>
 		<!-- Rhino object 'Lamp' -->
 	</bsdf>
 

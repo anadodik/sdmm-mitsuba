@@ -32,26 +32,31 @@
 	</sensor>
 	<bsdf type="twosided" id="Boxes" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.483044, 0.384664, 0.301561"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="PlasticCable" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.558543, 0.558543, 0.558543"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="LampEmitter" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.64, 0.64, 0.64"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="Blankets" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.485435, 0.456263, 0.428075"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="Bedsheets" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<texture name="reflectance" type="bitmap" >
 				<string name="filename" value="textures/wallpaper-1.jpg" />
 				<string name="filterType" value="trilinear" />
@@ -60,16 +65,19 @@
 	</bsdf>
 	<bsdf type="twosided" id="Window" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.028173, 0.028173, 0.028173"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="PictureBacking" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.111567, 0.037068, 0.017016"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="Picture" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<texture name="reflectance" type="bitmap" >
 				<string name="filename" value="textures/Teapot.png" />
 				<string name="filterType" value="trilinear" />
@@ -78,41 +86,50 @@
 	</bsdf>
 	<bsdf type="twosided" id="Rocks1" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.350827, 0.242986, 0.17883"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="Rocks2" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.098964, 0.098964, 0.098964"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="Rocks3" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.558544, 0.558544, 0.558544"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="DecoPlant" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.041772, 0.011306, 0.007575"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="Painting" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.015396, 0.015396, 0.015396"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="Carpet" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.034499, 0.034499, 0.034499"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="Matress" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.893289, 0.893289, 0.893289"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="WoodFloor" >
 		<bsdf type="roughplastic" >
+            <string name="sdmmFilename" value="plastic_ggx_4c.sdmm"/>
+
 			<float name="alpha" value="0.15" />
 			<string name="distribution" value="ggx" />
 			<float name="intIOR" value="1.5" />
@@ -126,11 +143,14 @@
 	</bsdf>
 	<bsdf type="twosided" id="Walls2" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.799999, 0.799999, 0.799999"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="WoodFurniture" >
 		<bsdf type="roughplastic" >
+            <string name="sdmmFilename" value="plastic_beckmann_4c.sdmm"/>
+
 			<float name="alpha" value="0.15" />
 			<string name="distribution" value="beckmann" />
 			<float name="intIOR" value="1.5" />
@@ -144,6 +164,7 @@
 	</bsdf>
 	<bsdf type="twosided" id="Walls" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.799999, 0.799999, 0.799999"/>
 		</bsdf>
 	</bsdf>
@@ -154,6 +175,8 @@
 	</bsdf>
 	<bsdf type="twosided" id="Aluminium" >
 		<bsdf type="roughconductor" >
+            <string name="sdmmFilename" value="conductor_Al_ggx_4c.sdmm"/>
+
 			<float name="alpha" value="0.2" />
 			<string name="distribution" value="ggx" />
 			<float name="extEta" value="1" />
@@ -164,16 +187,20 @@
 	</bsdf>
 	<bsdf type="twosided" id="BookCover" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0, 0, 0"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="BookPages" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.567027, 0.567027, 0.567027"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="LampMetal" >
 		<bsdf type="roughconductor" >
+            <string name="sdmmFilename" value="conductor_Al_ggx_4c.sdmm"/>
+
 			<float name="alpha" value="0.1" />
 			<string name="distribution" value="ggx" />
 			<float name="extEta" value="1" />
@@ -183,6 +210,8 @@
 		</bsdf>
 	</bsdf>
 	<bsdf type="roughdielectric" id="LampGlass" >
+        <string name="sdmmFilename" value="dielectric_4c.sdmm"/>
+
 		<float name="alpha" value="0.1" />
 		<string name="distribution" value="beckmann" />
 		<float name="intIOR" value="1.5" />
@@ -190,6 +219,8 @@
 	</bsdf>
 	<bsdf type="twosided" id="PictureFrame" >
 		<bsdf type="roughconductor" >
+            <string name="sdmmFilename" value="conductor_Al_beckmann_4c.sdmm"/>
+
 			<float name="alpha" value="0.1" />
 			<string name="distribution" value="beckmann" />
 			<float name="extEta" value="1" />
@@ -210,12 +241,15 @@
 		<rgb name="opacity" value="0.531049, 0.531049, 0.531049"/>
 		<bsdf type="twosided" >
 			<bsdf type="diffuse" >
+                <string name="sdmmFilename" value="diffuse.sdmm"/>
 				<rgb name="reflectance" value="1, 1, 1"/>
 			</bsdf>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="CurtainRod" >
 		<bsdf type="roughconductor" >
+            <string name="sdmmFilename" value="conductor_Al_ggx_4c.sdmm"/>
+
 			<float name="alpha" value="0.1" />
 			<string name="distribution" value="ggx" />
 			<float name="extEta" value="1" />
@@ -720,6 +754,7 @@
 		</transform>
 		<bsdf type="twosided" >
 			<bsdf type="diffuse" >
+                <string name="sdmmFilename" value="diffuse.sdmm"/>
 				<rgb name="reflectance" value="0, 0, 0"/>
 			</bsdf>
 		</bsdf>
@@ -733,6 +768,7 @@
 		</transform>
 		<bsdf type="twosided" >
 			<bsdf type="diffuse" >
+                <string name="sdmmFilename" value="diffuse.sdmm"/>
 				<rgb name="reflectance" value="0, 0, 0"/>
 			</bsdf>
 		</bsdf>

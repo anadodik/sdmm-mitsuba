@@ -16,11 +16,18 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <mitsuba/core/fresolver.h>
 #include <mitsuba/render/bsdf.h>
 #include <mitsuba/render/sampler.h>
 #include <mitsuba/hw/basicshader.h>
 #include "microfacet.h"
 #include "ior.h"
+
+#include <sdmm/distributions/sdmm.h>
+#include <sdmm/distributions/sdmm_conditioner.h>
+#include <sdmm/spaces/euclidian.h>
+#include <sdmm/spaces/directional.h>
+#include <sdmm/spaces/spatio_directional.h>
 
 MTS_NAMESPACE_BEGIN
 
@@ -180,6 +187,29 @@ MTS_NAMESPACE_BEGIN
  */
 class RoughDielectric : public BSDF {
 public:
+    using DMM = typename BSDF::DMM;
+    using GMM2 = typename BSDF::GMM2;
+    using SDMM5 = typename BSDF::SDMM5;
+    using SDMM5Conditioner = typename BSDF::SDMM5Conditioner;
+
+    std::unique_ptr<SDMM5> m_sdmm = nullptr;
+    mutable SDMM5Conditioner conditioner;
+
+    bool getDMM(BSDFSamplingRecord &bRec, DMM& dmm) const final override {
+        if(m_sdmm == nullptr || Frame::cosTheta(bRec.wi) <= 0) {
+            return false;
+        }
+        Float theta = std::acos(std::min((Float) 1.0f, Frame::cosTheta(bRec.wi)));
+        Float alpha = m_alphaU->eval(bRec.its).average();
+        Float eta = m_eta;
+        sdmm::embedded_s_t<GMM3> condition({theta, alpha, eta});
+        if(enoki::slices(dmm) != enoki::slices(*m_sdmm)) {
+            enoki::set_slices(dmm, enoki::slices(*m_sdmm));
+        }
+        bool validConditional = sdmm::create_conditional_pruned(conditioner, condition, dmm, 2);
+        return validConditional;
+    }
+
     RoughDielectric(const Properties &props) : BSDF(props) {
         m_specularReflectance = new ConstantSpectrumTexture(
             props.getSpectrum("specularReflectance", Spectrum(1.0f)));
@@ -208,6 +238,23 @@ public:
             m_alphaV = m_alphaU;
         else
             m_alphaV = new ConstantFloatTexture(distr.getAlphaV());
+
+        if(props.hasProperty("sdmmFilename")) {
+            std::cerr << "Loading RoughDielectricSDMM.\n";
+            FileResolver *fResolver = Thread::getThread()->getFileResolver();
+            fs::path path = fResolver->resolve(
+                props.getString("sdmmFilename", "dielectric_4c.sdmm")
+            );
+            if (!fs::exists(path)) {
+                Log(EError, "RoughDielectricSDMM file \"%s\" could not be found!",
+                    path.string().c_str());
+            }
+            
+            m_sdmm = std::make_unique<SDMM5>();
+            sdmm::load_json(*m_sdmm, path.string().c_str());
+            enoki::set_slices(conditioner, enoki::slices(*m_sdmm));
+            sdmm::prepare(conditioner, *m_sdmm);
+        }
     }
 
     RoughDielectric(Stream *stream, InstanceManager *manager)

@@ -63,7 +63,6 @@ class SDMMRenderer : public WorkProcessor {
     constexpr static int t_dims = SDMMProcess::t_dims;
     constexpr static int t_conditionalDims = SDMMProcess::t_conditionalDims;
     constexpr static int t_conditionDims = SDMMProcess::t_conditionDims;
-    constexpr static int t_initComponents = SDMMProcess::t_initComponents;
     constexpr static int t_components = SDMMProcess::t_components;
     constexpr static bool USE_BAYESIAN = SDMMProcess::USE_BAYESIAN;
 
@@ -90,13 +89,11 @@ public:
 	SDMMRenderer(
         const SDMMConfiguration &config,
         std::shared_ptr<HashGridType> grid,
-        std::shared_ptr<MMDiffuse> diffuseDistribution,
         int iteration,
         bool collect_data
     ) :
         m_config(config),
         m_grid(grid),
-        m_diffuseDistribution(diffuseDistribution),
         m_iteration(iteration),
         m_collect_data(collect_data)
     { }
@@ -153,6 +150,10 @@ public:
             m_fieldOfView = perspectiveCamera->getXFov();
         }
         m_sceneAabb = m_scene->getAABBWithoutCamera();
+        const auto aabb_extents = m_sceneAabb.getExtents();
+        m_spatialNormalization = std::max(
+            aabb_extents[0], std::max(aabb_extents[1], aabb_extents[2])
+        );
 
         if(m_config.maxDepth != 2 && m_config.savedSamplesPerPath <= 1) {
             std::cerr << "WARNING: ONLY SAVING ONE VERTEX PER PATH!\n";
@@ -180,27 +181,7 @@ public:
         bool needsTimeSample = m_sensor->needsTimeSample();
 
         MMCond conditional;
-        MMCond diffuseConditional;
-        MMCond rotatedMaterialConditional;
         MMCond productConditional;
-
-        {
-            Scalar diffuseHeuristicWeight;
-            typename MMDiffuse::ConditionVectord diffuseCondition;
-            diffuseCondition.setOnes();
-            // m_diffuseDistribution->conditional(
-            //     diffuseCondition, diffuseConditional, diffuseHeuristicWeight
-            // );
-            // std::cerr <<
-            //     "Mean before rotation: " <<
-            //     diffuseConditional.components()[0].mean().transpose() <<
-            //     ".\n";
-        }
-
-        const auto aabb_extents = m_scene->getAABBWithoutCamera().getExtents();
-        m_spatialNormalization = std::max(
-            aabb_extents[0], std::max(aabb_extents[1], aabb_extents[2])
-        );
 
         RadianceQueryRecord rRec(m_scene, m_sampler);
         Point2 apertureSample(0.5f);
@@ -253,9 +234,7 @@ public:
                     sensorRay,
                     rRec,
                     conditional,
-                    diffuseConditional,
                     productConditional,
-                    rotatedMaterialConditional,
                     samplePos,
                     firstSample,
                     savedSample
@@ -376,34 +355,6 @@ public:
                 (its.p[2] - aabb_min[2]) / m_spatialNormalization
             ;
         }
-        if(t_conditionDims >= 4) {
-            // sample.template segment<1>(3) <<
-            //     its.time
-            // ;
-            sample.template segment<1>(3) <<
-                (Float) depth / (Float) m_config.maxDepth;
-            ;
-        }
-        if(t_conditionDims >= 5) {
-            bool transmissive = its.isValid() ? (its.getBSDF()->getType() & BSDF::ETransmission) : false;
-
-            Vector n = its.shFrame.n;
-            if (!transmissive && dot(its.shFrame.n, its.shFrame.toWorld(its.wi)) < 0) {
-                n = -n;
-            }
-            auto canonicalNormal = dirToCanonical<2>(n);
-    
-            sample.template segment<2>(3) <<
-                canonicalNormal[0],
-                canonicalNormal[1]
-            ;
-        }
-        if(t_conditionDims >= 7) {
-            auto canonicalWi = dirToCanonical<2>(its.shFrame.toWorld(its.wi));
-            sample.template segment<2>(5) <<
-                canonicalWi[0],
-                canonicalWi[1];
-        }
     }
 
     Spectrum sampleSurface(
@@ -418,8 +369,6 @@ public:
         Vectord& sample,
         RadianceQueryRecord& rRec,
         MMCond& jmm_conditional,
-        MMCond& materialConditional,
-        MMCond& rotatedMaterialConditional,
         MMCond& productConditional
     ) const {
         using RotationMatrix = SDMMProcess::ConditionalSDMM::TangentSpace::MatrixS;
@@ -468,12 +417,10 @@ public:
         if(usingProduct || usingLearnedBSDF) {
             size_t n_slices = enoki::slices(learned_bsdf);
             if((type & BSDF::EDiffuseReflection) == (type & BSDF::EAll)) {
-                for(size_t slice_i = 0; slice_i < n_slices; ++slice_i) {
-                    sdmm::linalg::Vector<float, 3> world_mean(
-                        normal(0), normal(1), normal(2)
-                    );
-                    enoki::slice(learned_bsdf.tangent_space, slice_i).set_mean(world_mean);
-                }
+                sdmm::linalg::Vector<float, 3> world_mean(
+                    normal(0), normal(1), normal(2)
+                );
+                enoki::slice(learned_bsdf.tangent_space, 0).set_mean(world_mean);
             } else {
                 sdmm::linalg::Vector<float, 3> wi(
                     bRec.wi[0], bRec.wi[1], bRec.wi[2]
@@ -483,27 +430,12 @@ public:
                     its.shFrame.s[1], its.shFrame.t[1], its.shFrame.n[1],
                     its.shFrame.s[2], its.shFrame.t[2], its.shFrame.n[2]
                 );
-                for(size_t slice_i = 0; slice_i < n_slices; ++slice_i) {
-                    auto&& ts = enoki::slice(learned_bsdf.tangent_space, slice_i);
-                    auto&& cs = ts.coordinate_system;
-                    ts.rotate_to_wo(wi);
-                    cs.from = to_world_space * cs.from;
-                    cs.to = cs.to * sdmm::linalg::transpose(to_world_space);
-                    auto old_ts_mean = ts.mean;
-                    ts.mean = to_world_space * ts.mean;
-                    if(!enoki::all(enoki::isfinite(ts.mean))) {
-                        std::cerr << fmt::format(
-                            "mean={}, "
-                            "old_mean={}, "
-                            "to_world_space={}, "
-                            "wi={}\n",
-                            ts.mean,
-                            old_ts_mean,
-                            to_world_space,
-                            wi
-                        );
-                    }
-                }
+                auto&& ts = enoki::packet(learned_bsdf.tangent_space, 0);
+                auto&& cs = ts.coordinate_system;
+                ts.rotate_to_wo(wi);
+                cs.from = to_world_space * cs.from;
+                cs.to = cs.to * sdmm::linalg::transpose(to_world_space);
+                ts.mean = to_world_space * ts.mean;
             }
         }
 
@@ -528,11 +460,13 @@ public:
         heuristicConditionalWeight = 0.5;
         if(usingLearnedBSDF) {
             heuristicConditionalWeight = 0.f;
+        } else if(usingProduct) {
+            heuristicConditionalWeight = 0.5; // TODO: modify
         } else if(!validConditional) {
             heuristicConditionalWeight = 1.0f;
         }
 
-        if(!usingLearnedBSDF && rRec.nextSample1D() <= heuristicConditionalWeight) {
+        if(!validConditional || (!usingLearnedBSDF && rRec.nextSample1D() <= heuristicConditionalWeight)) {
             bsdfWeight = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
             pdf = bsdfPdf;
 
@@ -705,6 +639,7 @@ public:
 
                 "cond_weight={}\n"
                 "to={}\n"
+                "rotated={}\n"
                 "mean={}\n"
                 "cond_cov={}\n"
                 "cov_sqrt={}\n"
@@ -721,6 +656,7 @@ public:
 
                 conditional.weight.pmf,
                 conditional.tangent_space.coordinate_system.to,
+                conditional.tangent_space.coordinate_system.to * sdmm::Vector<float, 3>(sample(0), sample(1), sample(2)),
                 conditional.tangent_space.mean,
                 conditional.cov,
                 conditional.cov_sqrt
@@ -736,8 +672,6 @@ public:
         const RayDifferential &r,
         RadianceQueryRecord &rRec,
         MMCond& conditional,
-        MMCond& materialConditional,
-        MMCond& rotatedMaterialConditional,
         MMCond& productConditional,
         const Point2& samplePos,
         Vectord& firstSample,
@@ -921,8 +855,6 @@ public:
                 canonicalSample,
                 rRec,
                 conditional,
-                materialConditional,
-                rotatedMaterialConditional,
                 productConditional
             );
             if(!bsdfWeight.isValid()) {
@@ -934,23 +866,6 @@ public:
             if(Frame::cosTheta(bRec.wi) < 0) {
                 normal = -normal;
             }
-
-            // if(m_iteration > 30 && !(bsdf->getType() & BSDF::EGlossy)) {
-            //     GridKeyVector key;
-            //     jmm::buildKey(canonicalSample, normal, key);
-            //     typename HashGridType::AABB sampleAABB;
-            //     auto cell = m_grid->find(key, sampleAABB);
-            //     if(cell != nullptr) {
-            //         Li +=
-            //             throughput *
-            //             bsdfWeight *
-            //             Spectrum(
-            //                 cell->distribution.modelError()
-            //                 // cell->distribution.surfacePdf(canonicalSample, heuristicPdf)
-            //             );
-            //         break;
-            //     }
-            // }
 
             Float meanCurvature = 0, gaussianCurvature = 0;
             its.shape->getCurvature(its, meanCurvature, gaussianCurvature);
@@ -1126,6 +1041,7 @@ public:
                     vertices[d].point,
                     vertices[d].sdmm_normal,
                     vertices[d].weight.average(),
+                    vertices[d].heuristicWeight,
                     heuristic_pdf
                 );
             }
@@ -1157,7 +1073,13 @@ public:
                     rRec.sampler->next1D() - 0.5,
                     rRec.sampler->next1D() - 0.5,
                     rRec.sampler->next1D() - 0.5;
-                offset.array() *= sampleAABB.diagonal().template topRows<3>().array();
+                auto diagonal = sampleAABB.diagonal();
+                offset.array() *= MM::ConditionVectord(
+                    diagonal.coeff(0), diagonal.coeff(1), diagonal.coeff(2)
+                ).array();
+                if(!offset.array().isFinite().all()) {
+                    std::cerr << fmt::format("offset={}, diagonal={}\n", offset.transpose(), diagonal);
+                }
 
                 Eigen::Matrix<Scalar, 3, 1> jitteredPosition =
                     position.array() + offset.array();
@@ -1165,7 +1087,7 @@ public:
                 jmm::buildKey(jitteredPosition, vertices[d].normal, key);
                 typename HashGridType::AABB aabb;
                 auto gridCell = m_grid->find(key, aabb);
-                if(gridCell == nullptr || (aabb.min().array() == sampleAABB.min().array()).all()) {
+                if(gridCell == nullptr || enoki::all(aabb.min == sampleAABB.min)) {
                     continue;
                 } else {
                     if(enoki::slices(gridCell->sdmm) == 0) {
@@ -1271,7 +1193,7 @@ public:
 
 	ref<WorkProcessor> clone() const {
 		return new SDMMRenderer(
-            m_config, m_grid, m_diffuseDistribution, m_iteration, m_collect_data
+            m_config, m_grid, m_iteration, m_collect_data
         );
 	}
 
@@ -1315,7 +1237,6 @@ private:
     mutable BSDF::Value bsdf_posterior;
 
     std::shared_ptr<HashGridType> m_grid;
-    std::shared_ptr<MMDiffuse> m_diffuseDistribution;
 };
 
 std::deque<jmm::Samples<SDMMProcess::t_dims, SDMMRenderer::Scalar>> SDMMRenderer::prioritySamples;
@@ -1331,7 +1252,6 @@ Eigen::Matrix<SDMMRenderer::Scalar, SDMMProcess::t_conditionDims, 1> SDMMRendere
 constexpr int SDMMProcess::t_dims;
 constexpr int SDMMProcess::t_conditionalDims;
 constexpr int SDMMProcess::t_conditionDims;
-constexpr int SDMMProcess::t_initComponents;
 constexpr int SDMMProcess::t_components;
 constexpr bool SDMMProcess::USE_BAYESIAN;
 
@@ -1340,14 +1260,12 @@ SDMMProcess::SDMMProcess(
     RenderQueue *queue,
     const SDMMConfiguration &config,
     std::shared_ptr<HashGridType> grid,
-    std::shared_ptr<MMDiffuse> diffuseDistribution,
     int iteration,
     bool collect_data
 ) :
     BlockedRenderProcess(parent, queue, config.blockSize),
     m_config(config),
     m_grid(grid),
-    m_diffuseDistribution(diffuseDistribution),
     m_iteration(iteration),
     m_collect_data(collect_data)
 {
@@ -1357,7 +1275,7 @@ SDMMProcess::SDMMProcess(
 
 ref<WorkProcessor> SDMMProcess::createWorkProcessor() const {
     ref<WorkProcessor> renderer = new SDMMRenderer(
-        m_config, m_grid, m_diffuseDistribution, m_iteration, m_collect_data
+        m_config, m_grid, m_iteration, m_collect_data
     );
     return renderer;
 }

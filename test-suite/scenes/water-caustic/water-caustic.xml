@@ -11,7 +11,7 @@
 	<include filename="../_integrators/$integrator.xml"/>
 
 	<sensor type="perspective" >
-		<float name="fov" value="19.5" />
+		<float name="fov" value="35" />
 		<transform name="toWorld" >
 			<matrix value="-1 0 1.50996e-007 -1.03263e-006 0 1 0 0.990944 -1.50996e-007 0 -1 6.83879 0 0 0 1"/>
 		</transform>
@@ -20,49 +20,65 @@
 			<integer name="seed" value="1234"/>
 		</sampler>
 		<film type="hdrfilm" >
-			<integer name="width" value="512" />
-			<integer name="height" value="512" />
+			<integer name="width" value="640" />
+			<integer name="height" value="360" />
 			<boolean name="banner" value="false" />
 			<rfilter type="box" />
 		</film>
 	</sensor>
 	<bsdf type="twosided" id="LeftWall" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 			<rgb name="reflectance" value="0.63, 0.065, 0.05"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="RightWall" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 			<rgb name="reflectance" value="0.14, 0.45, 0.091"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="Floor" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 			<rgb name="reflectance" value="0.725, 0.71, 0.68"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="Ceiling" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 			<rgb name="reflectance" value="0.725, 0.71, 0.68"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="BackWall" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 			<rgb name="reflectance" value="0.725, 0.71, 0.68"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="ShortBox" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 			<rgb name="reflectance" value="0.725, 0.71, 0.68"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="TallBox" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 			<rgb name="reflectance" value="0.725, 0.71, 0.68"/>
 		</bsdf>
 	</bsdf>
 	<bsdf type="twosided" id="Light" >
 		<bsdf type="diffuse" >
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 			<rgb name="reflectance" value="0, 0, 0"/>
 		</bsdf>
 	</bsdf>

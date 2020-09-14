@@ -38,6 +38,8 @@
 
 	<bsdf type="twosided" id="apple_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<texture name="diffuseReflectance" type="bitmap" id="apple_texture.jpg">
 				<string name="filename" value="textures/apple_texture.jpg"/>
 			</texture>
@@ -48,6 +50,8 @@
 
 	<bsdf type="twosided" id="apple_obj_02SG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
+
 			<texture name="reflectance" type="bitmap" id="apple_leaf.JPG">
 				<string name="filename" value="textures/apple_leaf.JPG"/>
 			</texture>
@@ -56,6 +60,8 @@
 
 	<bsdf type="twosided" id="apple_obj_03SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.5 0.5 0.5"/>
 			<rgb name="specularReflectance" value="0.08 0.08 0.08"/>
 			<float name="exponent" value="88.51"/>
@@ -64,12 +70,15 @@
 
 	<bsdf type="twosided" id="apple_obj_06SG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.5 0.5 0.5"/>
 		</bsdf>
 	</bsdf>
 
 	<bsdf type="twosided" id="apple_obj_07SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<ref name="diffuseReflectance" id="apple_texture.jpg"/>
 			<rgb name="specularReflectance" value="0.08 0.08 0.08"/>
 			<float name="exponent" value="88.51"/>
@@ -78,6 +87,8 @@
 
 	<bsdf type="twosided" id="apple_obj_08SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<ref name="diffuseReflectance" id="apple_texture.jpg"/>
 			<rgb name="specularReflectance" value="0.08 0.08 0.08"/>
 			<float name="exponent" value="88.51"/>
@@ -86,6 +97,8 @@
 
 	<bsdf type="twosided" id="apple_obj_09SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<ref name="diffuseReflectance" id="apple_texture.jpg"/>
 			<rgb name="specularReflectance" value="0.08 0.08 0.08"/>
 			<float name="exponent" value="88.51"/>
@@ -94,6 +107,8 @@
 
 	<bsdf type="twosided" id="aspirator_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0 0 0"/>
 			<rgb name="specularReflectance" value="1 1 1"/>
 			<float name="exponent" value="98"/>
@@ -102,6 +117,8 @@
 
 	<bsdf type="twosided" id="aspirator_obj_03SG1_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.24 0.24 0.24"/>
 			<rgb name="specularReflectance" value="0.59 0.59 0.59"/>
 			<float name="exponent" value="54"/>
@@ -115,6 +132,7 @@
 
 	<bsdf type="twosided" id="backgroundSG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<texture name="reflectance" type="bitmap" id="background.jpg">
 				<string name="filename" value="textures/background.jpg"/>
 			</texture>
@@ -123,6 +141,8 @@
 
 	<bsdf type="twosided" id="boardSG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.35 0.25 0.0"/>
 			<rgb name="specularReflectance" value="0.2 0.2 0.2"/>
 			<float name="exponent" value="126"/>
@@ -131,6 +151,8 @@
 
 	<bsdf type="twosided" id="bread_container_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.24 0.24 0.24"/>
 			<rgb name="specularReflectance" value="0.59 0.59 0.59"/>
 			<float name="exponent" value="60.04"/>
@@ -139,6 +161,8 @@
 
 	<bsdf type="twosided" id="bread_container_obj_06SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0 0 0"/>
 			<rgb name="specularReflectance" value="0.04 0.04 0.04"/>
 			<float name="exponent" value="126"/>
@@ -147,6 +171,8 @@
 
 	<bsdf type="twosided" id="case_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.28 0.28 0.25"/>
 			<rgb name="specularReflectance" value="0.44 0.44 0.44"/>
 			<float name="exponent" value="226"/>
@@ -155,6 +181,8 @@
 
 	<bsdf type="twosided" id="case_obj_02SG_material">
 		<bsdf type="roughconductor">
+            <string name="sdmmFilename" value="conductor_Al_as_4c.sdmm"/>
+
 			<rgb name="specularReflectance" value="0.65 0.65 0.65"/>
 			<string name="material" value="Al"/>
 			<string name="distribution" value="as"/>
@@ -164,24 +192,29 @@
 
 	<bsdf type="twosided" id="ceilingSG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.76 0.76 0.76"/>
 		</bsdf>
 	</bsdf>
 
 	<bsdf type="twosided" id="chair1_obj_01SG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.63 0 0"/>
 		</bsdf>
 	</bsdf>
 
 	<bsdf type="twosided" id="cookies_obj_02SG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.43 0.33 0.21"/>
 		</bsdf>
 	</bsdf>
 
 	<bsdf type="twosided" id="cup2_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.16 0.27 0.42"/>
 			<rgb name="specularReflectance" value="0.18 0.18 0.18"/>
 			<float name="exponent" value="70"/>
@@ -190,11 +223,14 @@
 
 	<bsdf type="twosided" id="cup2_obj_01SG1_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="1 1 1"/>
 		</bsdf>
 	</bsdf>
 
 	<bsdf type="phong" id="cup2_obj_03SG_material">
+        <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 		<rgb name="diffuseReflectance" value="0.275 0.230357 0.185714"/>
 		<rgb name="specularReflectance" value="0.18125 0.18125 0.18125"/>
 		<float name="exponent" value="79.02"/>
@@ -202,6 +238,8 @@
 
 	<bsdf type="twosided" id="cup_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.875 0.875 0.875"/>
 			<rgb name="specularReflectance" value="0.125 0.125 0.125"/>
 			<float name="exponent" value="110"/>
@@ -210,6 +248,8 @@
 
 	<bsdf type="twosided" id="decoration_obj_09SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.02 0.02 0.02"/>
 			<rgb name="specularReflectance" value="0.14 0.14 0.14"/>
 			<float name="exponent" value="110"/>
@@ -218,12 +258,15 @@
 
 	<bsdf type="twosided" id="dish2SG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.57 0 0"/>
 		</bsdf>
 	</bsdf>
 
 	<bsdf type="twosided" id="edgeSG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.24 0.24 0.24"/>
 			<rgb name="specularReflectance" value="0.59 0.59 0.59"/>
 			<float name="exponent" value="54"/>
@@ -232,6 +275,8 @@
 
 	<bsdf type="twosided" id="floorSG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<texture name="diffuseReflectance" type="bitmap" id="Finishes.Painting.Paint.bump.jpg">
 				<string name="filename" value="textures/Finishes.Painting.Paint.bump.jpg"/>
 			</texture>
@@ -242,6 +287,8 @@
 
 	<bsdf type="twosided" id="floorSG1_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.24 0.24 0.24"/>
 			<rgb name="specularReflectance" value="0.59 0.59 0.59"/>
 			<float name="exponent" value="54"/>
@@ -250,6 +297,8 @@
 
 	<bsdf type="twosided" id="floorSG2_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<ref name="diffuseReflectance" id="Finishes.Painting.Paint.bump.jpg"/>
 			<rgb name="specularReflectance" value="0.18 0.18 0.18"/>
 			<float name="exponent" value="79.02"/>
@@ -258,6 +307,8 @@
 
 	<bsdf type="twosided" id="floor_lists_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.6 0.6 0.6"/>
 			<rgb name="specularReflectance" value="0.14 0.14 0.14"/>
 			<float name="exponent" value="54"/>
@@ -271,6 +322,8 @@
 
 	<bsdf type="twosided" id="ironplateSG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0 0 0"/>
 			<rgb name="specularReflectance" value="1 1 1"/>
 			<float name="exponent" value="38"/>
@@ -284,6 +337,8 @@
 
 	<bsdf type="twosided" id="knife_handleSG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.907407 0.907407 0.907407"/>
 			<rgb name="specularReflectance" value="0.0925926 0.0925926 0.0925926"/>
 			<float name="exponent" value="126"/>
@@ -292,6 +347,8 @@
 
 	<bsdf type="twosided" id="knifes_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.09 0.09 0.09"/>
 			<rgb name="specularReflectance" value="0.04 0.04 0.04"/>
 			<float name="exponent" value="62"/>
@@ -300,6 +357,8 @@
 
 	<bsdf type="twosided" id="knifes_obj_02SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.463636 0.463636 0.463636"/>
 			<rgb name="specularReflectance" value="0.536364 0.536364 0.536364"/>
 			<float name="exponent" value="89.44"/>
@@ -308,6 +367,8 @@
 
 	<bsdf type="twosided" id="knifes_obj_07SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.31 0.31 0.31"/>
 			<rgb name="specularReflectance" value="0.59 0.59 0.59"/>
 			<float name="exponent" value="60.04"/>
@@ -316,6 +377,8 @@
 
 	<bsdf type="twosided" id="lambert2SG_lamp1_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.875 0.875 0.875"/>
 			<rgb name="specularReflectance" value="0.125 0.125 0.125"/>
 			<float name="exponent" value="110"/>
@@ -324,18 +387,21 @@
 
 	<bsdf type="twosided" id="lambert5SG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0 0 0"/>
 		</bsdf>
 	</bsdf>
 
 	<bsdf type="twosided" id="lambert6SG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0 0 0"/>
 		</bsdf>
 	</bsdf>
 
 	<bsdf type="twosided" id="lambert7SG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0 0 0"/>
 		</bsdf>
 	</bsdf>
@@ -347,6 +413,8 @@
 
 	<bsdf type="twosided" id="lamp2_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.02 0.02 0.02"/>
 			<rgb name="specularReflectance" value="0.06 0.06 0.06"/>
 			<float name="exponent" value="54"/>
@@ -355,12 +423,15 @@
 
 	<bsdf type="twosided" id="lettuce_obj_SG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.09 0.37 0"/>
 		</bsdf>
 	</bsdf>
 
 	<bsdf type="twosided" id="mat_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.05 0.05 0.05"/>
 			<rgb name="specularReflectance" value="0.79 0.79 0.79"/>
 			<float name="exponent" value="360.04"/>
@@ -369,6 +440,7 @@
 
 	<bsdf type="twosided" id="pasted__ceilingSG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.98 0.98 0.98"/>
 		</bsdf>
 	</bsdf>
@@ -380,6 +452,8 @@
 
 	<bsdf type="twosided" id="plate2_obj_03SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.875 0.875 0.875"/>
 			<rgb name="specularReflectance" value="0.125 0.125 0.125"/>
 			<float name="exponent" value="110"/>
@@ -388,6 +462,8 @@
 
 	<bsdf type="twosided" id="plate2_obj_03SG1_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.02 0.02 0.02"/>
 			<rgb name="specularReflectance" value="0.14 0.14 0.14"/>
 			<float name="exponent" value="110"/>
@@ -401,6 +477,8 @@
 
 	<bsdf type="twosided" id="plates2_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.875 0.875 0.875"/>
 			<rgb name="specularReflectance" value="0.125 0.125 0.125"/>
 			<float name="exponent" value="110"/>
@@ -409,6 +487,8 @@
 
 	<bsdf type="twosided" id="roaster_obj_03SG_glass_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0 0 0"/>
 			<rgb name="specularReflectance" value="0.19 0.19 0.19"/>
 			<float name="exponent" value="110"/>
@@ -421,6 +501,8 @@
 
 	<bsdf type="twosided" id="saltFBXASC045cellar_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0 0 0"/>
 			<rgb name="specularReflectance" value="0.59 0.59 0.59"/>
 			<float name="exponent" value="110"/>
@@ -429,6 +511,8 @@
 
 	<bsdf type="twosided" id="saltFBXASC045cellar_obj_02SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0 0 0"/>
 			<rgb name="specularReflectance" value="1 1 1"/>
 			<float name="exponent" value="89.44"/>
@@ -437,6 +521,7 @@
 
 	<bsdf type="twosided" id="serviette_03SG_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<texture name="reflectance" type="bitmap" id="serviette.jpg">
 				<string name="filename" value="textures/serviette.jpg"/>
 			</texture>
@@ -445,6 +530,8 @@
 
 	<bsdf type="twosided" id="shelf_stuff_obj_10SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.27 0.27 0.27"/>
 			<rgb name="specularReflectance" value="0.59 0.59 0.59"/>
 			<float name="exponent" value="73.59"/>
@@ -453,6 +540,8 @@
 
 	<bsdf type="twosided" id="shelf_stuff_obj_23SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.31 0.31 0.31"/>
 			<rgb name="specularReflectance" value="0.59 0.59 0.59"/>
 			<float name="exponent" value="60.04"/>
@@ -461,6 +550,8 @@
 
 	<bsdf type="twosided" id="shelf_stuff_obj_25SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.01 0.01 0.01"/>
 			<rgb name="specularReflectance" value="0.06 0.06 0.06"/>
 			<float name="exponent" value="54"/>
@@ -469,6 +560,8 @@
 
 	<bsdf type="twosided" id="shelf_stuff_obj_30SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0 0 0"/>
 			<rgb name="specularReflectance" value="0.06 0.06 0.06"/>
 			<float name="exponent" value="54"/>
@@ -477,6 +570,8 @@
 
 	<bsdf type="twosided" id="shelf_stuff_obj_32SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.27 0.27 0.27"/>
 			<rgb name="specularReflectance" value="0.59 0.59 0.59"/>
 			<float name="exponent" value="73.59"/>
@@ -485,6 +580,8 @@
 
 	<bsdf type="twosided" id="shelf_stuff_obj_33SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0 0 0"/>
 			<rgb name="specularReflectance" value="0.06 0.06 0.06"/>
 			<float name="exponent" value="54"/>
@@ -493,6 +590,8 @@
 
 	<bsdf type="twosided" id="shelf_stuff_obj_35SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.2 0.2 0.2"/>
 			<rgb name="specularReflectance" value="0.59 0.59 0.59"/>
 			<float name="exponent" value="73.59"/>
@@ -501,6 +600,8 @@
 
 	<bsdf type="twosided" id="shelf_stuff_obj_36SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0 0 0"/>
 			<rgb name="specularReflectance" value="1 1 1"/>
 			<float name="exponent" value="122"/>
@@ -509,6 +610,8 @@
 
 	<bsdf type="twosided" id="table2_obj_10SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.907407 0.907407 0.907407"/>
 			<rgb name="specularReflectance" value="0.0925926 0.0925926 0.0925926"/>
 			<float name="exponent" value="126"/>
@@ -517,6 +620,8 @@
 
 	<bsdf type="twosided" id="thermos_flask_obj_02SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.02 0.02 0.02"/>
 			<rgb name="specularReflectance" value="0.1 0.1 0.1"/>
 			<float name="exponent" value="254"/>
@@ -525,6 +630,8 @@
 
 	<bsdf type="twosided" id="tomatos_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.56 0.02 0"/>
 			<rgb name="specularReflectance" value="0.08 0.08 0.08"/>
 			<float name="exponent" value="179.02"/>
@@ -533,6 +640,8 @@
 
 	<bsdf type="twosided" id="tomatos_obj_03SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.92 0.82 0.5"/>
 			<rgb name="specularReflectance" value="0.08 0.08 0.08"/>
 			<float name="exponent" value="22.08"/>
@@ -541,6 +650,8 @@
 
 	<bsdf type="twosided" id="wallsSG_material">
 		<bsdf type="roughconductor">
+            <string name="sdmmFilename" value="conductor_Al_as_4c.sdmm"/>
+
 			<string name="material" value="Al"/>
 			<string name="distribution" value="as"/>
 			<float name="alpha" value="0.03"/>
@@ -550,12 +661,15 @@
 
 	<bsdf type="twosided" id="wallsSG1_material">
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.57 0 0"/>
 		</bsdf>
 	</bsdf>
 
 	<bsdf type="twosided" id="window1_obj_01SG_material">
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<rgb name="diffuseReflectance" value="0.907407 0.907407 0.907407"/>
 			<rgb name="specularReflectance" value="0.0925926 0.0925926 0.0925926"/>
 			<float name="exponent" value="54"/>
@@ -6924,6 +7038,7 @@
 		<integer name="shapeIndex" value="911"/>
 
 		<bsdf type="diffuse">
+            <string name="sdmmFilename" value="diffuse.sdmm"/>
 			<rgb name="reflectance" value="0.5"/>
 		</bsdf>
 		<!--	<ref name="bsdf" id="kitchen_set5_obj_03SG_glass_material"/>-->
@@ -10890,6 +11005,8 @@
 		<integer name="shapeIndex" value="0"/>
 
 		<bsdf type="phong">
+            <string name="sdmmFilename" value="phong_4c.sdmm"/>
+
 			<float name="exponent" value="32"/>
 			<spectrum name="specularReflectance" value="0.1"/>
 			<spectrum name="diffuseReflectance" value="0.05"/>

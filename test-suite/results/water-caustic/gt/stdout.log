@@ -1,27 +1,60 @@
-2020-05-12 22:58:39 INFO  main [mitsuba.cpp:274] Mitsuba version 0.6.0 (Linux, 64 bit), Copyright (c) 2017 Wenzel Jakob
-2020-05-12 22:58:39 INFO  main [mitsuba.cpp:377] Parsing scene description from "/home/anadodik/pmc/scenes/water-caustic/water-caustic.xml" ..
-2020-05-12 22:58:39 INFO  main [scenehandler.cpp:675] In file "/home/anadodik/pmc/scenes/water-caustic/water-caustic.xml" (near line 11): Parsing included file "gt.xml" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/volpath.so" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/independent.so" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/box.so" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/hdrfilm.so" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/perspective.so" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/diffuse.so" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/twosided.so" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/dielectric.so" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/rectangle.so" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/cube.so" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/area.so" ..
-2020-05-12 22:58:39 INFO  main [PluginManager] Loading plugin "plugins/obj.so" ..
-2020-05-12 22:58:39 INFO  main [WavefrontOBJ] Loading geometry from "Mesh001.obj" ..
-2020-05-12 22:58:40 INFO  main [WavefrontOBJ] Mesh001: 102938 triangles, 61830 vertices (merged 246984 vertices).
-2020-05-12 22:58:40 INFO  main [WavefrontOBJ] Done with "Mesh001.obj" (took 475 ms)
-2020-05-12 22:58:40 INFO  ren0 [KDTreeBase] Constructing a SAH kd-tree (102968 primitives) ..
-2020-05-12 22:58:40 INFO  ren0 [KDTreeBase] Finished -- took 314 ms.
-2020-05-12 22:58:40 INFO  ren0 [SamplingIntegrator] Starting render job (512x512, 131072 samples, 128 cores, SSE2 enabled) ..
-2020-05-12 23:55:34 INFO  ren0 [RenderJob] Render time: 56.8998m
-2020-05-12 23:55:34 INFO  ren0 [HDRFilm] Writing image to "/home/anadodik/pmc/scenes/gt/water-caustic/gt/water-caustic.exr" ..
-2020-05-12 23:55:34 INFO  main [statistics.cpp:142] Statistics:
+2020-09-11 13:00:56 INFO  main [mitsuba.cpp:274] Mitsuba version 0.6.0 (Linux, 64 bit), Copyright (c) 2017 Wenzel Jakob
+2020-09-11 13:00:56 INFO  main [mitsuba.cpp:377] Parsing scene description from "/home/anadodik/sdmm-mitsuba/test-suite/scenes/water-caustic/water-caustic.xml" ..
+2020-09-11 13:00:56 INFO  main [scenehandler.cpp:675] In file "/home/anadodik/sdmm-mitsuba/test-suite/scenes/water-caustic/water-caustic.xml" (near line 11): Parsing included file "gt.xml" ..
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/volpath.so" ..
+2020-09-11 13:00:56 WARN  main [scenehandler.cpp:795] In file "/home/anadodik/sdmm-mitsuba/test-suite/scenes/water-caustic/../_integrators/gt.xml" (near line 12): Unqueried attribute "blockSize" in element "integrator"
+2020-09-11 13:00:56 WARN  main [scenehandler.cpp:795] In file "/home/anadodik/sdmm-mitsuba/test-suite/scenes/water-caustic/../_integrators/gt.xml" (near line 13): Unqueried attribute "maxDepth" in element "scene"
+2020-09-11 13:00:56 WARN  main [scenehandler.cpp:795] In file "/home/anadodik/sdmm-mitsuba/test-suite/scenes/water-caustic/../_integrators/gt.xml" (near line 13): Unqueried attribute "rrDepth" in element "scene"
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/independent.so" ..
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/box.so" ..
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/hdrfilm.so" ..
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/perspective.so" ..
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/diffuse.so" ..
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/twosided.so" ..
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/dielectric.so" ..
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/rectangle.so" ..
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/cube.so" ..
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/area.so" ..
+2020-09-11 13:00:56 INFO  main [PluginManager] Loading plugin "plugins/obj.so" ..
+2020-09-11 13:00:56 INFO  main [WavefrontOBJ] Loading geometry from "Mesh001.obj" ..
+2020-09-11 13:00:56 INFO  main [WavefrontOBJ] Mesh001: 102938 triangles, 61830 vertices (merged 246984 vertices).
+2020-09-11 13:00:56 INFO  main [WavefrontOBJ] Done with "Mesh001.obj" (took 464 ms)
+2020-09-11 13:00:56 INFO  ren0 [KDTreeBase] Constructing a SAH kd-tree (102968 primitives) ..
+2020-09-11 13:00:56 INFO  ren0 [KDTreeBase] Finished -- took 316 ms.
+2020-09-11 13:00:56 INFO  ren0 [SamplingIntegrator] Starting render job (640x360, 500000 samples, 128 cores, SSE2 enabled) ..
+2020-09-11 13:03:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:06:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:09:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:12:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:15:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:18:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:21:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:24:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:27:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:30:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:33:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:36:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:39:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:42:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:45:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:48:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:51:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:54:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 13:57:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:00:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:03:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:06:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:09:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:12:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:15:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:18:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:21:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:24:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:27:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:30:56 INFO  flush[HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:32:35 INFO  ren0 [RenderJob] Render time: 1.5276h
+2020-09-11 14:32:35 INFO  ren0 [HDRFilm] Writing image to "/home/anadodik/sdmm-mitsuba/test-suite/results/water-caustic/gt/water-caustic.exr" ..
+2020-09-11 14:32:35 INFO  main [statistics.cpp:142] Statistics:
 ------------------------------------------------------------
  * Loaded plugins :
     -  plugins/area.so [Area light]
@@ -38,9 +71,9 @@
     -  plugins/volpath.so [Volumetric path tracer]
 
   * General :
-    -  Normal rays traced : 212.864 G
-    -  Shadow rays traced : 122.440 G
+    -  Normal rays traced : 431.807 G
+    -  Shadow rays traced : 217.003 G
 
   * Volumetric path tracer :
-    -  Average path length : 6.20 (212.86 G / 34.36 G)
+    -  Average path length : 3.75 (431.81 G / 115.20 G)
 ------------------------------------------------------------
