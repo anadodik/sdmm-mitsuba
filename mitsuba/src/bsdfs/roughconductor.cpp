@@ -241,6 +241,7 @@ public:
             m_sdmm = std::make_unique<SDMM4>();
             sdmm::load_json(*m_sdmm, path.string().c_str());
             enoki::set_slices(conditioner, enoki::slices(*m_sdmm));
+            conditioner.compute_inverse = APPROXIMATE_PRODUCT;
             sdmm::prepare(conditioner, *m_sdmm);
         }
     }

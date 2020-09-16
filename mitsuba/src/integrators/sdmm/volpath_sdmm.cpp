@@ -300,6 +300,8 @@ public:
                 auto& cell = nodes[cell_i].value;
                 sdmm::em_step(cell->sdmm, cell->em, cell->data);
                 enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
+                cell->conditioner.compute_inverse = false;
+                cell->conditioner.normalize_weights = !m_config.sampleProduct;
                 sdmm::prepare(cell->conditioner, cell->sdmm);
 
                 cell->data.clear();

@@ -111,6 +111,8 @@ public:
             
             m_dmm = std::make_unique<DMM>();
             sdmm::load_json(*m_dmm, path.string().c_str());
+            m_dmm->compute_inverse = APPROXIMATE_PRODUCT;
+            sdmm::prepare_vectorized(*m_dmm);
         }
     }
 

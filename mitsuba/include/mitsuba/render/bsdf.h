@@ -36,6 +36,8 @@
 #include <mitsuba/render/common.h>
 #include <mitsuba/render/shader.h>
 
+#define APPROXIMATE_PRODUCT (0)
+
 MTS_NAMESPACE_BEGIN
 
 /**

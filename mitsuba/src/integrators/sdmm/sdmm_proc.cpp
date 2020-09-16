@@ -452,7 +452,7 @@ public:
         if(!usingLearnedBSDF && validConditional && usingProduct) {
             auto product_success = sdmm::product(conditional, learned_bsdf, product);
             if(enoki::none(product_success)) {
-                spdlog::info("product unsuccessful={}", product_success);
+                spdlog::info("product successful={}", product_success);
                 usingProduct = false;
             }
         }
@@ -461,7 +461,7 @@ public:
         if(usingLearnedBSDF) {
             heuristicConditionalWeight = 0.f;
         } else if(usingProduct) {
-            heuristicConditionalWeight = 0.5; // TODO: modify
+            heuristicConditionalWeight = 0.3;
         } else if(!validConditional) {
             heuristicConditionalWeight = 1.0f;
         }
@@ -1036,12 +1036,11 @@ public:
             }
             {
                 std::lock_guard lock(cell.mutex_wrapper.mutex);
-                Float heuristic_pdf = vertices[d].isDiffuse ? vertices[d].heuristicPdf : -1;
+                Float heuristic_pdf = -1; // m_config.sampleProduct ? -1 : vertices[d].heuristicPdf; // vertices[d].isDiffuse ? vertices[d].heuristicPdf : -1;
                 cell.data.push_back(
                     vertices[d].point,
                     vertices[d].sdmm_normal,
                     vertices[d].weight.average(),
-                    vertices[d].heuristicWeight,
                     heuristic_pdf
                 );
             }
