@@ -1978,7 +1978,8 @@ public:
                 // We only guide smooth BRDFs for now. Analytic product sampling
                 // would be conceivable for discrete decisions such as refraction vs
                 // reflection.
-                if (bsdf->getType() & BSDF::ESmooth) {
+                // if (bsdf->getType() & BSDF::ESmooth) {
+                if (bsdf->getType() & BSDF::ESmooth && (m_bsdfSamplingFractionLoss != EBsdfSamplingFractionLoss::ENone || m_bsdfSamplingFraction != 1)) {
                     dTree = m_sdTree->dTreeWrapper(its.p, dTreeVoxelSize);
                 }
 
@@ -2186,7 +2187,8 @@ public:
         avgPathLength.incrementBase();
         avgPathLength += rRec.depth;
 
-        if (nVertices > 0 && !m_isFinalIter) {
+        // if (nVertices > 0 && !m_isFinalIter) {
+        if (nVertices > 0 && !m_isFinalIter && (m_bsdfSamplingFractionLoss != EBsdfSamplingFractionLoss::ENone || m_bsdfSamplingFraction != 1)) {
             for (int i = 0; i < nVertices; ++i) {
                 vertices[i].commit(*m_sdTree, m_doNee ? 0.5f : 1.0f, m_spatialFilter, m_directionalFilter, m_isBuilt ? m_bsdfSamplingFractionLoss : EBsdfSamplingFractionLoss::ENone, rRec.sampler);
             }

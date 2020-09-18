@@ -266,14 +266,16 @@ namespace jmm {
                     bPriors[component_i] = bPrior;
                     bDepthPriors[component_i].setZero();
                     // std::cerr << "Curvature: " << curvatures(position_i) << "\n";
-                    if(std::abs(curvatures(position_i)) < 1e-4) {
-                        bDepthPriors[component_i] += 
-                            n * n.transpose() * 5e-8;
-                    } else {
-                        // std::cerr << "Large curvature init\n";
-                        bDepthPriors[component_i] +=
-                            n * n.transpose() * 1e-5;
-                    }
+                    bDepthPriors[component_i] += 
+                        n * n.transpose() * 1e-6;
+                    // if(std::abs(curvatures(position_i)) < 1e-4) {
+                    //     bDepthPriors[component_i] += 
+                    //         n * n.transpose() * 5e-8;
+                    // } else {
+                    //     // std::cerr << "Large curvature init\n";
+                    //     bDepthPriors[component_i] +=
+                    //         n * n.transpose() * 1e-5;
+                    // }
 
                     ++component_i;
                 }

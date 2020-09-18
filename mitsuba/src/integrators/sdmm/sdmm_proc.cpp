@@ -393,9 +393,12 @@ public:
 			normal = -normal;
 		}
 
-		GridKeyVector key;
-		jmm::buildKey(sample, normal, key);
-        auto gridCell = m_grid->find(key);
+        GridCell* gridCell = nullptr;
+        if(m_iteration != 0) {
+            GridKeyVector key;
+            jmm::buildKey(sample, normal, key);
+            gridCell = m_grid->find(key);
+        }
         if(m_iteration == 0 || gridCell == nullptr || enoki::slices(gridCell->sdmm) == 0) {
             heuristicConditionalWeight = 1.0f;
             Spectrum result = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
@@ -461,7 +464,7 @@ public:
         if(usingLearnedBSDF) {
             heuristicConditionalWeight = 0.f;
         } else if(usingProduct) {
-            heuristicConditionalWeight = 0.5; // TODO: modify
+            heuristicConditionalWeight = 0.3;
         } else if(!validConditional) {
             heuristicConditionalWeight = 1.0f;
         }
@@ -868,7 +871,7 @@ public:
             }
 
             Float meanCurvature = 0, gaussianCurvature = 0;
-            its.shape->getCurvature(its, meanCurvature, gaussianCurvature);
+            // its.shape->getCurvature(its, meanCurvature, gaussianCurvature);
             
             if(bsdfWeight.isZero()) {
                 if(!savedSample) {
@@ -997,7 +1000,7 @@ public:
         avgPathLength.incrementBase();
         avgPathLength += rRec.depth;
 
-        if(depth == 0 || !m_collect_data) {
+        if(depth == 0 || !m_collect_data || Li.max() == 0) {
             return Li;
         }
 
@@ -1036,12 +1039,11 @@ public:
             }
             {
                 std::lock_guard lock(cell.mutex_wrapper.mutex);
-                Float heuristic_pdf = vertices[d].isDiffuse ? vertices[d].heuristicPdf : -1;
+                Float heuristic_pdf = -1; // vertices[d].isDiffuse ? vertices[d].heuristicPdf : -1;
                 cell.data.push_back(
                     vertices[d].point,
                     vertices[d].sdmm_normal,
                     vertices[d].weight.average(),
-                    vertices[d].heuristicWeight,
                     heuristic_pdf
                 );
             }

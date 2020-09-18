@@ -1,4 +1,5 @@
 <scene version="0.6.0">
+    <default name="bsdfSamplingFraction" value="0.5"/>
     <integrator type="guided_path">
         <boolean name="strictNormals" value="true"/>
         <integer name="maxDepth" value="$maxDepth"/>
@@ -27,6 +28,8 @@
         <string name="directionalFilter" value="box"/>
         <integer name="sTreeThreshold" value="4000"/>
         <integer name="sppPerPass" value="1"/>
+        <float name="bsdfSamplingFraction" value="$bsdfSamplingFraction"/>
+        <!--<string name="nee" value="always"/>-->
         <!-- <integer name="blockSize" value="8"/> -->
     </integrator>
 </scene>
