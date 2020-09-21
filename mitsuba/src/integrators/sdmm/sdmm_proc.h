@@ -34,6 +34,7 @@
 #include <sdmm/distributions/sdmm.h>
 #include <sdmm/distributions/sdmm_conditioner.h>
 #include <sdmm/opt/em.h>
+#include <sdmm/opt/init.h>
 #include <sdmm/spaces/directional.h>
 #include <sdmm/spaces/euclidian.h>
 #include <sdmm/spaces/spatio_directional.h>
@@ -159,19 +160,14 @@ public:
     };
 
     struct GridCell {
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-        MM distribution;
-        RenderingSamplesType samples;
-        StepwiseEMType optimizer;
-        Scalar error;
-        
         JointSDMM sdmm;
         Conditioner conditioner;
-        RNG rng;
-
         Data data;
         EM em;
+        RNG rng;
+
+        Data training_data;
+
         MutexWrapper mutex_wrapper;
     };
 

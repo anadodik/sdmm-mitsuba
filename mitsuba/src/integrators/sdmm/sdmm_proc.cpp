@@ -692,50 +692,32 @@ public:
             (m_iteration == 0) ? initialHeuristicWeight : 0.5;
 
         struct Vertex {
-            Vectord canonicalSample;
             Spectrum weight;
-            Spectrum functionValue;
             Spectrum throughput;
-            Spectrum directIllumination;
-            Float heuristicWeight;
-            Float heuristicPdf;
             Float samplingPdf;
-            Float learnedPdf;
-            Eigen::Matrix<Scalar, 3, 1> normal;
-            bool isDiffuse;
-            Scalar curvature;
-
             sdmm::embedded_s_t<SDMMProcess::Data> point;
             sdmm::normal_s_t<SDMMProcess::Data> sdmm_normal;
+            Vectord canonicalSample;
+            Eigen::Matrix<Scalar, 3, 1> normal;
 
             void record(const Spectrum& radiance) {
                 for(int ch = 0; ch < 3; ++ch) {
                     if(throughput[ch] > Epsilon) {
                         weight[ch] += radiance[ch] / (throughput[ch] * samplingPdf);
-                        functionValue[ch] += radiance[ch] / throughput[ch];
                     }
                 }
             }
         };
 
-        std::array<Vertex, 100> vertices;
+        std::array<Vertex, 10> vertices;
         assert(std::max(m_config.maxDepth + 1, m_config.savedSamplesPerPath) < 100);
         int depth = 0;
 
-        auto recordRadiance = [&](const Spectrum& radiance, bool recordDirect=true) {
+        auto recordRadiance = [&](const Spectrum& radiance) {
             Li += radiance;
 
             if(depth == 0) {
                 return;
-            }
-
-            if(recordDirect) {
-                for(int ch = 0; ch < 3; ++ch) {
-                    if(vertices[depth - 1].throughput[ch] > Epsilon) {
-                        vertices[depth - 1].directIllumination[ch] +=
-                            radiance[ch] / vertices[depth - 1].throughput[ch];
-                    }
-                }
             }
             for(int i = 0; i < depth; ++i) {
                 vertices[i].record(radiance);
@@ -923,7 +905,7 @@ public:
 #endif
                 Float weight = 1; // miWeight(misPdf, emitterPdf);
                 if(!value.isZero()) {
-                    recordRadiance(throughput * value * weight, !cacheable);
+                    recordRadiance(throughput * value * weight);
                 }
 
                 if(cacheable) {
@@ -942,18 +924,9 @@ public:
                         // );
                         
                         vertices[depth] = Vertex{
-                            canonicalSample,
                             incomingRadiance * invPdf,
-                            incomingRadiance,
                             throughput,
-                            incomingRadiance,
-                            heuristicConditionalWeight,
-                            heuristicPdf,
                             misPdf,
-                            gmmPdf,
-                            normal,
-                            isDiffuse,
-                            meanCurvature,
                             sdmm::embedded_s_t<SDMMProcess::JointSDMM>{
                                 canonicalSample(0),
                                 canonicalSample(1),
@@ -964,7 +937,9 @@ public:
                             },
                             sdmm::normal_s_t<SDMMProcess::Data>{
                                 normal(0), normal(1), normal(2)
-                            }
+                            },
+                            canonicalSample,
+                            normal
                         };
 
                         ++depth;
@@ -1004,47 +979,17 @@ public:
             return Li;
         }
 
-        auto push_back_vertex = [&](SDMMProcess::GridCell& cell, int d) {
-            if(enoki::slices(cell.sdmm) != 0) {
-                return;
-            }
-            Eigen::Matrix<Scalar, 3, 1> color;
-            color <<
-                vertices[d].weight[0],
-                vertices[d].weight[1],
-                vertices[d].weight[2];
-            Scalar discount = 0;
-            cell.samples.push_back_synchronized(
-                vertices[d].canonicalSample,
-                // vertices[d].functionValue.max() * canonicalToDirInvJacobian<t_conditionalDims>(),
-                vertices[d].samplingPdf * canonicalToDirInvJacobian<t_conditionalDims>(),
-                vertices[d].learnedPdf * canonicalToDirInvJacobian<t_conditionalDims>(),
-                vertices[d].heuristicPdf * canonicalToDirInvJacobian<t_conditionalDims>(),
-                vertices[d].heuristicWeight,
-                vertices[d].weight.average(),
-                color,
-
-                vertices[d].isDiffuse,
-                vertices[d].normal,
-                vertices[d].curvature,
-
-                vertices[d].directIllumination.max() * canonicalToDirInvJacobian<t_conditionalDims>(), // reward
-                discount
-            );
-        };
-
         auto push_back_data = [&](SDMMProcess::GridCell& cell, int d) {
             if(!m_collect_data) {
                 return;
             }
+
             {
                 std::lock_guard lock(cell.mutex_wrapper.mutex);
-                Float heuristic_pdf = -1; // vertices[d].isDiffuse ? vertices[d].heuristicPdf : -1;
                 cell.data.push_back(
                     vertices[d].point,
                     vertices[d].sdmm_normal,
-                    vertices[d].weight.average(),
-                    heuristic_pdf
+                    vertices[d].weight.average()
                 );
             }
         };
@@ -1059,9 +1004,6 @@ public:
             typename HashGridType::AABB sampleAABB;
             auto sampleCell = m_grid->find(key, sampleAABB);
             if(sampleCell != nullptr) {
-                if(enoki::slices(sampleCell->sdmm) == 0) {
-                    push_back_vertex(*sampleCell, d);
-                }
                 push_back_data(*sampleCell, d);
             } else {
                 std::cerr << "ERROR: COULD NOT FIND CELL FOR SAMPLE." << std::endl;
@@ -1092,9 +1034,6 @@ public:
                 if(gridCell == nullptr || enoki::all(aabb.min == sampleAABB.min)) {
                     continue;
                 } else {
-                    if(enoki::slices(gridCell->sdmm) == 0) {
-                        push_back_vertex(*gridCell, d);
-                    }
                     push_back_data(*gridCell, d);
                 }
             }

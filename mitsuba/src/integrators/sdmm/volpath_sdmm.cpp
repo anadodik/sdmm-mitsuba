@@ -146,12 +146,12 @@ public:
     template<typename JMM, typename SDMM>
     void copy_sdmm(JMM& jmm, SDMM& sdmm) {
         size_t NComponents = jmm.nComponents();
-        enoki::set_slices(sdmm, NComponents);
-        copy_means(jmm, sdmm, std::make_index_sequence<SDMM::Embedded::Size>{});
+        // enoki::set_slices(sdmm, NComponents);
+        // copy_means(jmm, sdmm, std::make_index_sequence<SDMM::Embedded::Size>{});
         copy_covs(jmm, sdmm, std::make_index_sequence<SDMM::Tangent::Size * SDMM::Tangent::Size>{});
-        for(size_t component_i = 0; component_i < NComponents; ++component_i) {
-            enoki::slice(sdmm.weight.pmf, component_i) = jmm.weights()[component_i];
-        }
+        // for(size_t component_i = 0; component_i < NComponents; ++component_i) {
+        //     enoki::slice(sdmm.weight.pmf, component_i) = jmm.weights()[component_i];
+        // }
         bool prepare_success = sdmm::prepare_vectorized(sdmm);
         assert(prepare_success);
     }
@@ -171,77 +171,19 @@ public:
     }
 
     GridCell initCell() {
-        using JointSDMM = typename SDMMProcess::JointSDMM;
-        constexpr static size_t NComponents = SDMMProcess::NComponents;
-        Eigen::Matrix<Scalar, 5, 1> bPrior;// bPrior << 1e-3, 1e-3, 1e-3, 1e-5, 1e-5;
         GridCell cell;
-        cell.samples.reserve(m_maxSamplesSize);
-        cell.optimizer = SDMMProcess::StepwiseEMType(
-            m_config.alpha, bPrior, 1.f / NComponents
-        );
         cell.data.reserve(m_maxSamplesSize);
-        cell.em = enoki::zero<SDMMProcess::EM>(SDMMProcess::NComponents);
-
-        float weight_prior = 1.f / NComponents;
-        float cov_prior_strength = 5.f / NComponents;
-        sdmm::matrix_t<JointSDMM> cov_prior = enoki::zero<sdmm::matrix_t<JointSDMM>>(NComponents);
-        for(size_t slice_i = 0; slice_i < NComponents; ++slice_i) {
-            enoki::slice(cov_prior, slice_i) = sdmm::matrix_s_t<JointSDMM>(
-                2e-3, 0, 0, 0, 0,
-                0, 2e-3, 0, 0, 0,
-                0, 0, 2e-3, 0, 0,
-                0, 0, 0, 2e-4, 0,
-                0, 0, 0, 0, 2e-4
-            );
-        }
-        cell.em.set_priors(weight_prior, cov_prior_strength, cov_prior);
         return cell;
     }
 
     void initializeGridCell(SDMMProcess::GridCell* cell, Scalar maxDiagonal) {
-        constexpr static int nSpatialComponents = SDMMProcess::NComponents / 8;
-        constexpr static Scalar depthPrior = 3e-2;
+        constexpr static int n_spatial_components = SDMMProcess::NComponents / 8;
 
-        if(
-            cell->samples.size() < 2 * nSpatialComponents ||
-            enoki::slices(cell->sdmm) > 0
-        ) {
+        if(cell->data.size < 2 * n_spatial_components || enoki::slices(cell->sdmm) > 0) {
             return;
         }
-        std::cerr << "Initializing grid cell.\n";
-        std::function<Scalar()> rng = 
-            [samplerCopy = m_sampler]() mutable -> Scalar {
-                return samplerCopy->next1D();
-            };
-        std::vector<jmm::SphereSide> sides(
-            cell->samples.size(), jmm::SphereSide::Top
-        );
-        auto& bPriors = cell->optimizer.getBPriors();
-        auto& bDepthPriors = cell->optimizer.getBDepthPriors();
-        jmm::uniformHemisphereInit(
-            cell->distribution,
-            bPriors,
-            bDepthPriors,
-            rng,
-            nSpatialComponents,
-            depthPrior,
-            3 * maxDiagonal / nSpatialComponents,
-            cell->samples,
-            sides,
-            true
-        );
-        copy_sdmm(cell->distribution, cell->sdmm);
-        cell->em.depth_prior = enoki::zero<decltype(cell->em.depth_prior)>(
-            cell->distribution.nComponents()
-        );
-        for(size_t prior_i = 0; prior_i < cell->distribution.nComponents(); ++prior_i) {
-            for(size_t r = 0; r < 3; ++r) {
-                for(size_t c = 0; c < 3; ++c) {
-                    enoki::slice(cell->em.depth_prior, prior_i)(r, c) =
-                        bDepthPriors[prior_i](r, c);
-                }
-            }
-        }
+        float spatial_distance = 3 * maxDiagonal / n_spatial_components;
+        sdmm::initialize(cell->sdmm, cell->em, cell->data, cell->rng, n_spatial_components, spatial_distance);
         enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
         sdmm::prepare(cell->conditioner, cell->sdmm);
     }
@@ -275,17 +217,12 @@ public:
         std::cerr << "Splitting samples.\n";
         m_grid->split(splitThreshold);
 
-        initializeHashGridComponents();
         auto& nodes = m_grid->data();
-
         std::vector<size_t> node_idcs;
         node_idcs.reserve(nodes.size());
-
         for(size_t cell_i = 0; cell_i < nodes.size(); ++cell_i) {
             auto& cell = nodes[cell_i].value;
-            if(
-                !canBeOptimized(nodes[cell_i]) || enoki::slices(cell->sdmm) == 0
-            ) {
+            if(!canBeOptimized(nodes[cell_i])) {
                 continue;
             }
             node_idcs.push_back(cell_i);
@@ -298,6 +235,11 @@ public:
             #pragma omp for schedule(guided)
             for(size_t cell_i : node_idcs) {
                 auto& cell = nodes[cell_i].value;
+                initializeGridCell(cell.get(), enoki::hmax(nodes[cell_i].aabb.diagonal()));
+                if(enoki::slices(cell->sdmm) == 0) {
+                    continue;
+                }
+
                 sdmm::em_step(cell->sdmm, cell->em, cell->data);
                 enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
                 sdmm::prepare(cell->conditioner, cell->sdmm);
@@ -368,30 +310,18 @@ public:
         m_maxSamplesSize =
             nPixels * m_config.samplesPerIteration * m_config.savedSamplesPerPath;
 
-        Properties props("independent");
-        props.setInteger(
-            "sampleCount", SDMMProcess::t_components * SDMMProcess::t_dims
-        );
-        props.setInteger("dimension", SDMMProcess::t_dims);
-        props.setInteger("seed", m_config.rngSeed);
-        m_sampler = static_cast<Sampler*>(
-            PluginManager::getInstance()->createObject(
-                MTS_CLASS(Sampler), props
-            )
-        );
-
         const auto scene_aabb = m_scene->getAABBWithoutCamera();
         const auto aabb_min = scene_aabb.min;
         const auto aabb_max = scene_aabb.max;
         const auto aabb_extents = scene_aabb.getExtents();
-        Float spatialNormalization = std::min(
-            aabb_extents[0], std::min(aabb_extents[1], aabb_extents[2])
+        Float spatialNormalization = std::max(
+            aabb_extents[0], std::max(aabb_extents[1], aabb_extents[2])
         );
 
         typename HashGridType::AABB aabb;
         getAABB(aabb, aabb_min, aabb_max, spatialNormalization);
         m_grid = std::make_shared<HashGridType>(aabb, initCell());
-        m_grid->split_to_depth(2);
+        m_grid->split_to_depth(3);
 
         bool success = true;
         fs::path destinationFile = scene->getDestinationFile();
@@ -402,13 +332,19 @@ public:
         using json = nlohmann::json;
         auto stats = json::array();
 
+        int originalSamplesPerIteration = m_config.samplesPerIteration;
+        int iteration = 0;
         for(
             int samplesRendered = 0;
             samplesRendered < sampleCount;
             samplesRendered += m_config.samplesPerIteration
         ) {
-            int iteration = samplesRendered / m_config.samplesPerIteration;
-            m_still_training = samplesRendered < m_config.sampleCount / 2;
+            // if(samplesRendered == 0) {
+            //     m_config.samplesPerIteration = 2;
+            // } else {
+            //     m_config.samplesPerIteration = originalSamplesPerIteration;
+            // }
+            m_still_training = samplesRendered < m_config.sampleCount / 3;
 
             // if(!m_still_training) {
             //     m_config.samplesPerIteration = sampleCount - samplesRendered;
@@ -472,6 +408,7 @@ public:
                 destinationFile.parent_path(),
                 timer->lap()
             );
+            ++iteration;
         }
         std::ofstream statsOutFile(
             (destinationFile.parent_path() / "stats.json").string()
@@ -591,10 +528,9 @@ private:
     ref<ParallelProcess> m_process;
     SDMMConfiguration m_config;
 
-    int m_maxSamplesSize;
+    uint32_t m_maxSamplesSize;
     bool m_still_training = false;
 
-    ref<Sampler> m_sampler;
     Scene* m_scene;
     std::shared_ptr<HashGridType> m_grid;
 };

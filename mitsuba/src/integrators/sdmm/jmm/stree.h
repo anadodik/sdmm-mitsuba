@@ -3,8 +3,6 @@
 
 #include <vector>
 
-#include <Eigen/Geometry>
-
 namespace sdmm::linalg {
 
 template<typename Scalar, int Size>
@@ -13,14 +11,18 @@ struct AABB {
 
     AABB() {}
     AABB(Point min_, Point max_) : min(min_), max(max_) { }
+    AABB(const AABB& other) = default;
+    AABB(AABB&& other) = default;
+    AABB& operator=(const AABB& other) = default;
+    AABB& operator=(AABB&& other) = default;
 
     template<typename PointIn>
-    auto contains(const PointIn& point) -> bool {
+    auto contains(const PointIn& point) const -> bool {
         bool result = enoki::all(point > min) && enoki::all(point < max);
         return result;
     }
 
-    auto diagonal() -> Point {
+    auto diagonal() const -> Point {
         return max - min;
     }
 
@@ -34,8 +36,6 @@ namespace jmm {
 
 template<typename Scalar, int Size, typename Value>
 struct STreeNode  {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
     using AABB = sdmm::linalg::AABB<Scalar, Size>;
     using Point = typename AABB::Point;
 
@@ -45,7 +45,7 @@ struct STreeNode  {
 
     Value* find(
         const Point& point,
-        const jmm::aligned_vector<STreeNode>& nodes,
+        const std::vector<STreeNode>& nodes,
         AABB& foundAABB
     ) const {
         if(isLeaf) {
@@ -86,15 +86,13 @@ struct STreeNode  {
     // std::array<std::array<std::shared_ptr<Value>, 2>, 2> values;
     std::unique_ptr<Value> value;
     AABB aabb;
-    AABB data_aabb;
+    // AABB data_aabb;
     int depth;
 };
 
 template<typename Scalar, int Size, typename Value>
 class STree {
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
     using Node = STreeNode<Scalar, Size, Value>;
     using AABB = typename Node::AABB;
     using Point = typename AABB::Point;
@@ -178,22 +176,16 @@ public:
         int axis = m_nodes[node_i].axis;
         child.axis = (axis + 1) % Size;
         child.aabb = m_nodes[node_i].aabb;
-        child.data_aabb = m_nodes[node_i].data_aabb;
+        // child.data_aabb = m_nodes[node_i].data_aabb;
         if(child_i == 0) {
             child.aabb.min.coeff(axis) += splitLocation * child.aabb.diagonal().coeff(axis);
-            child.data_aabb.min.coeff(axis) = child.aabb.min.coeff(axis);
+            // child.data_aabb.min.coeff(axis) = child.aabb.min.coeff(axis);
         } else {
             child.aabb.max.coeff(axis) -= (1.f - splitLocation) * child.aabb.diagonal().coeff(axis);
-            child.data_aabb.max.coeff(axis) = child.aabb.max.coeff(axis);
+            // child.data_aabb.max.coeff(axis) = child.aabb.max.coeff(axis);
         }
 
         auto childValue = std::make_unique<Value>();
-
-        if(enoki::slices(m_nodes[node_i].value->sdmm) == 0) {
-            childValue->distribution = m_nodes[node_i].value->distribution;
-            childValue->optimizer = m_nodes[node_i].value->optimizer;
-            childValue->samples.reserve(m_nodes[node_i].value->samples.capacity());
-        }
 
         childValue->sdmm = m_nodes[node_i].value->sdmm;
         childValue->conditioner = m_nodes[node_i].value->conditioner;
@@ -201,18 +193,6 @@ public:
         childValue->data.reserve(m_nodes[node_i].value->data.capacity);
 
         for(int sample_i = 0; sample_i < m_nodes[node_i].value->data.size; ++sample_i) {
-            if(enoki::slices(m_nodes[node_i].value->sdmm) == 0) {
-                Point point;
-                Position position = 
-                    m_nodes[node_i].value->samples.samples.col(sample_i).template topRows<3>();
-                point = Point(position(0), position(1), position(2));
-                if(child.aabb.contains(point)) {
-                    childValue->samples.push_back(
-                        m_nodes[node_i].value->samples, sample_i
-                    );
-                }
-            }
-
             Point point(
                 enoki::slice(m_nodes[node_i].value->data.point.coeff(0), sample_i),
                 enoki::slice(m_nodes[node_i].value->data.point.coeff(1), sample_i),
@@ -234,7 +214,7 @@ public:
     }
 
     void split_to_depth_recurse(uint32_t node_i, int depth, int maxDepth, int recursion_depth) {
-        std::cerr << "Nodes size: " << m_nodes.size() << ", depth: " << depth << "\n";
+        // std::cerr << "Nodes size: " << m_nodes.size() << ", depth: " << depth << "\n";
 
         int maxAxis = (depth == 0) ? Size : 3;
         int nextDepth = (m_nodes[node_i].axis == maxAxis - 1) ? (depth + 1) : depth;
@@ -253,7 +233,7 @@ public:
 
         m_nodes[node_i].isLeaf = false;
         for (int child_i = 0; child_i < 2; ++child_i) {
-            m_nodes[node_i].data_aabb = m_nodes[node_i].aabb;
+            // m_nodes[node_i].data_aabb = m_nodes[node_i].aabb;
             // Create node
             STreeNode<Scalar, Size, Value> child =
                 createChildNode(node_i, child_i, 0.5);
@@ -290,10 +270,10 @@ public:
         }
 
         if(m_nodes[node_i].value->data.stats_size > splitThreshold) {
-            m_nodes[node_i].data_aabb = AABB(
-                m_nodes[node_i].value->data.min_position,
-                m_nodes[node_i].value->data.max_position
-            );
+            // m_nodes[node_i].data_aabb = AABB(
+            //     m_nodes[node_i].value->data.min_position,
+            //     m_nodes[node_i].value->data.max_position
+            // );
 
             m_nodes[node_i].isLeaf = false;
             std::pair<int, Scalar> split = getSplitLocation(node_i);
@@ -323,7 +303,7 @@ public:
     void set_initialized(bool initialized_) { initialized = initialized_; }
 
 private:
-    jmm::aligned_vector<STreeNode<Scalar, Size, Value>> m_nodes;
+    std::vector<STreeNode<Scalar, Size, Value>> m_nodes;
     AABB m_aabb;
     bool initialized = false;
 };
