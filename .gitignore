@@ -5,3 +5,4 @@
 **/__pycache__
 **.prof
 test-suite/scenes/sdmm
+mitsuba/build/conan-out

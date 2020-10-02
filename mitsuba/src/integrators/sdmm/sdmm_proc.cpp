@@ -18,8 +18,6 @@
 
 #include "sdmm_proc.h"
 
-#include "blob_writer.h"
-
 #include <mitsuba/core/statistics.h>
 #include <mitsuba/core/sfcurve.h>
 #include <mitsuba/bidir/util.h>
@@ -34,20 +32,6 @@
 
 #include <iterator>
 #include <mutex>
-
-#define DUMP_DISTRIB 0
-// #define INIT_DEBUG
-// #define INIT_DETERMINISTIC
-// #define VISUALIZE_GAUSSIANS
-// #define GAUSSIAN_INIT_TEST //disable for rendering!!!! This is only to visualize intitial gaussian distribution!!!
-
-#define RUN_KNN 1
-
-#define DENOISE 0
-
-#define COMPUTE_KL 0
-
-#define LEARN_COSINE 0
 
 MTS_NAMESPACE_BEGIN
 
@@ -64,36 +48,25 @@ class SDMMRenderer : public WorkProcessor {
     constexpr static int t_conditionalDims = SDMMProcess::t_conditionalDims;
     constexpr static int t_conditionDims = SDMMProcess::t_conditionDims;
     constexpr static int t_components = SDMMProcess::t_components;
-    constexpr static bool USE_BAYESIAN = SDMMProcess::USE_BAYESIAN;
 
-    using MM = typename SDMMProcess::MM;
-    using HashGridType = typename SDMMProcess::HashGridType;
-    using GridCell = typename SDMMProcess::GridCell;
-	using GridKeyVector = typename HashGridType::Vectord;
-    using MMDiffuse = typename SDMMProcess::MMDiffuse;
-    using MMCond = typename MM::ConditionalDistribution;
-    using StepwiseEMType = typename SDMMProcess::StepwiseEMType;
-    
-    using Scalar = typename MM::Scalar;
-    using Vectord = typename MM::Vectord;
-    using Matrixd = typename MM::Matrixd;
+    using Scalar = typename SDMMProcess::Scalar;
+    using Vectord = typename SDMMProcess::Vectord;
+    using ConditionalVectord = typename SDMMProcess::ConditionalVectord;
 
-    using ConditionalVectord = typename MMCond::Vectord;
-    using ConditionalMatrixd = typename MMCond::Matrixd;
+    using SDMMContext = typename SDMMProcess::SDMMContext;
+    using Accelerator = typename SDMMProcess::Accelerator;
+	using AcceleratorPoint = typename Accelerator::Point;
+	using AcceleratorAABB = typename Accelerator::AABB;
 
-    using RenderingSamplesType = typename SDMMProcess::RenderingSamplesType;
-
-    using FeatureVectord = Point3f;
-    using KDNode = SimpleKDNode<FeatureVectord, Float>;
 public:
 	SDMMRenderer(
         const SDMMConfiguration &config,
-        std::shared_ptr<HashGridType> grid,
+        Accelerator* accelerator,
         int iteration,
         bool collect_data
     ) :
         m_config(config),
-        m_grid(grid),
+        m_accelerator(accelerator),
         m_iteration(iteration),
         m_collect_data(collect_data)
     { }
@@ -127,7 +100,6 @@ public:
 		Scene *scene = static_cast<Scene *>(getResource("scene"));
 		m_scene = new Scene(scene);
 		m_sampler = static_cast<Sampler *>(getResource("sampler"));
-        m_rng = [samplerCopy = m_sampler]() mutable { return samplerCopy->next1D(); };
 		m_sensor = static_cast<Sensor *>(getResource("sensor"));
 		m_rfilter = m_sensor->getFilm()->getReconstructionFilter();
 		m_scene->removeSensor(scene->getSensor());
@@ -180,9 +152,6 @@ public:
         bool needsApertureSample = m_sensor->needsApertureSample();
         bool needsTimeSample = m_sensor->needsTimeSample();
 
-        MMCond conditional;
-        MMCond productConditional;
-
         RadianceQueryRecord rRec(m_scene, m_sampler);
         Point2 apertureSample(0.5f);
         Float timeSample = 0.5f;
@@ -215,7 +184,7 @@ public:
                     break;
 
                 Point2 samplePos(Point2(offset) + Vector2(m_sampler->next2D()));
-                rRec.newQuery(queryType, m_sensor->getMedium());  
+                rRec.newQuery(queryType, m_sensor->getMedium());
 
                 Spectrum spec;
 
@@ -233,8 +202,6 @@ public:
                 spec *= Li(
                     sensorRay,
                     rRec,
-                    conditional,
-                    productConditional,
                     samplePos,
                     firstSample,
                     savedSample
@@ -261,21 +228,6 @@ public:
             if(allSamplesZero) {
                 continue;
             }
-
-#if DENOISE == 1
-            barrier->wait();
-            if(m_threadId == 0){
-                std::cerr << "Denoising.\n";
-                result->clearDenoised();
-                result->dumpDenoised(
-                    samplesInThisIteration,
-                    destinationFile.parent_path(),
-                    destinationFile.stem(),
-                    m_iteration
-                );
-            }
-            barrier->wait();
-#endif
         }
 	}
 
@@ -295,7 +247,7 @@ public:
     template<int conditionalDims>
     static typename std::enable_if<conditionalDims == 3, Vector3>::type
     canonicalToDir(const Eigen::Matrix<Scalar, conditionalDims, 1>& p) {
-        return {p.x(), p.y(), p.z()};
+        return {(float) p.x(), (float) p.y(), (float) p.z()};
     }
 
     template<int conditionalDims>
@@ -309,7 +261,7 @@ public:
     canonicalToDirInvJacobian() {
         return 1;
     }
-    
+
     template<int conditionalDims>
     static typename std::enable_if<
         conditionalDims == 2, Eigen::Matrix<Scalar, conditionalDims, 1>
@@ -325,7 +277,7 @@ public:
 
         return {(cosTheta + 1) / 2, phi / (2 * M_PI)};
     }
-    
+
     template<int conditionalDims>
     static typename std::enable_if<
         conditionalDims == 3, Eigen::Matrix<Scalar, conditionalDims, 1>
@@ -367,9 +319,7 @@ public:
         Float& gmmPdf,
         Scalar& heuristicConditionalWeight,
         Vectord& sample,
-        RadianceQueryRecord& rRec,
-        MMCond& jmm_conditional,
-        MMCond& productConditional
+        RadianceQueryRecord& rRec
     ) const {
         using RotationMatrix = SDMMProcess::ConditionalSDMM::TangentSpace::MatrixS;
 
@@ -393,13 +343,12 @@ public:
 			normal = -normal;
 		}
 
-        GridCell* gridCell = nullptr;
+        SDMMContext* sdmmContext = nullptr;
         if(m_iteration != 0) {
-            GridKeyVector key;
-            jmm::buildKey(sample, normal, key);
-            gridCell = m_grid->find(key);
+            AcceleratorPoint key(sample(0), sample(1), sample(2));
+            sdmmContext = m_accelerator->find(key);
         }
-        if(m_iteration == 0 || gridCell == nullptr || enoki::slices(gridCell->sdmm) == 0) {
+        if(m_iteration == 0 || sdmmContext == nullptr || enoki::slices(sdmmContext->sdmm) == 0) {
             heuristicConditionalWeight = 1.0f;
             Spectrum result = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
             pdf = bsdfPdf;
@@ -421,7 +370,7 @@ public:
             size_t n_slices = enoki::slices(learned_bsdf);
             if((type & BSDF::EDiffuseReflection) == (type & BSDF::EAll)) {
                 sdmm::linalg::Vector<float, 3> world_mean(
-                    normal(0), normal(1), normal(2)
+                    (float) normal(0), (float) normal(1), (float) normal(2)
                 );
                 enoki::slice(learned_bsdf.tangent_space, 0).set_mean(world_mean);
             } else {
@@ -444,12 +393,12 @@ public:
 
         if(!usingLearnedBSDF) {
             sdmm::embedded_s_t<SDMMProcess::MarginalSDMM> condition({
-                sample(0), sample(1), sample(2)
+                (float) sample(0), (float) sample(1), (float) sample(2)
             });
-            if(enoki::slices(conditional) != enoki::slices(gridCell->conditioner)) {
-                enoki::set_slices(conditional, enoki::slices(gridCell->conditioner));
+            if(enoki::slices(conditional) != enoki::slices(sdmmContext->conditioner)) {
+                enoki::set_slices(conditional, enoki::slices(sdmmContext->conditioner));
             }
-            validConditional = sdmm::create_conditional(gridCell->conditioner, condition, conditional);
+            validConditional = sdmm::create_conditional(sdmmContext->conditioner, condition, conditional);
         }
 
         if(!usingLearnedBSDF && validConditional && usingProduct) {
@@ -459,7 +408,7 @@ public:
                 usingProduct = false;
             }
         }
-        
+
         heuristicConditionalWeight = 0.5;
         if(usingLearnedBSDF) {
             heuristicConditionalWeight = 0.f;
@@ -483,11 +432,10 @@ public:
                 gmmPdf = 0.f;
                 pdf *= heuristicConditionalWeight;
                 return bsdfWeight / heuristicConditionalWeight;
-            } 
+            }
 
             bsdfWeight *= pdf;
         } else {
-            // ConditionalVectord condVec = samplingConditional->sample(m_rng);
             float inv_jacobian;
             if(usingLearnedBSDF) {
                 learned_bsdf.sample(
@@ -535,17 +483,14 @@ public:
             // );
             sample.template bottomRows<t_conditionalDims>() << condVec;
 
-            if(
-                (t_conditionalDims == 2 && !jmm::isInUnitHypercube(condVec)) ||
-                (t_conditionalDims == 3 && condVec.isZero())
-             ) {
+            if(condVec.isZero()) {
                 return Spectrum{0.f};
             }
 
             bRec.wo = bRec.its.toLocal(canonicalToDir(condVec));
             bsdfWeight = bsdf->eval(bRec);
         }
-        
+
         if(usingLearnedBSDF) {
             pdf = pdfSurface(
                 bsdf,
@@ -554,7 +499,7 @@ public:
                 gmmPdf,
                 learned_bsdf,
                 bsdf_posterior,
-                gridCell->conditioner,
+                sdmmContext->conditioner,
                 heuristicConditionalWeight,
                 sample.template bottomRows<t_conditionalDims>()
             );
@@ -566,7 +511,7 @@ public:
                 gmmPdf,
                 product,
                 posterior,
-                gridCell->conditioner,
+                sdmmContext->conditioner,
                 heuristicConditionalWeight,
                 sample.template bottomRows<t_conditionalDims>()
             );
@@ -578,12 +523,12 @@ public:
                 gmmPdf,
                 conditional,
                 posterior,
-                gridCell->conditioner,
+                sdmmContext->conditioner,
                 heuristicConditionalWeight,
                 sample.template bottomRows<t_conditionalDims>()
             );
         }
-        
+
         if(pdf == 0) {
             return Spectrum{0.f};
         }
@@ -596,7 +541,6 @@ public:
         const BSDFSamplingRecord& bRec,
         Float& bsdfPdf,
         Float& gmmPdf,
-        // const MMCond& conditional,
         DMM& conditional,
         Value& posterior,
         SDMMProcess::Conditioner& conditioner,
@@ -616,7 +560,7 @@ public:
             return 0;
         }
         sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM> embedded_sample({
-            sample(0), sample(1), sample(2)
+            (float) sample(0), (float) sample(1), (float) sample(2)
         });
         enoki::vectorize_safe(
             VECTORIZE_WRAP_MEMBER(posterior),
@@ -659,7 +603,7 @@ public:
 
                 conditional.weight.pmf,
                 conditional.tangent_space.coordinate_system.to,
-                conditional.tangent_space.coordinate_system.to * sdmm::Vector<float, 3>(sample(0), sample(1), sample(2)),
+                conditional.tangent_space.coordinate_system.to * sdmm::Vector<float, 3>((float) sample(0), (float) sample(1), (float) sample(2)),
                 conditional.tangent_space.mean,
                 conditional.cov,
                 conditional.cov_sqrt
@@ -670,12 +614,10 @@ public:
             heuristicConditionalWeight * bsdfPdf +
             (1 - heuristicConditionalWeight) * gmmPdf;
     }
-    
+
     Spectrum Li(
         const RayDifferential &r,
         RadianceQueryRecord &rRec,
-        MMCond& conditional,
-        MMCond& productConditional,
         const Point2& samplePos,
         Vectord& firstSample,
         bool& savedSample
@@ -688,7 +630,7 @@ public:
         Float eta = 1.0f;
 
         constexpr static Float initialHeuristicWeight = 1.f;
-        const Float heuristicWeight = 
+        const Float heuristicWeight =
             (m_iteration == 0) ? initialHeuristicWeight : 0.5;
 
         struct Vertex {
@@ -838,9 +780,7 @@ public:
                 gmmPdf,
                 heuristicConditionalWeight,
                 canonicalSample,
-                rRec,
-                conditional,
-                productConditional
+                rRec
             );
             if(!bsdfWeight.isValid()) {
                 std::cerr << "!bsdfWeight.isValid()\n";
@@ -854,7 +794,7 @@ public:
 
             Float meanCurvature = 0, gaussianCurvature = 0;
             // its.shape->getCurvature(its, meanCurvature, gaussianCurvature);
-            
+
             if(bsdfWeight.isZero()) {
                 if(!savedSample) {
                     firstSample = canonicalSample;
@@ -918,11 +858,7 @@ public:
 
                     if (misPdf > 0 && std::isfinite(invPdf)) {
                         bool isDiffuse = !(bsdf->getType() & BSDF::EGlossy);
-                        //  || (
-                        //     bsdf->getDiffuseReflectance(its).max() >
-                        //     bsdf->getSpecularReflectance(its).max()
-                        // );
-                        
+
                         vertices[depth] = Vertex{
                             incomingRadiance * invPdf,
                             throughput,
@@ -936,7 +872,7 @@ public:
                                 canonicalSample(5),
                             },
                             sdmm::normal_s_t<SDMMProcess::Data>{
-                                normal(0), normal(1), normal(2)
+                                (float) normal(0), (float) normal(1), (float) normal(2)
                             },
                             canonicalSample,
                             normal
@@ -979,32 +915,31 @@ public:
             return Li;
         }
 
-        auto push_back_data = [&](SDMMProcess::GridCell& cell, int d) {
+        auto push_back_data = [&](SDMMProcess::SDMMContext& context, int d) {
             if(!m_collect_data) {
                 return;
             }
 
             {
-                std::lock_guard lock(cell.mutex_wrapper.mutex);
-                cell.data.push_back(
+                std::lock_guard lock(context.mutex_wrapper.mutex);
+                context.data.push_back(
                     vertices[d].point,
                     vertices[d].sdmm_normal,
                     vertices[d].weight.average()
                 );
             }
         };
-        
-        typename MM::ConditionVectord offset;
+
+        Eigen::Matrix<Scalar, 3, 1> offset;
 		int firstSaved = std::max(depth - m_config.savedSamplesPerPath, 0);
         for(int d = depth - 1; d >= firstSaved; --d) {
             Eigen::Matrix<Scalar, 3, 1> position = vertices[d].
                 canonicalSample.template topRows<3>();
-            GridKeyVector key;
-            jmm::buildKey(position, vertices[d].normal, key);
-            typename HashGridType::AABB sampleAABB;
-            auto sampleCell = m_grid->find(key, sampleAABB);
-            if(sampleCell != nullptr) {
-                push_back_data(*sampleCell, d);
+            AcceleratorPoint key(position(0), position(1), position(2));
+            AcceleratorAABB sampleAABB;
+            auto sampleContext = m_accelerator->find(key, sampleAABB);
+            if(sampleContext != nullptr) {
+                push_back_data(*sampleContext, d);
             } else {
                 std::cerr << "ERROR: COULD NOT FIND CELL FOR SAMPLE." << std::endl;
                 throw std::runtime_error("ERROR: COULD NOT FIND CELL FOR SAMPLE.");
@@ -1018,7 +953,7 @@ public:
                     rRec.sampler->next1D() - 0.5,
                     rRec.sampler->next1D() - 0.5;
                 auto diagonal = sampleAABB.diagonal();
-                offset.array() *= MM::ConditionVectord(
+                offset.array() *= Eigen::Matrix<Scalar, 3, 1>(
                     diagonal.coeff(0), diagonal.coeff(1), diagonal.coeff(2)
                 ).array();
                 if(!offset.array().isFinite().all()) {
@@ -1027,14 +962,13 @@ public:
 
                 Eigen::Matrix<Scalar, 3, 1> jitteredPosition =
                     position.array() + offset.array();
-                GridKeyVector key;
-                jmm::buildKey(jitteredPosition, vertices[d].normal, key);
-                typename HashGridType::AABB aabb;
-                auto gridCell = m_grid->find(key, aabb);
-                if(gridCell == nullptr || enoki::all(aabb.min == sampleAABB.min)) {
+                AcceleratorPoint key(jitteredPosition(0), jitteredPosition(1), jitteredPosition(2));
+                AcceleratorAABB aabb;
+                auto sdmmContext = m_accelerator->find(key, aabb);
+                if(sdmmContext == nullptr || enoki::all(aabb.min == sampleAABB.min)) {
                     continue;
                 } else {
-                    push_back_data(*gridCell, d);
+                    push_back_data(*sdmmContext, d);
                 }
             }
         }
@@ -1134,7 +1068,7 @@ public:
 
 	ref<WorkProcessor> clone() const {
 		return new SDMMRenderer(
-            m_config, m_grid, m_iteration, m_collect_data
+            m_config, m_accelerator, m_iteration, m_collect_data
         );
 	}
 
@@ -1144,11 +1078,10 @@ private:
 	ref<Scene> m_scene;
 	ref<Sensor> m_sensor;
 	ref<Sampler> m_sampler;
-    std::function<Scalar()> m_rng;
 	ref<ReconstructionFilter> m_rfilter;
+
 	MemoryPool m_pool;
 	SDMMConfiguration m_config;
-    int m_threadId = -1;
 	HilbertCurve2D<int> m_hilbertCurve;
     int m_iteration;
     bool m_collect_data;
@@ -1158,14 +1091,6 @@ private:
     Matrix4x4 m_cameraMatrix;
     AABB m_sceneAabb;
     Float m_fieldOfView = 50;
-    std::vector<ref<TriMesh>> m_meshes;
-    bool m_dumpMesh = true;
-    ref<PositionSampleVector> m_blueNoisePoints;
-
-    static std::deque<jmm::Samples<t_dims, Scalar>> prioritySamples;
-    static Eigen::Matrix<Scalar, t_conditionDims, 1> m_sampleMean;
-    static Eigen::Matrix<Scalar, t_conditionDims, 1> m_sampleStd;
-    static std::unique_ptr<StepwiseEMType> stepwiseEM;
 
     mutable SDMMProcess::ConditionalSDMM conditional;
     mutable BSDF::DMM learned_bsdf;
@@ -1177,14 +1102,8 @@ private:
     mutable SDMMProcess::Value posterior;
     mutable BSDF::Value bsdf_posterior;
 
-    std::shared_ptr<HashGridType> m_grid;
+    Accelerator* m_accelerator;
 };
-
-std::deque<jmm::Samples<SDMMProcess::t_dims, SDMMRenderer::Scalar>> SDMMRenderer::prioritySamples;
-std::unique_ptr<typename SDMMRenderer::StepwiseEMType> SDMMRenderer::stepwiseEM;
-
-Eigen::Matrix<SDMMRenderer::Scalar, SDMMProcess::t_conditionDims, 1> SDMMRenderer::m_sampleMean;
-Eigen::Matrix<SDMMRenderer::Scalar, SDMMProcess::t_conditionDims, 1> SDMMRenderer::m_sampleStd;
 
 /* ==================================================================== */
 /*                           Parallel process                           */
@@ -1194,19 +1113,18 @@ constexpr int SDMMProcess::t_dims;
 constexpr int SDMMProcess::t_conditionalDims;
 constexpr int SDMMProcess::t_conditionDims;
 constexpr int SDMMProcess::t_components;
-constexpr bool SDMMProcess::USE_BAYESIAN;
 
 SDMMProcess::SDMMProcess(
     const RenderJob *parent,
     RenderQueue *queue,
     const SDMMConfiguration &config,
-    std::shared_ptr<HashGridType> grid,
+    Accelerator* accelerator,
     int iteration,
     bool collect_data
 ) :
     BlockedRenderProcess(parent, queue, config.blockSize),
     m_config(config),
-    m_grid(grid),
+    m_accelerator(accelerator),
     m_iteration(iteration),
     m_collect_data(collect_data)
 {
@@ -1216,7 +1134,7 @@ SDMMProcess::SDMMProcess(
 
 ref<WorkProcessor> SDMMProcess::createWorkProcessor() const {
     ref<WorkProcessor> renderer = new SDMMRenderer(
-        m_config, m_grid, m_iteration, m_collect_data
+        m_config, m_accelerator, m_iteration, m_collect_data
     );
     return renderer;
 }
@@ -1270,4 +1188,3 @@ MTS_IMPLEMENT_CLASS(SDMMRenderer, false, WorkProcessor)
 MTS_IMPLEMENT_CLASS(SDMMProcess, false, BlockedImageProcess)
 
 MTS_NAMESPACE_END
-#pragma GCC diagnostic pop

@@ -30,10 +30,10 @@ def build(scriptFile, exports = [], duplicate = 0):
 
 # Load the compilation_db tool. We want to do this after configure so we don't end up with
 # compilation database entries for the configure tests, which is weird.
-# env.Tool("compilation_db")
+env.Tool("compilation_db")
 
-# compileCommands = env.CompilationDatabase('compile_commands.json')
-# compileDb = env.Alias("compiledb", compileCommands)
+compileCommands = env.CompilationDatabase('compile_commands.json')
+compileDb = env.Alias("compiledb", compileCommands)
 
 # ===== Build the support libraries ====
 

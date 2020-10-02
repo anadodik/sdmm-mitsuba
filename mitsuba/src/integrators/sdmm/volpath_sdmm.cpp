@@ -16,21 +16,10 @@
     along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic error "-Wpedantic"
-
-#include "jmm/mixture_model.h"
-#include "jmm/mixture_model_init.h"
-#include "jmm/mixture_model_opt.h"
-// #include "jmm/outlier_detection.h"
+#include <fstream>
+#include <memory>
 
 #include <nlohmann/json.hpp>
-
-#include "jmm/kdtree-eigen/kdtree_eigen.h"
-
-#include "mesh.h"
-
-#pragma GCC diagnostic pop
 
 #include <mitsuba/render/scene.h>
 #include <mitsuba/core/statistics.h>
@@ -40,8 +29,10 @@
 #include <mitsuba/bidir/edge.h>
 #include "../../subsurface/bluenoise.h"
 
+#include <tev/ThreadPool.h>
 #include "sdmm_config.h"
 #include "sdmm_proc.h"
+#include "mesh.h"
 
 MTS_NAMESPACE_BEGIN
 
@@ -49,14 +40,14 @@ static StatsCounter avgPathLength("SDMM volumetric path tracer", "Average path l
 
 class SDMMVolumetricPathTracer : public Integrator {
     using Scalar = typename SDMMProcess::Scalar;
-    using SamplesType = typename jmm::Samples<SDMMProcess::t_dims, Scalar>;
 
-    using GridCell = typename SDMMProcess::GridCell;
-    using HashGridType = typename SDMMProcess::HashGridType;
-	using GridKeyVector = typename SDMMProcess::HashGridType::Vectord;
-        
+    using SDMMContext = typename SDMMProcess::SDMMContext;
+    using Accelerator = typename SDMMProcess::Accelerator;
+    using AcceleratorNode = typename Accelerator::Node;
+    using AcceleratorPoint = typename Accelerator::Point;
+
 public:
-    SDMMVolumetricPathTracer(const Properties &props) : Integrator(props) { 
+    SDMMVolumetricPathTracer(const Properties &props) : Integrator(props) {
 		/* Load the parameters / defaults */
 		m_config.maxDepth = props.getInteger("maxDepth", -1);
 		m_config.blockSize = props.getInteger("blockSize", -1);
@@ -95,7 +86,7 @@ public:
 
     /// Unserialize from a binary data stream
     SDMMVolumetricPathTracer(Stream *stream, InstanceManager *manager)
-    : Integrator(stream, manager) { 
+    : Integrator(stream, manager) {
         m_config = SDMMConfiguration(stream);
     }
 
@@ -121,132 +112,71 @@ public:
 		Scheduler::getInstance()->cancel(m_process);
     }
 
-    template<typename JMM, typename SDMM, size_t... Indices>
-    void copy_means(JMM& jmm, SDMM& sdmm, std::index_sequence<Indices...>) {
-        size_t NComponents = jmm.nComponents();
-        for(size_t component_i = 0; component_i < NComponents; ++component_i) {
-            enoki::slice(sdmm.tangent_space, component_i).set_mean(
-                sdmm::embedded_s_t<SDMM>(
-                    jmm.components()[component_i].mean()(Indices)...
-                )
-            );
-        }
-    }
-
-    template<typename JMM, typename SDMM, size_t... Indices>
-    void copy_covs(JMM& jmm, SDMM& sdmm, std::index_sequence<Indices...>) {
-        size_t NComponents = jmm.nComponents();
-        for(size_t component_i = 0; component_i < NComponents; ++component_i) {
-            enoki::slice(sdmm.cov, component_i) = sdmm::matrix_s_t<SDMM>(
-                jmm.components()[component_i].cov()(Indices)...
-            );
-        }
-    }
-
-    template<typename JMM, typename SDMM>
-    void copy_sdmm(JMM& jmm, SDMM& sdmm) {
-        size_t NComponents = jmm.nComponents();
-        // enoki::set_slices(sdmm, NComponents);
-        // copy_means(jmm, sdmm, std::make_index_sequence<SDMM::Embedded::Size>{});
-        copy_covs(jmm, sdmm, std::make_index_sequence<SDMM::Tangent::Size * SDMM::Tangent::Size>{});
-        // for(size_t component_i = 0; component_i < NComponents; ++component_i) {
-        //     enoki::slice(sdmm.weight.pmf, component_i) = jmm.weights()[component_i];
-        // }
-        bool prepare_success = sdmm::prepare_vectorized(sdmm);
-        assert(prepare_success);
-    }
-
     void saveCheckpoint(const fs::path& experimentPath, int iteration) {
         fs::path checkpointsDir = experimentPath / "checkpoints";
         if(iteration == 0 && (!fs::is_directory(checkpointsDir) || !fs::exists(checkpointsDir))) {
             fs::create_directories(checkpointsDir);
         }
-        // fs::path samplesPath = checkpointsDir / fs::path(
-        //     formatString("samples_%05i.jmms", iteration)
-        // );
         // fs::path distributionPath = checkpointsDir / fs::path(
-        //     formatString("model_%05i.jmm", iteration)
+        //     formatString("model_%05i.sdmm", iteration)
         // );
-        // m_samples->save(samplesPath.string());
     }
 
-    GridCell initCell() {
-        GridCell cell;
-        cell.data.reserve(m_maxSamplesSize);
-        return cell;
-    }
-
-    void initializeGridCell(SDMMProcess::GridCell* cell, Scalar maxDiagonal) {
+    void initializeSDMMContext(SDMMProcess::SDMMContext* context, Scalar maxDiagonal) {
         constexpr static int n_spatial_components = SDMMProcess::NComponents / 8;
 
-        if(cell->data.size < 2 * n_spatial_components || enoki::slices(cell->sdmm) > 0) {
+        if(context->data.size < 2 * n_spatial_components || enoki::slices(context->sdmm) > 0) {
             return;
         }
         float spatial_distance = 3 * maxDiagonal / n_spatial_components;
-        sdmm::initialize(cell->sdmm, cell->em, cell->data, cell->rng, n_spatial_components, spatial_distance);
-        enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
-        sdmm::prepare(cell->conditioner, cell->sdmm);
+        sdmm::initialize(context->sdmm, context->em, context->data, context->rng, n_spatial_components, spatial_distance);
+        enoki::set_slices(context->conditioner, enoki::slices(context->sdmm));
+        sdmm::prepare(context->conditioner, context->sdmm);
     }
 
-    bool canBeOptimized(const SDMMProcess::NodeType& node) {
-        const auto& cell = node.value;
+    bool canBeOptimized(const AcceleratorNode& node) {
+        const auto& context = node.value;
         return (
-            node.isLeaf &&
+            node.is_leaf &&
             // node.depth >= 8 &&
-            cell != nullptr &&
-            cell->data.size >= 32
+            context != nullptr &&
+            context->data.size >= 32
         );
     }
 
-    void initializeHashGridComponents() {
-        for(auto& node : *m_grid) {
-            if(!canBeOptimized(node)) {
-                continue;
-            }
-            HashGridType::AABB aabb = node.aabb;
-            auto& cell = node.value;
-            initializeGridCell(cell.get(), enoki::hmax(node.aabb.diagonal()));
-        }
-    }
-
-    void optimizeHashGrid(int iteration) {
-        using ConditionVectord = typename SDMMProcess::MM::ConditionVectord;
+    void optimize() {
         constexpr static int t_conditionDims = SDMMProcess::t_conditionDims;
         int splitThreshold = 16000;
 
         std::cerr << "Splitting samples.\n";
-        m_grid->split(splitThreshold);
+        m_accelerator->split(splitThreshold);
 
-        auto& nodes = m_grid->data();
+        auto& nodes = m_accelerator->data();
         std::vector<size_t> node_idcs;
         node_idcs.reserve(nodes.size());
-        for(size_t cell_i = 0; cell_i < nodes.size(); ++cell_i) {
-            auto& cell = nodes[cell_i].value;
-            if(!canBeOptimized(nodes[cell_i])) {
+        for(size_t context_i = 0; context_i < nodes.size(); ++context_i) {
+            auto& context = nodes[context_i].value;
+            if(!canBeOptimized(nodes[context_i])) {
                 continue;
             }
-            node_idcs.push_back(cell_i);
+            node_idcs.push_back(context_i);
         }
 
         std::cerr << "Optimizing guiding distribution: " << node_idcs.size() << " distributions in tree.\n";
-
-        #pragma omp parallel shared(node_idcs, nodes)
-        {
-            #pragma omp for schedule(guided)
-            for(size_t cell_i : node_idcs) {
-                auto& cell = nodes[cell_i].value;
-                initializeGridCell(cell.get(), enoki::hmax(nodes[cell_i].aabb.diagonal()));
-                if(enoki::slices(cell->sdmm) == 0) {
-                    continue;
-                }
-
-                sdmm::em_step(cell->sdmm, cell->em, cell->data);
-                enoki::set_slices(cell->conditioner, enoki::slices(cell->sdmm));
-                sdmm::prepare(cell->conditioner, cell->sdmm);
-
-                cell->data.clear();
+        m_thread_pool->parallelFor(0, (int) node_idcs.size(), [&](int i){
+            size_t context_i = node_idcs[(size_t) i];
+            auto& context = nodes[context_i].value;
+            initializeSDMMContext(context.get(), enoki::hmax(nodes[context_i].aabb.diagonal()));
+            if(enoki::slices(context->sdmm) == 0) {
+                return;
             }
-        }
+
+            sdmm::em_step(context->sdmm, context->em, context->data);
+            enoki::set_slices(context->conditioner, enoki::slices(context->sdmm));
+            sdmm::prepare(context->conditioner, context->sdmm);
+
+            context->data.clear();
+        });
     }
 
     template<typename AABB>
@@ -277,6 +207,7 @@ public:
         int sensorResID,
         int samplerResID
     ) override {
+
 	spdlog::info("Max packet size={}", enoki::max_packet_size);
         m_scene = scene;
 		ref<Scheduler> scheduler = Scheduler::getInstance();
@@ -286,7 +217,8 @@ public:
 		size_t seed = scene->getSampler()->getSeed();
 		size_t nCores = scheduler->getCoreCount();
 
-        Thread::initializeOpenMP(nCores);
+        // Thread::initializeOpenMP(nCores);
+        m_thread_pool = std::make_unique<tev::ThreadPool>(nCores);
 
 		Log(EInfo, "Starting render job (%ix%i, " SIZE_T_FMT " samples, " SIZE_T_FMT
 			" %s, " SSE_STR ") ..", film->getCropSize().x, film->getCropSize().y,
@@ -300,8 +232,8 @@ public:
             Log(EWarn,
                 "sampleCount % m_config.samplesPerIteration "
                 "(" SIZE_T_FMT " % " SIZE_T_FMT ") != 0\n",
-                std::to_string(sampleCount),
-                std::to_string(m_config.samplesPerIteration)
+                sampleCount,
+                m_config.samplesPerIteration
             );
         }
 		m_config.dump();
@@ -318,14 +250,16 @@ public:
             aabb_extents[0], std::max(aabb_extents[1], aabb_extents[2])
         );
 
-        typename HashGridType::AABB aabb;
+        typename Accelerator::AABB aabb;
         getAABB(aabb, aabb_min, aabb_max, spatialNormalization);
-        m_grid = std::make_shared<HashGridType>(aabb, initCell());
-        m_grid->split_to_depth(3);
+        m_accelerator = std::make_unique<Accelerator>(
+            aabb, std::make_unique<SDMMContext>(m_maxSamplesSize)
+        );
+        m_accelerator->split_to_depth(3);
 
         bool success = true;
         fs::path destinationFile = scene->getDestinationFile();
-        
+
         // dumpScene(destinationFile.parent_path() / "scene.vio");
 
         Float totalElapsedSeconds = 0.f;
@@ -350,14 +284,14 @@ public:
             //     m_config.samplesPerIteration = sampleCount - samplesRendered;
             // }
 
-            std::cerr << 
+            std::cerr <<
                 "Render iteration " + std::to_string(iteration) + ".\n";
 
             ref<SDMMProcess> process = new SDMMProcess(
                 job,
                 queue,
                 m_config,
-                m_grid,
+                m_accelerator.get(),
                 iteration,
                 m_still_training
             );
@@ -374,21 +308,17 @@ public:
             m_process = NULL;
             process->develop();
 
-            #if SDMM_DEBUG == 1
-                process->getResult()->dump(m_config, path.parent_path(), path.stem());
-            #endif
-
             success = success && (process->getReturnStatus() == ParallelProcess::ESuccess);
             if(!success) {
                 break;
             }
 
             if(m_still_training) {
-                optimizeHashGrid(iteration);
+                optimize();
             }
 
             auto workResult = process->getResult();
-            
+
             Float elapsedSeconds = timer->getSeconds();
             totalElapsedSeconds += elapsedSeconds;
             Float meanPathLength = workResult->averagePathLength / (float) workResult->pathCount;
@@ -410,11 +340,13 @@ public:
             );
             ++iteration;
         }
+
         std::ofstream statsOutFile(
             (destinationFile.parent_path() / "stats.json").string()
         );
+
         statsOutFile << std::setw(4) << stats << std::endl;
-        
+
 		return success;
 	}
 
@@ -532,7 +464,8 @@ private:
     bool m_still_training = false;
 
     Scene* m_scene;
-    std::shared_ptr<HashGridType> m_grid;
+    std::unique_ptr<Accelerator> m_accelerator;
+    std::unique_ptr<tev::ThreadPool> m_thread_pool;
 };
 
 MTS_IMPLEMENT_CLASS_S(SDMMVolumetricPathTracer, false, MonteCarloIntegrator)

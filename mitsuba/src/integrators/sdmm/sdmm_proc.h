@@ -19,17 +19,7 @@
 #if !defined(__SDMM_PROC_H)
 #define __SDMM_PROC_H
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic error "-Wpedantic"
-
-#include "jmm/mixture_model.h"
-#include "jmm/mixture_model_init.h"
-#include "jmm/mixture_model_opt.h"
-#include "jmm/outlier_detection.h"
-
-#include "jmm/kdtree-eigen/kdtree_eigen.h"
-
-#pragma GCC diagnostic pop
+#include <Eigen/Dense>
 
 #include <sdmm/distributions/sdmm.h>
 #include <sdmm/distributions/sdmm_conditioner.h>
@@ -43,19 +33,12 @@
 #include <mitsuba/render/renderproc.h>
 #include <mitsuba/render/renderjob.h>
 #include <mitsuba/core/bitmap.h>
+
 #include "sdmm_wr.h"
 #include "sdmm_config.h"
-
-// #include "jmm/hash_grid.h"
-#include "jmm/stree.h"
-#include "jmm/sntree.h"
-
-#include <deque>
+#include "sdmm/accelerators/spatial_tree.h"
 
 MTS_NAMESPACE_BEGIN
-
-template<int t_dims, typename Scalar>
-using RenderingSamples = jmm::Samples<t_dims, Scalar>;
 
 /* ==================================================================== */
 /*                           Parallel process                           */
@@ -67,46 +50,9 @@ public:
     constexpr static int t_conditionalDims = 3;
     constexpr static int t_conditionDims = t_dims - t_conditionalDims;
     constexpr static int t_components = 24;
-    constexpr static bool USE_BAYESIAN = true;
-    using Scalar = double;
-
-    using MM = jmm::MixtureModel<
-        t_dims,
-        t_components,
-        t_conditionalDims,
-        Scalar,
-        jmm::MultivariateTangentNormal,
-        jmm::MultivariateNormal
-    >;
-
-    using MMDiffuse = jmm::MixtureModel<
-        4,
-        t_components,
-        3,
-        Scalar,
-        jmm::MultivariateTangentNormal,
-        jmm::MultivariateNormal
-    >;
-
-    using StepwiseEMType = jmm::StepwiseTangentEM<
-        t_dims,
-        t_components,
-        t_conditionalDims,
-        Scalar,
-        jmm::MultivariateTangentNormal,
-        jmm::MultivariateNormal
-    >;
-
-    using RenderingSamplesType = RenderingSamples<t_dims, typename MM::Scalar>;
-
-    using MMCond = typename MM::ConditionalDistribution;
-    
-    using MMScalar = typename MM::Scalar;
-    using Vectord = typename MM::Vectord;
-    using Matrixd = typename MM::Matrixd;
-
-    using ConditionalVectord = typename MMCond::Vectord;
-    using ConditionalMatrixd = typename MMCond::Matrixd;
+    using Scalar = float;
+    using Vectord = Eigen::Matrix<Scalar, t_dims, 1>;
+    using ConditionalVectord = Eigen::Matrix<Scalar, t_conditionalDims, 1>;
 
     constexpr static size_t PacketSize = 8;
     constexpr static size_t JointSize = 5;
@@ -152,14 +98,24 @@ public:
     struct MutexWrapper {
         MutexWrapper() = default;
         ~MutexWrapper() = default;
-        MutexWrapper(const MutexWrapper& mutex_wrapper) { };
-        MutexWrapper(MutexWrapper&& mutex_wrapper) { };
-        MutexWrapper& operator=(const MutexWrapper& mutex_wrapper) { };
-        MutexWrapper& operator=(MutexWrapper&& mutex_wrapper) { };
+        MutexWrapper([[maybe_unused]] const MutexWrapper& mutex_wrapper) { };
+        MutexWrapper([[maybe_unused]] MutexWrapper&& mutex_wrapper) { };
+        MutexWrapper& operator=([[maybe_unused]] const MutexWrapper& mutex_wrapper) { return *this; };
+        MutexWrapper& operator=([[maybe_unused]] MutexWrapper&& mutex_wrapper) { return *this; };
+
         std::mutex mutex;
     };
 
-    struct GridCell {
+    struct SDMMContext {
+        SDMMContext(size_t data_size) {
+            data.reserve(data_size);
+        }
+        // Copy constructor intentionally deleted.
+        // This is a large data structure and should not be copied often.
+        SDMMContext(SDMMContext&& other) = default;
+        SDMMContext& operator=(SDMMContext&& other) = default;
+        ~SDMMContext() = default;
+
         JointSDMM sdmm;
         Conditioner conditioner;
         Data data;
@@ -171,15 +127,13 @@ public:
         MutexWrapper mutex_wrapper;
     };
 
-    using HashGridType = jmm::STree<Scalar, 3, GridCell>;
-    using NodeType = typename HashGridType::Node;
-	using GridKeyVector = typename HashGridType::Vectord;
+    using Accelerator = sdmm::accelerators::STree<Scalar, 3, SDMMContext>;
 
     SDMMProcess(
         const RenderJob *parent,
         RenderQueue *queue,
         const SDMMConfiguration &config,
-        std::shared_ptr<HashGridType> grid,
+        Accelerator* accelerator,
         int iteration,
         bool collect_data
     );
@@ -206,7 +160,7 @@ private:
     ref<Timer> m_refreshTimer;
     SDMMConfiguration m_config;
 
-    std::shared_ptr<HashGridType> m_grid;
+    Accelerator* m_accelerator;
     int m_iteration;
     bool m_collect_data;
 };

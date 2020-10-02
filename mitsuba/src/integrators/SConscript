@@ -48,9 +48,9 @@ plugins += bidirEnv.SharedLibrary(
         'sdmm/sdmm_proc.cpp',
         'sdmm/sdmm_wr.cpp',
         'sdmm/sdmm_wu.cpp',
-        'sdmm/jmm/multivariate_tangent_normal.cpp',
         '../subsurface/bluenoise.cpp',
         '../subsurface/irrproc.cpp',
+        'sdmm/tev/ThreadPool.cpp',
     ]
 )
 
