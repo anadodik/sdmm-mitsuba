@@ -23,20 +23,22 @@
 
 #include <sdmm/distributions/sdmm.h>
 #include <sdmm/distributions/sdmm_conditioner.h>
+#include <sdmm/distributions/sdmm_context.h>
 #include <sdmm/opt/em.h>
 #include <sdmm/opt/init.h>
 #include <sdmm/spaces/directional.h>
 #include <sdmm/spaces/euclidian.h>
 #include <sdmm/spaces/spatio_directional.h>
+#include <sdmm/accelerators/spatial_tree.h>
 #include <enoki/random.h>
 
 #include <mitsuba/render/renderproc.h>
 #include <mitsuba/render/renderjob.h>
 #include <mitsuba/core/bitmap.h>
 
+
 #include "sdmm_wr.h"
 #include "sdmm_config.h"
-#include "sdmm/accelerators/spatial_tree.h"
 
 MTS_NAMESPACE_BEGIN
 
@@ -58,14 +60,12 @@ public:
     constexpr static size_t JointSize = 5;
     constexpr static size_t MarginalSize = 3;
     constexpr static size_t ConditionalSize = 2;
-    constexpr static int NSamples = 1;
     constexpr static int NComponents = t_components;
     static_assert(NComponents == t_components);
     static_assert(JointSize == MarginalSize + ConditionalSize);
 
     using Packet = enoki::Packet<float, PacketSize>;
     using Value = enoki::DynamicArray<Packet>;
-
     using JointTangentSpace = sdmm::SpatioDirectionalTangentSpace<
         sdmm::Vector<Value, JointSize + 1>, sdmm::Vector<Value, JointSize>
     >;
@@ -84,49 +84,14 @@ public:
     using ConditionalSDMM = sdmm::SDMM<
         sdmm::Matrix<Value, ConditionalSize>, ConditionalTangentSpace
     >;
-
     using Conditioner = sdmm::SDMMConditioner<
         JointSDMM, MarginalSDMM, ConditionalSDMM
     >;
-
-    using RNG = enoki::PCG32<float, NSamples>;
-
+    using RNG = enoki::PCG32<float, 1>;
     using Data = sdmm::Data<JointSDMM>;
-
     using EM = sdmm::EM<JointSDMM>;
 
-    struct MutexWrapper {
-        MutexWrapper() = default;
-        ~MutexWrapper() = default;
-        MutexWrapper([[maybe_unused]] const MutexWrapper& mutex_wrapper) { };
-        MutexWrapper([[maybe_unused]] MutexWrapper&& mutex_wrapper) { };
-        MutexWrapper& operator=([[maybe_unused]] const MutexWrapper& mutex_wrapper) { return *this; };
-        MutexWrapper& operator=([[maybe_unused]] MutexWrapper&& mutex_wrapper) { return *this; };
-
-        std::mutex mutex;
-    };
-
-    struct SDMMContext {
-        SDMMContext(size_t data_size) {
-            data.reserve(data_size);
-        }
-        // Copy constructor intentionally deleted.
-        // This is a large data structure and should not be copied often.
-        SDMMContext(SDMMContext&& other) = default;
-        SDMMContext& operator=(SDMMContext&& other) = default;
-        ~SDMMContext() = default;
-
-        JointSDMM sdmm;
-        Conditioner conditioner;
-        Data data;
-        EM em;
-        RNG rng;
-
-        Data training_data;
-
-        MutexWrapper mutex_wrapper;
-    };
-
+    using SDMMContext = sdmm::SDMMContext<JointSDMM, Conditioner, RNG>;
     using Accelerator = sdmm::accelerators::STree<Scalar, 3, SDMMContext>;
 
     SDMMProcess(

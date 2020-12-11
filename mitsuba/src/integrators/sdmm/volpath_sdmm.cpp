@@ -34,6 +34,8 @@
 #include "sdmm_proc.h"
 #include "mesh.h"
 
+using json = nlohmann::json;
+
 MTS_NAMESPACE_BEGIN
 
 static StatsCounter avgPathLength("SDMM volumetric path tracer", "Average path length", EAverage);
@@ -117,9 +119,10 @@ public:
         if(iteration == 0 && (!fs::is_directory(checkpointsDir) || !fs::exists(checkpointsDir))) {
             fs::create_directories(checkpointsDir);
         }
-        // fs::path distributionPath = checkpointsDir / fs::path(
-        //     formatString("model_%05i.sdmm", iteration)
-        // );
+        fs::path distributionPath = checkpointsDir / fs::path(
+            formatString("model_%05i.asdmm", iteration)
+        );
+        sdmm::save_json(m_accelerator, distributionPath.string());
     }
 
     void initializeSDMMContext(SDMMProcess::SDMMContext* context, Scalar maxDiagonal) {
@@ -238,6 +241,8 @@ public:
         }
 		m_config.dump();
 
+        fs::path destinationFile = scene->getDestinationFile();
+
         const int nPixels = m_config.cropSize.x * m_config.cropSize.y;
         m_maxSamplesSize =
             nPixels * m_config.samplesPerIteration * m_config.savedSamplesPerPath;
@@ -249,6 +254,15 @@ public:
         Float spatialNormalization = std::max(
             aabb_extents[0], std::max(aabb_extents[1], aabb_extents[2])
         );
+        json scene_norm;
+        scene_norm["scene_min"] = {
+            aabb_min[0], aabb_min[1], aabb_min[2]
+        };
+        scene_norm["spatial_norm"] = spatialNormalization;
+        std::ofstream sceneNormFile(
+            (destinationFile.parent_path() / "scene_norm.json").string()
+        );
+        sceneNormFile << std::setw(4) << scene_norm << std::endl;
 
         typename Accelerator::AABB aabb;
         getAABB(aabb, aabb_min, aabb_max, spatialNormalization);
@@ -258,12 +272,10 @@ public:
         m_accelerator->split_to_depth(3);
 
         bool success = true;
-        fs::path destinationFile = scene->getDestinationFile();
 
         // dumpScene(destinationFile.parent_path() / "scene.vio");
 
         Float totalElapsedSeconds = 0.f;
-        using json = nlohmann::json;
         auto stats = json::array();
 
         int originalSamplesPerIteration = m_config.samplesPerIteration;
@@ -338,6 +350,7 @@ public:
                 destinationFile.parent_path(),
                 timer->lap()
             );
+            // saveCheckpoint(destinationFile.parent_path(), iteration);
             ++iteration;
         }
 
