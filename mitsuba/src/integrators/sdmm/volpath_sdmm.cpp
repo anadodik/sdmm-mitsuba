@@ -149,37 +149,75 @@ public:
 
     void optimize() {
         constexpr static int t_conditionDims = SDMMProcess::t_conditionDims;
-        int splitThreshold = 16000;
 
-        std::cerr << "Splitting samples.\n";
-        m_accelerator->split(splitThreshold);
+        m_thread_pool->waitUntilFinished();
 
         auto& nodes = m_accelerator->data();
-        std::vector<size_t> node_idcs;
-        node_idcs.reserve(nodes.size());
+        m_node_idcs.reserve(nodes.size());
+
+        std::cerr << "Splitting samples.\n";
+        int splitThreshold = 16000;
+        m_accelerator->split(splitThreshold);
+        m_node_idcs.reserve(nodes.size());
+
+        m_node_idcs.clear();
         for(size_t context_i = 0; context_i < nodes.size(); ++context_i) {
-            auto& context = nodes[context_i].value;
             if(!canBeOptimized(nodes[context_i])) {
                 continue;
             }
-            node_idcs.push_back(context_i);
+            m_node_idcs.push_back(context_i);
         }
 
-        std::cerr << "Optimizing guiding distribution: " << node_idcs.size() << " distributions in tree.\n";
-        m_thread_pool->parallelFor(0, (int) node_idcs.size(), [&](int i){
-            size_t context_i = node_idcs[(size_t) i];
+        std::cerr << "Optimizing guiding distribution: " << m_node_idcs.size() << " distributions in tree.\n";
+
+        m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&](int i){
+            size_t context_i = m_node_idcs[(size_t) i];
             auto& context = nodes[context_i].value;
             initializeSDMMContext(context.get(), enoki::hmax(nodes[context_i].aabb.diagonal()));
             if(enoki::slices(context->sdmm) == 0) {
                 return;
             }
+            // std::swap(context->data, context->training_data);
+        });
 
+        m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&](int i){
+            size_t context_i = m_node_idcs[(size_t) i];
+            auto& context = nodes[context_i].value;
+            if(enoki::slices(context->sdmm) == 0) {
+                return;
+            }
             sdmm::em_step(context->sdmm, context->em, context->data);
+            // sdmm::m_step(context->sdmm, context->em);
             enoki::set_slices(context->conditioner, enoki::slices(context->sdmm));
             sdmm::prepare(context->conditioner, context->sdmm);
-
+            context->update_ready = false;
+            context->training_data.clear();
             context->data.clear();
+            context->update_ready = true;
         });
+        // m_node_idcs.clear();
+        // for(size_t context_i = 0; context_i < nodes.size(); ++context_i) {
+        //     if(!nodes[context_i].is_leaf || nodes[context_i].value == nullptr) {
+        //         continue;
+        //     }
+        //     auto& context = nodes[context_i].value;
+        //     if(context->update_ready) {
+        //         m_node_idcs.push_back(context_i);
+        //     }
+        // }
+
+        // if(m_node_idcs.size() > 0) {
+        //     m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&](int i){
+        //         size_t context_i = m_node_idcs[(size_t) i];
+        //         auto& context = nodes[context_i].value;
+        //         if(context->update_ready) {
+        //             sdmm::m_step(context->sdmm, context->em);
+        //             enoki::set_slices(context->conditioner, enoki::slices(context->sdmm));
+        //             sdmm::prepare(context->conditioner, context->sdmm);
+        //             context->update_ready = false;
+        //         }
+        //     });
+        // }
     }
 
     template<typename AABB>
@@ -475,6 +513,7 @@ private:
 
     uint32_t m_maxSamplesSize;
     bool m_still_training = false;
+    std::vector<size_t> m_node_idcs;
 
     Scene* m_scene;
     std::unique_ptr<Accelerator> m_accelerator;
