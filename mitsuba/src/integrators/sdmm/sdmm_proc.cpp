@@ -348,7 +348,7 @@ public:
             AcceleratorPoint key(sample(0), sample(1), sample(2));
             sdmmContext = m_accelerator->find(key);
         }
-        if(m_iteration == 0 || sdmmContext == nullptr || enoki::slices(sdmmContext->sdmm) == 0) {
+        if(m_iteration == 0 || sdmmContext == nullptr || !sdmmContext->initialized) {
             heuristicConditionalWeight = 1.0f;
             Spectrum result = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
             pdf = bsdfPdf;

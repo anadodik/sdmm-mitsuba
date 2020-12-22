@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 
+#!/usr/bin/env python3
 
 import argparse
 from enum import Enum, auto
@@ -12,10 +12,11 @@ import numpy as np
 import skimage as ski
 import os
 import re
-import smartexr as exr
+import pyexr
 from collections import defaultdict
 from pathlib import Path
 from tqdm import tqdm
+from typing import NamedTuple
 
 from test_suite_utils import get_gt_path, MrSE, MAPE, SMAPE, aggregate
 from test_suite_utils import SCENES, SCENE_TITLES, RESULTS_PATH
@@ -25,13 +26,13 @@ rc('interactive') == False
 # rc('text', usetex=True)
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
-        
+
 def tonemap_exrs(experiment_path):
     image_files = [os.path.join(experiment_path, filename) for filename in os.listdir(experiment_path)
         if filename[-4:] == '.exr']
     output_directory = os.path.join(experiment_path, 'tonemapped')
     os.makedirs(output_directory, exist_ok=True)
-    
+
     for image_file in image_files:
         filename = os.path.basename(image_file)
         png_filename = os.path.splitext(filename)[0] + '.png'
@@ -41,12 +42,12 @@ def tonemap_exrs(experiment_path):
         process.wait()
 
 def load_iteration(image_file, image_sqr_file):
-    image_exr = exr.SmartExr(image_file)
-    attributes = image_exr.attributes
+    image_exr = pyexr.open(image_file)
+    header = image_exr.input_file.header()
 
-    spp = attributes['spp']
-    image_data = exr.read(image_file)
-    image_sqr_data = exr.read(image_sqr_file)
+    spp = header['spp']
+    image_data = pyexr.read(image_file)
+    image_sqr_data = pyexr.read(image_sqr_file)
     return image_data, image_sqr_data, spp
 
 
@@ -71,7 +72,7 @@ def get_errors(run_dir, combination_type='var', error_type=ErrorType.CUMULATIVE,
 
     scene_name = Path(out_dir).parents[2].name
     gt_path = get_gt_path(scene_name)
-    gt_image = exr.read(gt_path)
+    gt_image = pyexr.read(gt_path)
 
     final_image = None
     total_reciprocal_weight = 0.0
@@ -85,7 +86,9 @@ def get_errors(run_dir, combination_type='var', error_type=ErrorType.CUMULATIVE,
 
     stats_json = None
     if not os.path.exists(json_dir):
-        print('Cannot find PPG stats.json.')
+        print('Cannot find stats.json.')
+        return {}
+
     with open(json_dir) as json_file:
         stats_json = json.load(json_file)
 
@@ -98,16 +101,20 @@ def get_errors(run_dir, combination_type='var', error_type=ErrorType.CUMULATIVE,
         spp_data.append(stats_json[i]['spp'])
 
     for iteration, image_file in tqdm(enumerate(image_files), total=len(image_files)):
-        iteration_image = exr.read(os.path.join(run_dir, image_file))
+        iteration_image = pyexr.read(os.path.join(run_dir, image_file))
 
         var = var_data[iteration]
         spp = spp_data[iteration]
+        total_spp += spp
         if combination_type == 'var':
             weight = var_data[iteration]
         elif combination_type == 'uniform':
             weight = 1 / spp
 
-        if (integrator == 'ppg' and weight is not None) or (integrator == 'sdmm' and iteration >= 4): # iteration >= 3: # or iteration > 10:
+        if (
+            (integrator == 'ppg' and weight is not None)
+            or (integrator == 'sdmm' and total_spp >= 40)
+        ):
             total_reciprocal_weight += 1.0 / weight
             if final_image is None:
                 final_image = iteration_image / weight
@@ -134,7 +141,7 @@ def get_errors(run_dir, combination_type='var', error_type=ErrorType.CUMULATIVE,
         print(
             f"{Fore.GREEN}"
             f"Total time: {elapsed_seconds[-1]:.3f}s, "
-            f"MAPE: {MAPE_final:.3f}s, "
+            f"MAPE: {MAPE_final:.3f}, "
             f"{Style.RESET_ALL}"
         )
 
@@ -165,7 +172,7 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
 
     scene_name = Path(out_dir).parents[2].name
     gt_path = get_gt_path(scene_name)
-    gt_image = exr.read(gt_path)
+    gt_image = pyexr.read(gt_path)
 
     final_image = None
     total_reciprocal_weight = 0.0
@@ -201,14 +208,14 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
         per_channel_variance = np.mean(image_variance, axis=(0,1))
         max_variance = np.maximum(image_variance, per_channel_variance)
 
-        exr.write(os.path.join(out_dir, f'iteration_var{iteration}.exr'), image_variance)
+        pyexr.write(os.path.join(out_dir, f'iteration_var{iteration}.exr'), image_variance)
 
         total_spp += spp
         spp_data.append(total_spp)
         # print('Iteration {} spp={}.'.format(iteration, spp))
 
         var_data.append(aggregate(image_variance))
-        if iteration >= 3: # or iteration > 10:
+        if iteration >= 4: # or iteration > 10:
             # print('Including iteration {}.'.format(iteration))
             if combination_type == 'var':
                 weight = per_channel_variance
@@ -228,7 +235,7 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
             # out_path = os.path.join(out_dir, f'combined_{iteration:02d}' + '.exr')
             # if os.path.exists(out_path):
             #     os.remove(out_path)
-            # exr.write(out_path, combined_estimate.astype(np.float32))
+            # pyexr.write(out_path, combined_estimate.astype(np.float32))
             MrSE_data.append(aggregate(MrSE(np.clip(combined_estimate, 0, 1), np.clip(gt_image, 0, 1))))
             MAPE_data.append(aggregate(MAPE(combined_estimate, gt_image)))
             SMAPE_data.append(aggregate(SMAPE(combined_estimate, gt_image)))
@@ -258,16 +265,16 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
             json_file.write(json.dumps(stats_json, sort_keys=True, indent=4))
 
     plot_filename = 'error.pdf'
-    plot_file = os.path.join(out_dir, plot_filename) 
+    plot_file = os.path.join(out_dir, plot_filename)
     fig, ax = plt.subplots(figsize=(12, 9))
     ax.set_axisbelow(True)
     ax.minorticks_on()
     ax.grid(which='major', axis='both', linestyle='-', linewidth='0.5')
     ax.grid(which='minor', axis='both', linestyle=':', linewidth='0.5')
-    ax.semilogy(elapsed_seconds, var_data, basey=10, label='Estimated VAR')
-    ax.semilogy(elapsed_seconds, SMAPE_data, basey=10, label='SMAPE')
-    ax.semilogy(elapsed_seconds, MrSE_data, basey=10, label='MRSE')
-    ax.semilogy(elapsed_seconds, MAPE_data, basey=10, label='MAPE')
+    ax.semilogy(elapsed_seconds, var_data, base=10, label='Estimated VAR')
+    ax.semilogy(elapsed_seconds, SMAPE_data, base=10, label='SMAPE')
+    ax.semilogy(elapsed_seconds, MrSE_data, base=10, label='MRSE')
+    ax.semilogy(elapsed_seconds, MAPE_data, base=10, label='MAPE')
     # ax.plot(var_data, label='Estimated VAR')
     # ax.plot(SMAPE_data, label='SMAPE')
     # ax.plot(MrSE_data, label='MRSE')
@@ -298,7 +305,7 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
     out_path = os.path.join(out_dir, scene_name + '.exr')
     if os.path.exists(out_path):
         os.remove(out_path)
-    exr.write(out_path, final_image.astype(np.float32))
+    pyexr.write(out_path, final_image.astype(np.float32))
     return {
         'MAPE': (elapsed_seconds, MAPE_data, MAPE_final),
         'SMAPE': (elapsed_seconds, SMAPE_data, SMAPE_final),
@@ -309,76 +316,48 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
 def get_all_subdirs(directory):
     return [f.path for f in os.scandir(directory) if f.is_dir()]
 
-N_COMP_RUNS = OrderedDict([
-    ('comp-80-spatial-48-directional-fixed-init', "$80$ spatial locations"),
-    ('comp-170-spatial-48-directional-fixed-init', "$170$ spatial locations"),
-    ('comp-360-spatial-48-directional-fixed-init', "$360$ spatial locations"),
-])
 
-PRODUCT = OrderedDict([
-    ('comp-170-spatial-48-directional-fixed-init', "No product"),
-    # ('comp-product', "Product"),
-    # ('comp-product-per', "Diffuse Product"),
-    ('comp-product-no-jac', "Diffuse Product"),
-])
+class ExperimentRun(NamedTuple):
+    name: str
+    readable_name: str
+    integrator: str
+    first_iteration: int = 3
 
-RUNS = OrderedDict([
-    # ('radiance', "Radiance Guiding"),
-    # ('radiance_2', "Radiance Guiding v2"),
-    ('radiance_3', "Radiance Guiding v3"),
-    ('radiance_4', "Radiance Guiding v4"),
-    # ('radiance_3', "Radiance Performance"),
-    # ('radiance_init', "Radiance Init"),
-    # ('radiance_max_ch', "Radiance Max Ch."),
-    # ('radiance_init_it', "Radiance Init Iteration"),
-    ('comparison', "PPG"),
-    # ('no_curv_1e-5', "No Curvature, 1e-5"),
-    # ('no_curv_5e-8', "No Curvature, 5e-8"),
-    # ('radiance_all_offset', "Radiance Guiding (All Offset)"),
-    # ('radiance_none_offset', "Radiance Guiding (None Offset)"),
-    # ('radiance_all_offset_r2', "Radiance Guiding (All Offset) 2"),
-    # ('radiance_none_offset_r2', "Radiance Guiding (None Offset) 2"),
-    # ('radiance_01_all_offset', "Radiance Guiding (All Offset, 0.1)"),
 
-    # ('radiance_32c', "Radiance Guiding (32 Components)"),
+RUNS = [
+    # ExperimentRun("async_2_spp_4_spp", "Async 4 spp", "sdmm"),
+    # ExperimentRun("min_0_samples", "0 min. samples", "sdmm"),
+    # ExperimentRun("min_500_samples", "512 min. samples", "sdmm"),
+    # ExperimentRun("min_1024_samples", "1024 min. samples", "sdmm"),
+    # ExperimentRun("min_8192_samples", "8192 min. samples", "sdmm"),
+    # ExperimentRun("old_code", "Old Code", "sdmm"),
+    ExperimentRun("old_code_4spp", "Old Code 4 SPP", "sdmm"),
+    # ExperimentRun("old_code_4spp_2", "Old Code 4 SPP 2", "sdmm"),
+    # ExperimentRun("old_code_2_32_4spp", "Old Code 2/32 SPP Init 4 SPP", "sdmm"),
+    # ExperimentRun("async_4spp", "Async 4 SPP", "sdmm"),
+    ExperimentRun("async_4spp_2", "Async 4 SPP 2", "sdmm"),
+    ExperimentRun("async_4spp_8min", "Async 4 SPP 8 min", "sdmm"),
+    ExperimentRun("perf", "PPG", "ppg"),
+]
 
-    # ('product', "Product Guiding"),
-    # ('product_2', "Product Guiding v2"),
-    # ('product_3', "Product Guiding v3"),
-    ('product_4', "Product Guiding v4"),
-    # ('product_all_offset', "Product Guiding (All Offset)"),
-    # ('product_all_offset_r2', "Product Guiding (All Offset) 2"),
-    # ('product_none_offset', "Product Guiding (None Offset)"),
-    # ('product_none_offset_r2', "Product Guiding (None Offset) 2"),
-    # ('product_03', "Product Guiding (0.3 Ratio)"),
-    # ('product_01', "Product Guiding (0.1 Ratio)"),
-    # ('product_01_bsdf', "Product Guiding (0.1 BSDF Sampling)"),
-    # ('product', "Product Guiding"),
-    # ('product_32c', "Product Guiding (32 Components)"),
-])
 
-def make_comparison_figure(allowed_runs, name_prefix, error_type):
+def make_comparison_figure(runs, name_prefix, error_type):
     scene_errors = {}
     for scene in SCENES:
-        # if scene not in ['torus']: # ['cornell-box', 'glossy-cbox', 'torus', 'glossy-kitchen']:
+        # if scene not in ['glossy-cbox']:
         #     continue
-        all_errors = {}
-        for integrator in ['sdmm', 'ppg']:
-            scene_path = os.path.join(RESULTS_PATH, scene, integrator)
-            experiments = get_all_subdirs(scene_path)
-            print(experiments)
-            for experiment in experiments:
-                if not os.path.basename(experiment) in allowed_runs.keys():
-                    continue
-                runs = get_all_subdirs(experiment)
-                print(f'Found runs: {runs}.')
-                assert(len(runs) == 1)
-                for run in runs:
-                    # print(f'Combining renders: {run}.')
-                    errors = get_errors(run, 'var', error_type, integrator)
-                    # print(f'errors={errors}')
-                    all_errors[os.path.basename(experiment)] = errors
-            scene_errors[scene] = all_errors
+        runs_errors = {}
+        for run in runs:
+            experiment_path = os.path.join(RESULTS_PATH, scene, run.integrator, run.name)
+            if not os.path.exists(experiment_path):
+                continue
+            experiment_instance_paths = get_all_subdirs(experiment_path)
+            print(f'Found experiment instances: {experiment_instance_paths}.')
+            assert(len(experiment_instance_paths) == 1)
+            experiment_instance_path = experiment_instance_paths[0]
+            errors = get_errors(experiment_instance_path, 'var', error_type, run.integrator)
+            runs_errors[run.name] = errors
+        scene_errors[scene] = runs_errors
     plots = {
         # 'mrse.pdf': ['MrSE'],
         'mape.pdf': ['MAPE'],
@@ -387,25 +366,36 @@ def make_comparison_figure(allowed_runs, name_prefix, error_type):
     n_rows = 2 if len(scene_errors) > 1 else 1
     for plot_filename, allowed_errors in plots.items():
         result_path = os.path.join(RESULTS_PATH, '_plots', name_prefix + plot_filename)
-        fig, ax = plt.subplots(nrows=n_rows, ncols=int(np.ceil(len(scene_errors) / 2)), sharex=True, sharey=False, figsize=(4 * len(scene_errors), 6), squeeze=False)
+        fig, ax = plt.subplots(
+            nrows=n_rows,
+            ncols=int(np.ceil(len(scene_errors) / 2)),
+            sharex=True, sharey=True,
+            figsize=(10 * len(scene_errors), 6),
+            squeeze=False
+        )
         ax = ax.flatten()
         for scene_i, (scene_name, all_errors) in enumerate(sorted(scene_errors.items())):
             ax[scene_i].set_axisbelow(True)
             ax[scene_i].minorticks_on()
             ax[scene_i].grid(which='major', axis='both', linestyle='-', linewidth='0.5')
             ax[scene_i].grid(which='minor', axis='both', linestyle=':', linewidth='0.5')
-            for experiment_name in allowed_runs.keys():
+            for run in runs:
+                experiment_name = run.name
                 # print(f'Experiment name={experiment_name}')
+                if experiment_name not in all_errors:
+                    continue
                 experiment_errors = all_errors[experiment_name]
                 for error_name, errors in experiment_errors.items():
                     if error_name not in allowed_errors:
                         continue
-                    print(f"Label[{experiment_name}]={allowed_runs[experiment_name]}")
+                    # print(f"Label[{experiment_name}]={run.readable_name}")
                     ax[scene_i].semilogy(
                         errors[0],
                         errors[1],
-                        label=f'{allowed_runs[experiment_name]}'
+                        label=f"{run.readable_name}",
+                        # marker="o",
                     )
+                    ax[scene_i].set_ylim(bottom=1e-2, top=2)
             # ax.set_yscale('log')
             # ax[scene_i].legend(fontsize="x-large")
             ax[scene_i].set_title(SCENE_TITLES[scene_name], fontsize="xx-large")
@@ -465,7 +455,7 @@ def compare_all_runs():
             'smape.svg': ['SMAPE'],
         }
         for plot_filename, allowed_errors in plots.items():
-            plot_file = os.path.join(os.path.join(scene_path), plot_filename) 
+            plot_file = os.path.join(os.path.join(scene_path), plot_filename)
             fig, ax = plt.subplots(figsize=(12, 9))
             ax.set_axisbelow(True)
             ax.minorticks_on()
@@ -483,9 +473,9 @@ def compare_all_runs():
             plt.savefig(plot_file, format=os.path.splitext(plot_filename)[-1][1:], dpi=fig.dpi)
 
         for plot_filename, allowed_errors in plots.items():
-            plot_file = os.path.join(os.path.join(scene_path), 'final_' + plot_filename) 
+            plot_file = os.path.join(os.path.join(scene_path), 'final_' + plot_filename)
             fig, ax = plt.subplots(figsize=(12, 9))
-        
+
             experiment_names = []
             final_errors = []
             for experiment_name, experiment_errors in all_errors.items():
@@ -511,7 +501,7 @@ def compare_all_runs():
             fig.tight_layout()
             plt.savefig(plot_file, format=os.path.splitext(plot_filename)[-1][1:], dpi=fig.dpi)
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Combine SDMM Runs!')
     parser.add_argument('-t', '--tonemap', action='store_true')
     parser.add_argument('-c', '--combine_type', type=str, default='var')
@@ -524,7 +514,8 @@ if __name__ == "__main__":
 
     if args.all:
         # compare_all_runs()
-        make_comparison_figure(RUNS, 'radiance_init_it_', ErrorType.CUMULATIVE)
+        make_comparison_figure(RUNS, 'async_or_sync_', ErrorType.CUMULATIVE)
+        # make_comparison_figure(RUNS, 'cbox_', ErrorType.CUMULATIVE)
         quit()
 
     all_errors = {}
@@ -541,7 +532,7 @@ if __name__ == "__main__":
             'mape.svg': ['MAPE', 'SMAPE'],
         }
         for plot_filename, allowed_errors in plots.items():
-            plot_file = os.path.join(args.comparison_out_file, plot_filename) 
+            plot_file = os.path.join(args.comparison_out_file, plot_filename)
             fig, ax = plt.subplots(figsize=(12, 9))
             ax.set_axisbelow(True)
             ax.minorticks_on()
@@ -552,7 +543,7 @@ if __name__ == "__main__":
                 for error_name, error_list in experiment_errors.items():
                     if error_name not in allowed_errors:
                         continue
-                    ax.semilogy(error_list, subsy=error_list, basey=2, label=f'{experiment_name}: {error_name}')
+                    ax.semilogy(error_list, subsy=error_list, base=2, label=f'{experiment_name}: {error_name}')
             ax.legend()
             fig.tight_layout()
             plt.savefig(plot_file, format=os.path.splitext(plot_filename)[-1][1:], dpi=fig.dpi)

@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
 import sys, os, shutil, pprint
 from pathlib import Path
 import re
 
-import smartexr as exr
+import pyexr as exr
 import numpy as np
 import pandas as pd
 
@@ -118,9 +119,9 @@ def calculate_all(integrator, experiment_name, re_filter=''):
     return all_losses, parameters_strings
 
 def make_comparisons_methods():
-    ppg_losses, ppg_images = calculate_all_with_images('ppg', 'comp-new-ppg')
-    sdmm_losses, sdmm_images = calculate_all_with_images('sdmm', 'comp-360-spatial-48-directional-fixed-init')
-    product_losses, product_images = calculate_all_with_images('sdmm', 'comp-product-no-jac')
+    ppg_losses, ppg_images = calculate_all_with_images('ppg', 'perf')
+    sdmm_losses, sdmm_images = calculate_all_with_images('sdmm', 'opt_and_render')
+    product_losses, product_images = calculate_all_with_images('sdmm', 'opt_and_render')
     gt_images = get_gt_images()
     # print(ppg_losses)
     # print(sdmm_losses)
@@ -189,16 +190,16 @@ def make_comparisons_methods():
                 r'The best result for each scene and error metric has been highlighted for visibility.'
             ))
             doc.append(NoEscape(r'\label{tab:ppg-comp}'))
-        
+
         for counter, image_name in enumerate(sorted(sdmm_images.keys())):
             ppg_image = ppg_images[image_name]
             sdmm_image = sdmm_images[image_name]
             product_image = product_images[image_name]
             gt_image = gt_images[image_name]
-            ppg_image_path = os.path.join(ppg_image_directory, image_name + '.jpg') 
-            sdmm_image_path = os.path.join(sdmm_image_directory, image_name + '.jpg') 
-            product_image_path = os.path.join(product_image_directory, image_name + '.jpg') 
-            gt_image_path = os.path.join(gt_image_directory, image_name + '.jpg') 
+            ppg_image_path = os.path.join(ppg_image_directory, image_name + '.jpg')
+            sdmm_image_path = os.path.join(sdmm_image_directory, image_name + '.jpg')
+            product_image_path = os.path.join(product_image_directory, image_name + '.jpg')
+            gt_image_path = os.path.join(gt_image_directory, image_name + '.jpg')
             imsave(ppg_image_path, ppg_image)
             imsave(sdmm_image_path, sdmm_image)
             imsave(product_image_path, product_image)

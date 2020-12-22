@@ -6,7 +6,7 @@ import numpy as np
 
 from test_suite_utils import MITSUBA_PATH, SCENES
 from test_suite_utils import get_scene_path, get_experiment_path, get_gt_path, get_combined_path, get_plots_path
-# from combine_renders import combine_renders
+from combine_renders import combine_renders
 
 def render_experiment(scene_name, experiment_name, integrator, parameters, processors):
     print('Running experiment {}, scene {}, with {} and {}'.format(experiment_name, scene_name, integrator, parameters))
@@ -81,7 +81,7 @@ def render_experiment(scene_name, experiment_name, integrator, parameters, proce
             f"Total time: {total_elapsed_seconds:.3f}s."
             f"{Style.RESET_ALL}"
         )
-        
+
 
 def combine(scene_name, experiment_name, integrator, parameters):
     experiment_path = get_experiment_path(scene_name, experiment_name, integrator, parameters)
@@ -150,11 +150,10 @@ if __name__ == '__main__':
             render_experiment(scene_name, args.name, args.integrator, parameters, args.processors)
         elif args.integrator == 'sdmm':
             if args.combine:
-                pass
-                # combine(scene_name, args.name, args.integrator, parameters)
+                combine(scene_name, args.name, args.integrator, parameters)
             else:
                 render_experiment(scene_name, args.name, args.integrator, parameters, args.processors)
-                # combine(scene_name, args.name, args.integrator, parameters)
+                combine(scene_name, args.name, args.integrator, parameters)
 
     if args.scene == 'all':
         for scene_name in SCENES:
