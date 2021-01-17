@@ -43,7 +43,7 @@ static StatsCounter avgPathLength("SDMM volumetric path tracer", "Average path l
 class SDMMVolumetricPathTracer : public Integrator {
     using Scalar = typename SDMMProcess::Scalar;
 
-    using SDMMContext = typename SDMMProcess::SDMMContext;
+    using DMMContext = typename SDMMProcess::DMMContext;
     using Accelerator = typename SDMMProcess::Accelerator;
     using AcceleratorNode = typename Accelerator::Node;
     using AcceleratorPoint = typename Accelerator::Point;
@@ -116,7 +116,7 @@ public:
 
     void saveCheckpoint(const fs::path& experimentPath, int iteration) {
         fs::path checkpointsDir = experimentPath / "checkpoints";
-        if(iteration == 0 && (!fs::is_directory(checkpointsDir) || !fs::exists(checkpointsDir))) {
+        if(!fs::is_directory(checkpointsDir) || !fs::exists(checkpointsDir)) {
             fs::create_directories(checkpointsDir);
         }
         fs::path distributionPath = checkpointsDir / fs::path(
@@ -125,7 +125,7 @@ public:
         sdmm::save_json(m_accelerator, distributionPath.string());
     }
 
-    void initializeSDMMContext(SDMMProcess::SDMMContext* context, Scalar maxDiagonal) {
+    void initializeDMMContext(SDMMProcess::DMMContext* context, Scalar maxDiagonal) {
         constexpr static int n_spatial_components = SDMMProcess::NComponents / 8;
         float spatial_distance = 3 * maxDiagonal / n_spatial_components;
         sdmm::initialize_dmm(context->dmm, context->em, context->training_data, context->rng, n_spatial_components, spatial_distance);
@@ -207,7 +207,7 @@ public:
             size_t context_i = m_node_idcs[(size_t) i];
             auto& context = nodes[context_i].value;
             if(enoki::slices(context->dmm) == 0) {
-                initializeSDMMContext(context.get(), enoki::hmax(nodes[context_i].aabb.diagonal()));
+                initializeDMMContext(context.get(), enoki::hmax(nodes[context_i].aabb.diagonal()));
             }
             sdmm::em_step(context->dmm, context->em, context->training_data);
             context->training_data.clear();
@@ -256,7 +256,7 @@ public:
                 enoki::slice(context->training_data.point, point_i) = direction;
             }
             if(enoki::slices(context->dmm) == 0) {
-                initializeSDMMContext(context.get(), enoki::hmax(nodes[context_i].aabb.diagonal()));
+                initializeDMMContext(context.get(), enoki::hmax(nodes[context_i].aabb.diagonal()));
             }
             sdmm::em_step(context->dmm, context->em, context->training_data);
             context->training_data.clear();
@@ -348,7 +348,7 @@ public:
         typename Accelerator::AABB aabb;
         getAABB(aabb, aabb_min, aabb_max, spatialNormalization);
         m_accelerator = std::make_unique<Accelerator>(
-            aabb, std::make_unique<SDMMContext>(m_maxSamplesSize)
+            aabb, std::make_unique<DMMContext>(m_maxSamplesSize)
         );
         m_accelerator->split_to_depth(3);
 
@@ -431,9 +431,9 @@ public:
                 destinationFile.parent_path(),
                 timer->lap()
             );
-            // saveCheckpoint(destinationFile.parent_path(), iteration);
             ++iteration;
         }
+        saveCheckpoint(destinationFile.parent_path(), iteration);
 
         std::ofstream statsOutFile(
             (destinationFile.parent_path() / "stats.json").string()

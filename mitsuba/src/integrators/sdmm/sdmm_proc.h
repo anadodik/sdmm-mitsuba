@@ -27,6 +27,7 @@
 #include <sdmm/opt/em.h>
 #include <sdmm/opt/init.h>
 #include <sdmm/spaces/directional.h>
+#include <sdmm/spaces/offset_directional.h>
 #include <sdmm/spaces/euclidian.h>
 #include <sdmm/spaces/spatio_directional.h>
 #include <sdmm/accelerators/spatial_tree.h>
@@ -78,7 +79,7 @@ public:
     using MarginalSDMM = sdmm::SDMM<
         sdmm::Matrix<Value, MarginalSize>, MarginalTangentSpace
     >;
-    using ConditionalTangentSpace = sdmm::DirectionalTangentSpace<
+    using ConditionalTangentSpace = sdmm::OffsetDirectionalTangentSpace<
         sdmm::Vector<Value, ConditionalSize + 1>, sdmm::Vector<Value, ConditionalSize>
     >;
     using ConditionalSDMM = sdmm::SDMM<

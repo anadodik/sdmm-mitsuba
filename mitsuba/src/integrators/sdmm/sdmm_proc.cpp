@@ -33,6 +33,8 @@
 #include <iterator>
 #include <mutex>
 
+#include <sdmm/distributions/sdmm_product.h>
+
 MTS_NAMESPACE_BEGIN
 
 static StatsCounter avgPathLength("SDMM path tracer", "Average path length", EAverage);

@@ -53,7 +53,7 @@ class SDMMRenderer : public WorkProcessor {
     using Vectord = typename SDMMProcess::Vectord;
     using ConditionalVectord = typename SDMMProcess::ConditionalVectord;
 
-    using SDMMContext = typename SDMMProcess::SDMMContext;
+    using DMMContext = typename SDMMProcess::DMMContext;
     using Accelerator = typename SDMMProcess::Accelerator;
 	using AcceleratorPoint = typename Accelerator::Point;
 	using AcceleratorAABB = typename Accelerator::AABB;
@@ -343,12 +343,12 @@ public:
 			normal = -normal;
 		}
 
-        SDMMContext* sdmmContext = nullptr;
+        DMMContext* dmmContext = nullptr;
         if(m_iteration != 0) {
             AcceleratorPoint key(sample(0), sample(1), sample(2));
-            sdmmContext = m_accelerator->find(key);
+            dmmContext = m_accelerator->find(key);
         }
-        if(m_iteration == 0 || sdmmContext == nullptr || !sdmmContext->initialized) {
+        if(m_iteration == 0 || dmmContext == nullptr || !dmmContext->initialized) {
             heuristicConditionalWeight = 1.0f;
             Spectrum result = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
             pdf = bsdfPdf;
@@ -396,7 +396,7 @@ public:
         }
 
         if(!usingLearnedBSDF && validConditional && usingProduct) {
-            auto product_success = sdmm::product(sdmmContext->dmm, learned_bsdf, product);
+            auto product_success = sdmm::product(dmmContext->dmm, learned_bsdf, product);
             if(enoki::none(product_success)) {
                 spdlog::info("product unsuccessful={}", product_success);
                 usingProduct = false;
@@ -440,7 +440,7 @@ public:
                     sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
                 );
             } else {
-                sdmmContext->dmm.sample(
+                dmmContext->dmm.sample(
                     sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
                 );
             }
@@ -452,7 +452,7 @@ public:
                     embedded_sample,
                     tangent_sample,
                     inv_jacobian,
-                    sdmmContext->dmm.tangent_space.coordinate_system.from
+                    dmmContext->dmm.tangent_space.coordinate_system.from
                 );
             }
 
@@ -513,7 +513,7 @@ public:
                 bRec,
                 bsdfPdf,
                 gmmPdf,
-                sdmmContext->dmm,
+                dmmContext->dmm,
                 posterior,
                 heuristicConditionalWeight,
                 sample.template bottomRows<t_conditionalDims>()
@@ -561,6 +561,7 @@ public:
         gmmPdf = enoki::hsum_nested(posterior);
         // gmmPdf = conditional.pdf(sample) * dirToCanonicalInvJacobian<t_conditionalDims>();
         if(!std::isfinite(gmmPdf)) {
+            /*
             std::cerr << fmt::format(
                 "pdf={}\n"
                 "posterior={}\n"
@@ -594,6 +595,8 @@ public:
                 conditional.cov,
                 conditional.cov_sqrt
             );
+            */
+            return 0;
         }
 
         return
@@ -901,7 +904,7 @@ public:
             return Li;
         }
 
-        auto push_back_data = [&](SDMMProcess::SDMMContext& context, int d) {
+        auto push_back_data = [&](SDMMProcess::DMMContext& context, int d) {
             if(!m_collect_data) {
                 return;
             }
@@ -950,11 +953,11 @@ public:
                     position.array() + offset.array();
                 AcceleratorPoint key(jitteredPosition(0), jitteredPosition(1), jitteredPosition(2));
                 AcceleratorAABB aabb;
-                auto sdmmContext = m_accelerator->find(key, aabb);
-                if(sdmmContext == nullptr || enoki::all(aabb.min == sampleAABB.min)) {
+                auto dmmContext = m_accelerator->find(key, aabb);
+                if(dmmContext == nullptr || enoki::all(aabb.min == sampleAABB.min)) {
                     continue;
                 } else {
-                    push_back_data(*sdmmContext, d);
+                    push_back_data(*dmmContext, d);
                 }
             }
         }

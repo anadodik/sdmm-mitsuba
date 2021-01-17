@@ -87,8 +87,8 @@ public:
     using Data = sdmm::Data<JointSDMM>;
     using EM = sdmm::EM<JointSDMM>;
 
-    using SDMMContext = sdmm::SDMMContext<JointSDMM, ConditionalSDMM, RNG>;
-    using Accelerator = sdmm::accelerators::STree<Scalar, 3, SDMMContext>;
+    using DMMContext = sdmm::DMMContext<JointSDMM, ConditionalSDMM, RNG>;
+    using Accelerator = sdmm::accelerators::DMMSTree<Scalar, 3, DMMContext>;
 
     SDMMProcess(
         const RenderJob *parent,
