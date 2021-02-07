@@ -296,7 +296,7 @@ public:
         int samplerResID
     ) override {
         spdlog::info("Max packet size={}", enoki::max_packet_size);
-	enoki::set_flush_denormals(true);
+	    // enoki::set_flush_denormals(true);
         m_scene = scene;
 		ref<Scheduler> scheduler = Scheduler::getInstance();
 		ref<Sensor> sensor = scene->getSensor();
@@ -354,9 +354,9 @@ public:
         m_accelerator = std::make_unique<Accelerator>(
             aabb, std::make_unique<SDMMContext>(m_maxSamplesSize)
         );
-	std::cerr << "Splitting to depth...\n";
+	    std::cerr << "Splitting to depth...\n";
         m_accelerator->split_to_depth(3);
-	std::cerr << "Done splitting to depth.\n";
+	    std::cerr << "Done splitting to depth.\n";
 
         bool success = true;
 

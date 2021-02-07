@@ -208,7 +208,7 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
         per_channel_variance = np.mean(image_variance, axis=(0,1))
         max_variance = np.maximum(image_variance, per_channel_variance)
 
-        pyexr.write(os.path.join(out_dir, f'iteration_var{iteration}.exr'), image_variance)
+        # pyexr.write(os.path.join(out_dir, f'iteration_var{iteration}.exr'), image_variance)
 
         total_spp += spp
         spp_data.append(total_spp)
