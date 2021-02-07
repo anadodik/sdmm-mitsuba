@@ -336,18 +336,18 @@ RUNS = [
     # ExperimentRun("old_code_2_32_4spp", "Old Code 2/32 SPP Init 4 SPP", "sdmm"),
     # ExperimentRun("async_4spp", "Async 4 SPP SDMM", "sdmm"),
     # ExperimentRun("async_4spp_2", "Async 4 SPP SDMM Verification Old", "sdmm"),
-    ExperimentRun("async_4spp_8min", "SDMM (Async 4 SPP)", "sdmm"),
-    ExperimentRun("dmm", "DMM", "sdmm"),
+    ExperimentRun("sdmm_baseline", "SDMM (Async 4 SPP)", "sdmm"),
+    # ExperimentRun("dmm", "DMM", "sdmm"),
     # ExperimentRun("async_4spp_2", "Async 4 SPP 2", "sdmm"),
     # ExperimentRun("async_4spp_8min", "Async 4 SPP 8 min", "sdmm"),
-    ExperimentRun("perf", "PPG", "ppg"),
+    ExperimentRun("baseline", "PPG", "ppg"),
 ]
 
 
 def make_comparison_figure(runs, name_prefix, error_type):
     scene_errors = {}
     for scene in SCENES:
-        # if scene not in ['glossy-cbox']:
+        # if scene not in ['torus']:
         #     continue
         runs_errors = {}
         for run in runs:

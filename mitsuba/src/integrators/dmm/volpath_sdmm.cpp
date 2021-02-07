@@ -325,8 +325,8 @@ public:
         fs::path destinationFile = scene->getDestinationFile();
 
         const int nPixels = m_config.cropSize.x * m_config.cropSize.y;
-        m_maxSamplesSize =
-            nPixels * m_config.samplesPerIteration * m_config.savedSamplesPerPath;
+        m_maxSamplesSize = 2000000;
+	// nPixels * m_config.samplesPerIteration * m_config.savedSamplesPerPath;
 
         const auto scene_aabb = m_scene->getAABBWithoutCamera();
         const auto aabb_min = scene_aabb.min;

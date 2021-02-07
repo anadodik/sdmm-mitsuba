@@ -160,7 +160,7 @@ public:
         // }
 
         // if(m_node_idcs.size() > 0) {
-            m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&](int i){
+            m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&nodes, this](int i){
                 size_t context_i = m_node_idcs[(size_t) i];
                 auto& context = nodes[context_i].value;
                 if(context->update_ready) {
@@ -206,13 +206,13 @@ public:
             optimization_running = true;
         }
 
-        m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&](int i){
+        m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&nodes, this](int i){
             size_t context_i = m_node_idcs[(size_t) i];
             auto& context = nodes[context_i].value;
             std::swap(context->data, context->training_data);
         });
 
-        m_thread_pool->parallelForNoWait(0, (int) m_node_idcs.size(), [&](int i){
+        m_thread_pool->parallelForNoWait(0, (int) m_node_idcs.size(), [&nodes, this](int i){
             size_t context_i = m_node_idcs[(size_t) i];
             auto& context = nodes[context_i].value;
             if(enoki::slices(context->sdmm) == 0) {
@@ -251,7 +251,7 @@ public:
         std::cerr << "Maximum node depth: " << max_depth << ".\n";
         std::cerr << "Optimizing guiding distribution: " << m_node_idcs.size() << " distributions in tree.\n";
 
-        m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&](int i){
+        m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&nodes, this](int i){
             size_t context_i = m_node_idcs[(size_t) i];
             auto& context = nodes[context_i].value;
             std::swap(context->data, context->training_data);
@@ -296,6 +296,7 @@ public:
         int samplerResID
     ) override {
         spdlog::info("Max packet size={}", enoki::max_packet_size);
+	enoki::set_flush_denormals(true);
         m_scene = scene;
 		ref<Scheduler> scheduler = Scheduler::getInstance();
 		ref<Sensor> sensor = scene->getSensor();
@@ -304,7 +305,7 @@ public:
 		size_t seed = scene->getSampler()->getSeed();
 		size_t nCores = scheduler->getCoreCount();
 
-        m_thread_pool = std::make_unique<tev::ThreadPool>(nCores);
+        m_thread_pool = std::make_unique<tev::ThreadPool>((int) nCores);
 
 		Log(EInfo, "Starting render job (%ix%i, " SIZE_T_FMT " samples, " SIZE_T_FMT
 			" %s, " SSE_STR ") ..", film->getCropSize().x, film->getCropSize().y,
@@ -327,8 +328,9 @@ public:
         fs::path destinationFile = scene->getDestinationFile();
 
         const int nPixels = m_config.cropSize.x * m_config.cropSize.y;
-        m_maxSamplesSize =
-            nPixels * m_config.samplesPerIteration * m_config.savedSamplesPerPath;
+        m_maxSamplesSize = 2000000;
+        	// nPixels * m_config.samplesPerIteration * m_config.savedSamplesPerPath;
+	std::cerr << "Maximum number of samples possible: " << m_maxSamplesSize << "\n";
 
         const auto scene_aabb = m_scene->getAABBWithoutCamera();
         const auto aabb_min = scene_aabb.min;
@@ -352,7 +354,9 @@ public:
         m_accelerator = std::make_unique<Accelerator>(
             aabb, std::make_unique<SDMMContext>(m_maxSamplesSize)
         );
+	std::cerr << "Splitting to depth...\n";
         m_accelerator->split_to_depth(3);
+	std::cerr << "Done splitting to depth.\n";
 
         bool success = true;
 
@@ -367,7 +371,7 @@ public:
             samplesRendered < sampleCount;
             samplesRendered += m_config.samplesPerIteration
         ) {
-            m_still_training = samplesRendered < m_config.sampleCount / 3;
+            m_still_training = !m_config.bsdfOnly && samplesRendered < m_config.sampleCount / 3;
 
             // if(!m_still_training) {
             //     m_config.samplesPerIteration = sampleCount - samplesRendered;

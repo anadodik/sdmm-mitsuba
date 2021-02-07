@@ -24,9 +24,9 @@ def render_experiment(scene_name, experiment_name, integrator, parameters, proce
     stdout_path = os.path.join(experiment_path, 'stdout.log')
     stderr_path = os.path.join(experiment_path, 'stderr.log')
     with open(stdout_path, 'wb+', 0) as stdout_file, open(stderr_path, 'wb+', 0) as stderr_file:
-        os.environ['LD_PRELOAD'] = '/usr/lib/x86_64-linux-gnu/libprofiler.so'
-        os.environ['CPUPROFILE'] = 'mts.prof'
-        os.environ['CPUPROFILE_FREQUENCY'] = '800'
+        # os.environ['LD_PRELOAD'] = '/usr/lib/x86_64-linux-gnu/libprofiler.so'
+        # os.environ['CPUPROFILE'] = 'mts.prof'
+        # os.environ['CPUPROFILE_FREQUENCY'] = '800'
         mts_call_list = [
             'mitsuba',
             '-z',
@@ -110,7 +110,7 @@ def render_gt(scene_name, parameters):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run the SDMM test suite.')
-    parser.add_argument('--name', type=str, help='Name of the experiment.', required=True)
+    parser.add_argument('--name', "-n", type=str, help='Name of the experiment.', required=True)
     parser.add_argument('--integrator', type=str, help='Name of the integrator to use.', required=True)
     parser.add_argument('--scene', type=str, help='Name of the scene to render.', required=True)
     parser.add_argument('--processors', type=str, help='Override the default number of processors.', required=True)

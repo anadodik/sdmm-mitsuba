@@ -1,4 +1,4 @@
 [submodule "sdmm"]
 	path = sdmm
 	url = git@github.com:anadodik/sdmm.git
-	branch = master
+	branch = origin/master
