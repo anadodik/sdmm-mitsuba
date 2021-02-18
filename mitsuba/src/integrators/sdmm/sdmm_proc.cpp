@@ -38,12 +38,7 @@
 MTS_NAMESPACE_BEGIN
 
 static StatsCounter avgPathLength("SDMM path tracer", "Average path length", EAverage);
-
-static StatsCounter avgIterationTime("SDMM Profiling (s)", "Average duration (s): render iteration", EAverage);
-static StatsCounter avgPyramidBuildTime("SDMM Profiling (s)", "Average duration (s): pyramid build time", EAverage);
-static StatsCounter avgDensityEstimationTime("SDMM Profiling (s)", "Average duration (s): density estimation", EAverage);
-static StatsCounter avgEMIterationTime("SDMM Profiling (s)", "Average duration (s): EM iteration", EAverage);
-static StatsCounter avgPosteriorTime("SDMM Profiling (s)", "Average duration (s): posterior calculation", EAverage);
+static StatsCounter avgInvalidSamples("SDMM path tracer", "Average proportion of discarded samples.", EAverage);
 
 class SDMMRenderer : public WorkProcessor {
     constexpr static int t_dims = SDMMProcess::t_dims;
@@ -57,11 +52,11 @@ class SDMMRenderer : public WorkProcessor {
 
     using SDMMContext = typename SDMMProcess::SDMMContext;
     using Accelerator = typename SDMMProcess::Accelerator;
-	using AcceleratorPoint = typename Accelerator::Point;
-	using AcceleratorAABB = typename Accelerator::AABB;
+    using AcceleratorPoint = typename Accelerator::Point;
+    using AcceleratorAABB = typename Accelerator::AABB;
 
 public:
-	SDMMRenderer(
+    SDMMRenderer(
         const SDMMConfiguration &config,
         Accelerator* accelerator,
         int iteration,
@@ -73,22 +68,22 @@ public:
         m_collect_data(collect_data)
     { }
 
-	SDMMRenderer(Stream *stream, InstanceManager *manager)
-	: WorkProcessor(stream, manager), m_config(stream) { }
+    SDMMRenderer(Stream *stream, InstanceManager *manager)
+    : WorkProcessor(stream, manager), m_config(stream) { }
 
-	virtual ~SDMMRenderer() { }
+    virtual ~SDMMRenderer() { }
 
-	void serialize(Stream *stream, InstanceManager *manager) const {
-		m_config.serialize(stream);
-	}
+    void serialize(Stream *stream, InstanceManager *manager) const {
+        m_config.serialize(stream);
+    }
 
-	ref<WorkUnit> createWorkUnit() const {
-		return new RectangularWorkUnit();
-	}
+    ref<WorkUnit> createWorkUnit() const {
+        return new RectangularWorkUnit();
+    }
 
-	ref<WorkResult> createWorkResult() const {
-		return new SDMMWorkResult(m_config, m_rfilter.get(), Vector2i(m_config.blockSize));
-	}
+    ref<WorkResult> createWorkResult() const {
+        return new SDMMWorkResult(m_config, m_rfilter.get(), Vector2i(m_config.blockSize));
+    }
 
     Vectord sampleUniformVector(ref<Sampler> sampler) const {
         Vectord uniformSample;
@@ -98,25 +93,25 @@ public:
         return uniformSample;
     }
 
-	void prepare() {
-		Scene *scene = static_cast<Scene *>(getResource("scene"));
-		m_scene = new Scene(scene);
-		m_sampler = static_cast<Sampler *>(getResource("sampler"));
-		m_sensor = static_cast<Sensor *>(getResource("sensor"));
-		m_rfilter = m_sensor->getFilm()->getReconstructionFilter();
-		m_scene->removeSensor(scene->getSensor());
-		m_scene->addSensor(m_sensor);
-		m_scene->setSensor(m_sensor);
-		m_scene->setSampler(m_sampler);
-		m_scene->wakeup(NULL, m_resources);
+    void prepare() {
+        Scene *scene = static_cast<Scene *>(getResource("scene"));
+        m_scene = new Scene(scene);
+        m_sampler = static_cast<Sampler *>(getResource("sampler"));
+        m_sensor = static_cast<Sensor *>(getResource("sensor"));
+        m_rfilter = m_sensor->getFilm()->getReconstructionFilter();
+        m_scene->removeSensor(scene->getSensor());
+        m_scene->addSensor(m_sensor);
+        m_scene->setSensor(m_sensor);
+        m_scene->setSampler(m_sampler);
+        m_scene->wakeup(NULL, m_resources);
         m_scene->initializeBidirectional();
-	}
+    }
 
-	void process(const WorkUnit *workUnit, WorkResult *workResult, const bool &stop) {
+    void process(const WorkUnit *workUnit, WorkResult *workResult, const bool &stop) {
         const RectangularWorkUnit *rect = static_cast<const RectangularWorkUnit *>(workUnit);
         SDMMWorkResult *result = static_cast<SDMMWorkResult *>(workResult);
 
-		fs::path destinationFile = m_scene->getDestinationFile();
+        fs::path destinationFile = m_scene->getDestinationFile();
         m_cameraMatrix = m_sensor->getWorldTransform()->eval(0).getMatrix();
 
         PerspectiveCamera* perspectiveCamera = dynamic_cast<PerspectiveCamera*>(&(*m_sensor));
@@ -163,10 +158,6 @@ public:
 
         if (!m_sensor->getFilm()->hasAlpha()) /* Don't compute an alpha channel if we don't have to */
             queryType &= ~RadianceQueryRecord::EOpacity;
-
-#if DUMP_DISTRIB == 1
-        std::ofstream jsonDumpFile("dumps/full.json");
-#endif
 
         m_timer = new Timer();
 
@@ -221,17 +212,8 @@ public:
                 }
                 result->putSample(samplePos, spec);
             }
-
-            avgIterationTime.incrementBase();
-            avgIterationTime += m_timer->lap();
-
-            continue;
-
-            if(allSamplesZero) {
-                continue;
-            }
         }
-	}
+    }
 
     template<int conditionalDims>
     static typename std::enable_if<conditionalDims == 2, Vector3>::type
@@ -339,11 +321,11 @@ public:
             return result;
         }
 
-		Eigen::Matrix<Scalar, 3, 1> normal;
-		normal << its.shFrame.n.x, its.shFrame.n.y, its.shFrame.n.z;
-		if(Frame::cosTheta(bRec.wi) < 0) {
-			normal = -normal;
-		}
+        Eigen::Matrix<Scalar, 3, 1> normal;
+        normal << its.shFrame.n.x, its.shFrame.n.y, its.shFrame.n.z;
+        if(Frame::cosTheta(bRec.wi) < 0) {
+            normal = -normal;
+        }
 
         SDMMContext* sdmmContext = nullptr;
         if(m_iteration != 0) {
@@ -464,7 +446,9 @@ public:
                 );
             }
 
+            avgInvalidSamples.incrementBase();
             if(inv_jacobian == 0) {
+                avgInvalidSamples += 1;
                 return Spectrum(0.f);
             }
 
@@ -933,7 +917,7 @@ public:
         };
 
         Eigen::Matrix<Scalar, 3, 1> offset;
-		int firstSaved = std::max(depth - m_config.savedSamplesPerPath, 0);
+        int firstSaved = std::max(depth - m_config.savedSamplesPerPath, 0);
         for(int d = depth - 1; d >= firstSaved; --d) {
             Eigen::Matrix<Scalar, 3, 1> position = vertices[d].
                 canonicalSample.template topRows<3>();
@@ -1068,23 +1052,23 @@ public:
         return pdfA / (pdfA + pdfB);
     }
 
-	ref<WorkProcessor> clone() const {
-		return new SDMMRenderer(
+    ref<WorkProcessor> clone() const {
+        return new SDMMRenderer(
             m_config, m_accelerator, m_iteration, m_collect_data
         );
-	}
+    }
 
-	MTS_DECLARE_CLASS()
+    MTS_DECLARE_CLASS()
 
 private:
-	ref<Scene> m_scene;
-	ref<Sensor> m_sensor;
-	ref<Sampler> m_sampler;
-	ref<ReconstructionFilter> m_rfilter;
+    ref<Scene> m_scene;
+    ref<Sensor> m_sensor;
+    ref<Sampler> m_sampler;
+    ref<ReconstructionFilter> m_rfilter;
 
-	MemoryPool m_pool;
-	SDMMConfiguration m_config;
-	HilbertCurve2D<int> m_hilbertCurve;
+    MemoryPool m_pool;
+    SDMMConfiguration m_config;
+    HilbertCurve2D<int> m_hilbertCurve;
     int m_iteration;
     bool m_collect_data;
     ref<Timer> m_timer;

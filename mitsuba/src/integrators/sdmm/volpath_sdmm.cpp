@@ -39,6 +39,7 @@ using json = nlohmann::json;
 MTS_NAMESPACE_BEGIN
 
 static StatsCounter avgPathLength("SDMM volumetric path tracer", "Average path length", EAverage);
+static StatsCounter avgInvalidSamples("SDMM path tracer", "Average proportion of discarded samples.", EAverage);
 
 class SDMMVolumetricPathTracer : public Integrator {
     using Scalar = typename SDMMProcess::Scalar;
@@ -50,40 +51,44 @@ class SDMMVolumetricPathTracer : public Integrator {
 
 public:
     SDMMVolumetricPathTracer(const Properties &props) : Integrator(props) {
-		/* Load the parameters / defaults */
-		m_config.maxDepth = props.getInteger("maxDepth", -1);
-		m_config.blockSize = props.getInteger("blockSize", -1);
-		m_config.rrDepth = props.getInteger("rrDepth", 5);
-		m_config.strictNormals = props.getBoolean("strictNormals", true);
-		m_config.sampleDirect = props.getBoolean("sampleDirect", true);
-		m_config.showWeighted = props.getBoolean("showWeighted", false);
-		m_config.samplesPerIteration = props.getInteger("samplesPerIteration", 8);
-		m_config.useHierarchical = props.getBoolean("useHierarchical", true);
-		m_config.sampleProduct = props.getBoolean("sampleProduct", false);
-		m_config.bsdfOnly = props.getBoolean("bsdfOnly", false);
-		m_config.alpha = props.getFloat("alpha", 0.5f);
-		m_config.batchIterations = props.getInteger("batchIterations", 0);
-		m_config.initIterations = props.getInteger("initIterations", 3);
-		m_config.enablePER = props.getBoolean("enablePER", false);
-		m_config.replayBufferLength = props.getInteger("replayBufferLength", 3);
-		m_config.resampleProportion = props.getFloat("resampleProportion", 0.1);
-		m_config.decreasePrior = props.getBoolean("decreasePrior", true);
-		m_config.correctStateDensity = props.getBoolean("correctStateDensity", true);
-		m_config.savedSamplesPerPath = props.getInteger("savedSamplesPerPath", 8);
+        /* Load the parameters / defaults */
+        m_config.strictNormals = props.getBoolean("strictNormals", true);
+        m_config.maxDepth = props.getInteger("maxDepth", -1);
+        m_config.rrDepth = props.getInteger("rrDepth", 5);
+        m_config.blockSize = props.getInteger("blockSize", -1);
 
-		m_config.useInit = props.getBoolean("useInit", true);
-		m_config.useInitCovar = props.getBoolean("useInitCovar", false);
-		m_config.useInitWeightsForMeans = props.getBoolean("useInitWeightsForMeans", true);
-		m_config.useInitWeightsForMixture = props.getBoolean("useInitWeightsForMixture", false);
-		m_config.initKMeansSwapTolerance = props.getFloat("initKMeansSwapTolerance", 1.f); //one means disabled
+        m_config.samplesPerIteration = props.getInteger("samplesPerIteration", 8);
+        m_config.sampleProduct = props.getBoolean("sampleProduct", false);
+        m_config.bsdfOnly = props.getBoolean("bsdfOnly", false);
+        m_config.savedSamplesPerPath = props.getInteger("savedSamplesPerPath", 8);
+
+        m_config.flushDenormals = props.getBoolean("flushDenormals", true);
+        m_config.optimizeAsync = props.getBoolean("optimizeAsync", true);
+        // TODO: make a SDMMFactory for different configurations:
+        //       24 components
+        //       16 components
+        //       Directional
+        //       OffsetDirectional
+
+        // m_config.sampleDirect = props.getBoolean("sampleDirect", true);
+        // m_config.alpha = props.getFloat("alpha", 0.5f);
+        // m_config.correctSpatialDensity = props.getBoolean("correctSpatialDensity", true);
 
         m_config.dump();
 
-		if (m_config.rrDepth <= 0)
-			Log(EError, "'rrDepth' must be set to a value greater than zero!");
+        if (m_config.rrDepth <= 0)
+            Log(EError, "'rrDepth' must be set to a value greater than zero!");
 
-		if (m_config.maxDepth <= 0 && m_config.maxDepth != -1)
-			Log(EError, "'maxDepth' must be set to -1 (infinite) or a value greater than zero!");
+        if (m_config.maxDepth <= 0 && m_config.maxDepth != -1)
+            Log(EError, "'maxDepth' must be set to -1 (infinite) or a value greater than zero!");
+
+        if (m_config.maxDepth != m_config.rrDepth)
+            Log(EError, "'maxDepth' must match 'rrDepth' for the SDMM integrator!");
+
+        spdlog::info("Max packet size={}", enoki::max_packet_size);
+        if(m_config.flushDenormals) {
+            enoki::set_flush_denormals(true);
+        }
     }
 
     /// Unserialize from a binary data stream
@@ -97,26 +102,26 @@ public:
         m_config.serialize(stream);
     }
 
-	bool preprocess(const Scene *scene, RenderQueue *queue,
-			const RenderJob *job, int sceneResID, int sensorResID,
-			int samplerResID) override {
-		Integrator::preprocess(scene, queue, job, sceneResID,
-				sensorResID, samplerResID);
+    bool preprocess(const Scene *scene, RenderQueue *queue,
+            const RenderJob *job, int sceneResID, int sensorResID,
+            int samplerResID) override {
+        Integrator::preprocess(scene, queue, job, sceneResID,
+                sensorResID, samplerResID);
 
-		if (scene->getSubsurfaceIntegrators().size() > 0)
-			Log(EError, "Subsurface integrators are not supported "
-				"by the SDMM path tracer!");
+        if (scene->getSubsurfaceIntegrators().size() > 0)
+            Log(EError, "Subsurface integrators are not supported "
+                "by the SDMM path tracer!");
 
-		return true;
-	}
+        return true;
+    }
 
     void cancel() override {
-		Scheduler::getInstance()->cancel(m_process);
+        Scheduler::getInstance()->cancel(m_process);
     }
 
     void saveCheckpoint(const fs::path& experimentPath, int iteration) {
         fs::path checkpointsDir = experimentPath / "checkpoints";
-        if(iteration == 0 && (!fs::is_directory(checkpointsDir) || !fs::exists(checkpointsDir))) {
+        if(!fs::is_directory(checkpointsDir) || !fs::exists(checkpointsDir)) {
             fs::create_directories(checkpointsDir);
         }
         fs::path distributionPath = checkpointsDir / fs::path(
@@ -142,52 +147,53 @@ public:
         );
     }
 
-    void optimize_async_wait_and_update() {
-        m_thread_pool->waitUntilFinished();
-        optimization_running = false;
+    struct TreeStats {
+        int samples_count = 0;
+        int leaf_nodes_count = 0;
+        int active_nodes_count = 0;
+        int max_depth = 0;
+        int optimized_nodes_count = 0;
+    };
 
+    TreeStats compute_tree_stats() {
         auto& nodes = m_accelerator->data();
-        // m_node_idcs.clear();
-        // m_node_idcs.reserve(nodes.size());
-        // for(size_t context_i = 0; context_i < nodes.size(); ++context_i) {
-        //     if(!nodes[context_i].is_leaf || nodes[context_i].value == nullptr) {
-        //         continue;
-        //     }
-        //     auto& context = nodes[context_i].value;
-        //     if(context->update_ready) {
-        //         m_node_idcs.push_back(context_i);
-        //     }
-        // }
-
-        // if(m_node_idcs.size() > 0) {
-            m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&nodes, this](int i){
-                size_t context_i = m_node_idcs[(size_t) i];
-                auto& context = nodes[context_i].value;
-                if(context->update_ready) {
-                    enoki::set_slices(context->conditioner, enoki::slices(context->sdmm));
-                    sdmm::prepare(context->conditioner, context->sdmm);
-                    context->update_ready = false;
-                    context->initialized = true;
+        TreeStats tree_stats;
+        for(size_t context_i = 0; context_i < nodes.size(); ++context_i) {
+            if(nodes[context_i].is_leaf) {
+                ++tree_stats.leaf_nodes_count;
+                if(nodes[context_i].value != nullptr) {
+                    ++tree_stats.active_nodes_count;
                 }
-            });
-        // }
+                tree_stats.samples_count += nodes[context_i].value->data.size;
+                if(tree_stats.max_depth < nodes[context_i].depth) {
+                    tree_stats.max_depth = nodes[context_i].depth;
+                }
+            }
+            if(canBeOptimized(nodes[context_i])) {
+                ++tree_stats.optimized_nodes_count;
+            }
+        }
+        return tree_stats;
     }
 
-    void optimize_async_run() {
-        std::cerr << "Splitting samples.\n";
-        int splitThreshold = 16000;
-        m_accelerator->split(splitThreshold);
+    TreeStats optimize_async_run() {
+        spdlog::info("Splitting samples.");
+        m_accelerator->split(m_splitThreshold);
 
         auto& nodes = m_accelerator->data();
         m_node_idcs.reserve(nodes.size());
         m_node_idcs.clear();
-        int total_n_samples = 0;
-        int max_depth = 0;
+
+        TreeStats tree_stats;
         for(size_t context_i = 0; context_i < nodes.size(); ++context_i) {
             if(nodes[context_i].is_leaf) {
-                total_n_samples += nodes[context_i].value->data.size;
-                if(max_depth < nodes[context_i].depth) {
-                    max_depth = nodes[context_i].depth;
+                ++tree_stats.leaf_nodes_count;
+                if(nodes[context_i].value != nullptr) {
+                    ++tree_stats.active_nodes_count;
+                }
+                tree_stats.samples_count += nodes[context_i].value->data.size;
+                if(tree_stats.max_depth < nodes[context_i].depth) {
+                    tree_stats.max_depth = nodes[context_i].depth;
                 }
             }
             if(!canBeOptimized(nodes[context_i])) {
@@ -195,13 +201,10 @@ public:
             }
             m_node_idcs.push_back(context_i);
         }
-
-        std::cerr << "Total number of samples: " << total_n_samples << ".\n";
-        std::cerr << "Maximum node depth: " << max_depth << ".\n";
-        std::cerr << "Optimizing guiding distribution: " << m_node_idcs.size() << " distributions in tree.\n";
+        tree_stats.optimized_nodes_count = m_node_idcs.size();
 
         if(m_node_idcs.size() == 0) {
-            return;
+            return tree_stats;
         } else {
             optimization_running = true;
         }
@@ -222,12 +225,29 @@ public:
             context->training_data.clear();
             context->update_ready = true;
         });
+        return tree_stats;
+    }
+
+    void optimize_async_wait_and_update() {
+        m_thread_pool->waitUntilFinished();
+        optimization_running = false;
+
+        auto& nodes = m_accelerator->data();
+        m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&nodes, this](int i){
+            size_t context_i = m_node_idcs[(size_t) i];
+            auto& context = nodes[context_i].value;
+            if(context->update_ready) {
+                enoki::set_slices(context->conditioner, enoki::slices(context->sdmm));
+                sdmm::prepare(context->conditioner, context->sdmm);
+                context->update_ready = false;
+                context->initialized = true;
+            }
+        });
     }
 
     void optimize() {
-        std::cerr << "Splitting samples.\n";
-        int splitThreshold = 16000;
-        m_accelerator->split(splitThreshold);
+        spdlog::info("Splitting samples.");
+        m_accelerator->split(m_splitThreshold);
 
         auto& nodes = m_accelerator->data();
         m_node_idcs.reserve(nodes.size());
@@ -287,7 +307,7 @@ public:
         aabb.max += epsilon;
     }
 
-	bool render(
+    bool render(
         Scene *scene,
         RenderQueue *queue,
         const RenderJob *job,
@@ -295,26 +315,22 @@ public:
         int sensorResID,
         int samplerResID
     ) override {
-        spdlog::info("Max packet size={}", enoki::max_packet_size);
-	enoki::set_flush_denormals(true);
         m_scene = scene;
-		ref<Scheduler> scheduler = Scheduler::getInstance();
-		ref<Sensor> sensor = scene->getSensor();
-		const Film *film = sensor->getFilm();
-		size_t sampleCount = scene->getSampler()->getSampleCount();
-		size_t seed = scene->getSampler()->getSeed();
-		size_t nCores = scheduler->getCoreCount();
+        ref<Scheduler> scheduler = Scheduler::getInstance();
+        ref<Sensor> sensor = scene->getSensor();
+        const Film *film = sensor->getFilm();
+        size_t sampleCount = scene->getSampler()->getSampleCount();
+        size_t nCores = scheduler->getCoreCount();
 
         m_thread_pool = std::make_unique<tev::ThreadPool>((int) nCores);
 
-		Log(EInfo, "Starting render job (%ix%i, " SIZE_T_FMT " samples, " SIZE_T_FMT
-			" %s, " SSE_STR ") ..", film->getCropSize().x, film->getCropSize().y,
-			sampleCount, nCores, nCores == 1 ? "core" : "cores");
+        Log(EInfo, "Starting render job (%ix%i, " SIZE_T_FMT " samples, " SIZE_T_FMT
+            " %s, " SSE_STR ") ..", film->getCropSize().x, film->getCropSize().y,
+            sampleCount, nCores, nCores == 1 ? "core" : "cores");
 
+        m_config.imageSize = film->getCropSize();
         m_config.blockSize = scene->getBlockSize();
-		m_config.cropSize = film->getCropSize();
         m_config.sampleCount = sampleCount;
-		m_config.rngSeed = seed;
         if(sampleCount % m_config.samplesPerIteration != 0) {
             Log(EWarn,
                 "sampleCount % m_config.samplesPerIteration "
@@ -323,14 +339,14 @@ public:
                 m_config.samplesPerIteration
             );
         }
-		m_config.dump();
+        m_config.dump();
 
         fs::path destinationFile = scene->getDestinationFile();
 
-        const int nPixels = m_config.cropSize.x * m_config.cropSize.y;
+        const int nPixels = m_config.imageSize.x * m_config.imageSize.y;
         m_maxSamplesSize = 2000000;
-        	// nPixels * m_config.samplesPerIteration * m_config.savedSamplesPerPath;
-	std::cerr << "Maximum number of samples possible: " << m_maxSamplesSize << "\n";
+            // nPixels * m_config.samplesPerIteration * m_config.savedSamplesPerPath;
+    std::cerr << "Maximum number of samples possible: " << m_maxSamplesSize << "\n";
 
         const auto scene_aabb = m_scene->getAABBWithoutCamera();
         const auto aabb_min = scene_aabb.min;
@@ -354,18 +370,16 @@ public:
         m_accelerator = std::make_unique<Accelerator>(
             aabb, std::make_unique<SDMMContext>(m_maxSamplesSize)
         );
-	std::cerr << "Splitting to depth...\n";
+        std::cerr << "Splitting to depth...\n";
         m_accelerator->split_to_depth(3);
-	std::cerr << "Done splitting to depth.\n";
-
-        bool success = true;
+        std::cerr << "Done splitting to depth.\n";
 
         // dumpScene(destinationFile.parent_path() / "scene.vio");
 
         Float totalElapsedSeconds = 0.f;
         auto stats = json::array();
-
         int iteration = 0;
+        bool success = true;
         for(
             int samplesRendered = 0;
             samplesRendered < sampleCount;
@@ -406,14 +420,20 @@ public:
                 break;
             }
 
-            // if(m_still_training) {
-            //     optimize();
-            // }
-            if(optimization_running) {
-                optimize_async_wait_and_update();
-            }
-            if(m_still_training) {
-                optimize_async_run();
+            TreeStats tree_stats;
+            if(m_config.optimizeAsync) {
+                if(optimization_running) {
+                    optimize_async_wait_and_update();
+                }
+                if(m_still_training) {
+                    tree_stats = optimize_async_run();
+                } else {
+                    tree_stats = compute_tree_stats();
+                }
+            } else {
+                if(m_still_training) {
+                    optimize();
+                }
             }
 
             auto workResult = process->getResult();
@@ -428,7 +448,13 @@ public:
                 {"total_elapsed_seconds", totalElapsedSeconds},
                 {"mean_path_length", meanPathLength},
                 {"spp", m_config.samplesPerIteration},
-                {"total_spp", samplesRendered + m_config.samplesPerIteration}
+                {"total_spp", samplesRendered + m_config.samplesPerIteration},
+
+                {"samples_count", tree_stats.samples_count},
+                {"leaf_nodes_count", tree_stats.leaf_nodes_count},
+                {"max_depth", tree_stats.max_depth},
+                {"optimized_nodes_count", tree_stats.optimized_nodes_count},
+                {"active_nodes_count", tree_stats.active_nodes_count}
             });
 
             workResult->dumpIndividual(
@@ -437,18 +463,17 @@ public:
                 destinationFile.parent_path(),
                 timer->lap()
             );
-            // saveCheckpoint(destinationFile.parent_path(), iteration);
             ++iteration;
         }
 
         std::ofstream statsOutFile(
             (destinationFile.parent_path() / "stats.json").string()
         );
-
         statsOutFile << std::setw(4) << stats << std::endl;
+        saveCheckpoint(destinationFile.parent_path(), iteration);
 
-		return success;
-	}
+        return success;
+    }
 
     void dumpScene(const fs::path& path) {
         std::cerr << "Dumping scene description to " << path.string() << endl;
@@ -564,6 +589,7 @@ private:
     bool m_still_training = false;
     std::vector<size_t> m_node_idcs;
     bool optimization_running = false;
+    int m_splitThreshold = 16000;
 
     Scene* m_scene;
     std::unique_ptr<Accelerator> m_accelerator;

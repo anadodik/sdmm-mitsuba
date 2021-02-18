@@ -133,6 +133,11 @@ def get_errors(run_dir, combination_type='var', error_type=ErrorType.CUMULATIVE,
 
     final_image /= total_reciprocal_weight
 
+    out_path = os.path.join(out_dir, scene_name + '_test' + '.exr')
+    if os.path.exists(out_path):
+        os.remove(out_path)
+    pyexr.write(out_path, final_image.astype(np.float32))
+
     SMAPE_final = aggregate(SMAPE(final_image, gt_image))
     MAPE_final = aggregate(MAPE(final_image, gt_image))
     MrSE_final = aggregate(MrSE(np.clip(final_image, 0, 1), np.clip(gt_image, 0, 1)))
@@ -336,18 +341,28 @@ RUNS = [
     # ExperimentRun("old_code_2_32_4spp", "Old Code 2/32 SPP Init 4 SPP", "sdmm"),
     # ExperimentRun("async_4spp", "Async 4 SPP SDMM", "sdmm"),
     # ExperimentRun("async_4spp_2", "Async 4 SPP SDMM Verification Old", "sdmm"),
-    ExperimentRun("sdmm_baseline", "SDMM (Async 4 SPP)", "sdmm"),
+    # ExperimentRun("sdmm_radiance_1", "SDMM Radiance 1", "sdmm"),
+    # ExperimentRun("sdmm_product_1", "SDMM Product 1", "sdmm"),
+    # ExperimentRun("sdmm_product_01bsdf_16c", "SDMM Product 0.1 BSDF 16 C", "sdmm"),
+    ExperimentRun("sdmm_radiance_16c_1", "SDMM Radiance 16 Comp 1", "sdmm"),
+    # ExperimentRun("dmm_radiance_approx_1k_components_1", "DMM Radiance 16 Comp 1", "sdmm"),
+    # ExperimentRun("sdmm_product_16c_1", "SDMM Product 16 Comp 1", "sdmm"),
+    # ExperimentRun("sdmm_product_1", "SDMM Product 1", "sdmm"),
+    # ExperimentRun("sdmm_radiance_2", "SDMM Radiance 2", "sdmm"),
+    # ExperimentRun("sdmm_radiance_3", "SDMM Radiance 3", "sdmm"),
+    # ExperimentRun("sdmm_radiance_4", "SDMM Radiance 4", "sdmm"),
+    # ExperimentRun("sdmm_radiance_5", "SDMM Radiance 5", "sdmm"),
     # ExperimentRun("dmm", "DMM", "sdmm"),
     # ExperimentRun("async_4spp_2", "Async 4 SPP 2", "sdmm"),
     # ExperimentRun("async_4spp_8min", "Async 4 SPP 8 min", "sdmm"),
-    ExperimentRun("baseline", "PPG", "ppg"),
+    ExperimentRun("baseline_2", "PPG", "ppg"),
 ]
 
 
 def make_comparison_figure(runs, name_prefix, error_type):
     scene_errors = {}
     for scene in SCENES:
-        # if scene not in ['torus']:
+        # if scene not in ['glossy-kitchen']:
         #     continue
         runs_errors = {}
         for run in runs:

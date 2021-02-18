@@ -50,7 +50,7 @@ public:
     constexpr static int t_dims = 6;
     constexpr static int t_conditionalDims = 3;
     constexpr static int t_conditionDims = t_dims - t_conditionalDims;
-    constexpr static int t_components = 24;
+    constexpr static int t_components = 16;
     using Scalar = float;
     using Vectord = Eigen::Matrix<Scalar, t_dims, 1>;
     using ConditionalVectord = Eigen::Matrix<Scalar, t_conditionalDims, 1>;

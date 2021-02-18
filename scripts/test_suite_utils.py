@@ -23,9 +23,8 @@ SCENES = [
     'necklace', # NEW, noisy reference
     'bottle', # maybe? conditioned on the number of fireflies. NEW, noisy reference
     'glossy-bathroom',
+    'water-caustic',
     # 'sdmm', # add when scene finalized. NEW
-
-    # 'water-caustic',
 
     # 'hairball',
     # 'bathroom2',
