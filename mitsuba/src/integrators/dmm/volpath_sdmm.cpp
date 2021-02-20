@@ -50,40 +50,40 @@ class SDMMVolumetricPathTracer : public Integrator {
 
 public:
     SDMMVolumetricPathTracer(const Properties &props) : Integrator(props) {
-		/* Load the parameters / defaults */
-		m_config.maxDepth = props.getInteger("maxDepth", -1);
-		m_config.blockSize = props.getInteger("blockSize", -1);
-		m_config.rrDepth = props.getInteger("rrDepth", 5);
-		m_config.strictNormals = props.getBoolean("strictNormals", true);
-		m_config.sampleDirect = props.getBoolean("sampleDirect", true);
-		m_config.showWeighted = props.getBoolean("showWeighted", false);
-		m_config.samplesPerIteration = props.getInteger("samplesPerIteration", 8);
-		m_config.useHierarchical = props.getBoolean("useHierarchical", true);
-		m_config.sampleProduct = props.getBoolean("sampleProduct", false);
-		m_config.bsdfOnly = props.getBoolean("bsdfOnly", false);
-		m_config.alpha = props.getFloat("alpha", 0.5f);
-		m_config.batchIterations = props.getInteger("batchIterations", 0);
-		m_config.initIterations = props.getInteger("initIterations", 3);
-		m_config.enablePER = props.getBoolean("enablePER", false);
-		m_config.replayBufferLength = props.getInteger("replayBufferLength", 3);
-		m_config.resampleProportion = props.getFloat("resampleProportion", 0.1);
-		m_config.decreasePrior = props.getBoolean("decreasePrior", true);
-		m_config.correctStateDensity = props.getBoolean("correctStateDensity", true);
-		m_config.savedSamplesPerPath = props.getInteger("savedSamplesPerPath", 8);
+        /* Load the parameters / defaults */
+        m_config.maxDepth = props.getInteger("maxDepth", -1);
+        m_config.blockSize = props.getInteger("blockSize", -1);
+        m_config.rrDepth = props.getInteger("rrDepth", 5);
+        m_config.strictNormals = props.getBoolean("strictNormals", true);
+        m_config.sampleDirect = props.getBoolean("sampleDirect", true);
+        m_config.showWeighted = props.getBoolean("showWeighted", false);
+        m_config.samplesPerIteration = props.getInteger("samplesPerIteration", 8);
+        m_config.useHierarchical = props.getBoolean("useHierarchical", true);
+        m_config.sampleProduct = props.getBoolean("sampleProduct", false);
+        m_config.bsdfOnly = props.getBoolean("bsdfOnly", false);
+        m_config.alpha = props.getFloat("alpha", 0.5f);
+        m_config.batchIterations = props.getInteger("batchIterations", 0);
+        m_config.initIterations = props.getInteger("initIterations", 3);
+        m_config.enablePER = props.getBoolean("enablePER", false);
+        m_config.replayBufferLength = props.getInteger("replayBufferLength", 3);
+        m_config.resampleProportion = props.getFloat("resampleProportion", 0.1);
+        m_config.decreasePrior = props.getBoolean("decreasePrior", true);
+        m_config.correctStateDensity = props.getBoolean("correctStateDensity", true);
+        m_config.savedSamplesPerPath = props.getInteger("savedSamplesPerPath", 8);
 
-		m_config.useInit = props.getBoolean("useInit", true);
-		m_config.useInitCovar = props.getBoolean("useInitCovar", false);
-		m_config.useInitWeightsForMeans = props.getBoolean("useInitWeightsForMeans", true);
-		m_config.useInitWeightsForMixture = props.getBoolean("useInitWeightsForMixture", false);
-		m_config.initKMeansSwapTolerance = props.getFloat("initKMeansSwapTolerance", 1.f); //one means disabled
+        m_config.useInit = props.getBoolean("useInit", true);
+        m_config.useInitCovar = props.getBoolean("useInitCovar", false);
+        m_config.useInitWeightsForMeans = props.getBoolean("useInitWeightsForMeans", true);
+        m_config.useInitWeightsForMixture = props.getBoolean("useInitWeightsForMixture", false);
+        m_config.initKMeansSwapTolerance = props.getFloat("initKMeansSwapTolerance", 1.f); //one means disabled
 
         m_config.dump();
 
-		if (m_config.rrDepth <= 0)
-			Log(EError, "'rrDepth' must be set to a value greater than zero!");
+        if (m_config.rrDepth <= 0)
+            Log(EError, "'rrDepth' must be set to a value greater than zero!");
 
-		if (m_config.maxDepth <= 0 && m_config.maxDepth != -1)
-			Log(EError, "'maxDepth' must be set to -1 (infinite) or a value greater than zero!");
+        if (m_config.maxDepth <= 0 && m_config.maxDepth != -1)
+            Log(EError, "'maxDepth' must be set to -1 (infinite) or a value greater than zero!");
     }
 
     /// Unserialize from a binary data stream
@@ -97,21 +97,21 @@ public:
         m_config.serialize(stream);
     }
 
-	bool preprocess(const Scene *scene, RenderQueue *queue,
-			const RenderJob *job, int sceneResID, int sensorResID,
-			int samplerResID) override {
-		Integrator::preprocess(scene, queue, job, sceneResID,
-				sensorResID, samplerResID);
+    bool preprocess(const Scene *scene, RenderQueue *queue,
+            const RenderJob *job, int sceneResID, int sensorResID,
+            int samplerResID) override {
+        Integrator::preprocess(scene, queue, job, sceneResID,
+                sensorResID, samplerResID);
 
-		if (scene->getSubsurfaceIntegrators().size() > 0)
-			Log(EError, "Subsurface integrators are not supported "
-				"by the SDMM path tracer!");
+        if (scene->getSubsurfaceIntegrators().size() > 0)
+            Log(EError, "Subsurface integrators are not supported "
+                "by the SDMM path tracer!");
 
-		return true;
-	}
+        return true;
+    }
 
     void cancel() override {
-		Scheduler::getInstance()->cancel(m_process);
+        Scheduler::getInstance()->cancel(m_process);
     }
 
     void saveCheckpoint(const fs::path& experimentPath, int iteration) {
@@ -165,8 +165,12 @@ public:
         m_node_idcs.clear();
         int total_n_samples = 0;
         int max_depth = 0;
+        int active_nodes_count = 0;
         for(size_t context_i = 0; context_i < nodes.size(); ++context_i) {
             if(nodes[context_i].is_leaf) {
+                if(nodes[context_i].value != nullptr) {
+                    ++active_nodes_count;
+                }
                 total_n_samples += nodes[context_i].value->data.size;
                 if(max_depth < nodes[context_i].depth) {
                     max_depth = nodes[context_i].depth;
@@ -180,6 +184,7 @@ public:
 
         std::cerr << "Total number of samples: " << total_n_samples << ".\n";
         std::cerr << "Maximum node depth: " << max_depth << ".\n";
+        std::cerr << "Active nodes count: " << active_nodes_count << ".\n";
         std::cerr << "Optimizing guiding distribution: " << m_node_idcs.size() << " distributions in tree.\n";
 
         if(m_node_idcs.size() == 0) {
@@ -285,7 +290,7 @@ public:
         aabb.max += epsilon;
     }
 
-	bool render(
+    bool render(
         Scene *scene,
         RenderQueue *queue,
         const RenderJob *job,
@@ -295,23 +300,23 @@ public:
     ) override {
         spdlog::info("Max packet size={}", enoki::max_packet_size);
         m_scene = scene;
-		ref<Scheduler> scheduler = Scheduler::getInstance();
-		ref<Sensor> sensor = scene->getSensor();
-		const Film *film = sensor->getFilm();
-		size_t sampleCount = scene->getSampler()->getSampleCount();
-		size_t seed = scene->getSampler()->getSeed();
-		size_t nCores = scheduler->getCoreCount();
+        ref<Scheduler> scheduler = Scheduler::getInstance();
+        ref<Sensor> sensor = scene->getSensor();
+        const Film *film = sensor->getFilm();
+        size_t sampleCount = scene->getSampler()->getSampleCount();
+        size_t seed = scene->getSampler()->getSeed();
+        size_t nCores = scheduler->getCoreCount();
 
         m_thread_pool = std::make_unique<tev::ThreadPool>(nCores);
 
-		Log(EInfo, "Starting render job (%ix%i, " SIZE_T_FMT " samples, " SIZE_T_FMT
-			" %s, " SSE_STR ") ..", film->getCropSize().x, film->getCropSize().y,
-			sampleCount, nCores, nCores == 1 ? "core" : "cores");
+        Log(EInfo, "Starting render job (%ix%i, " SIZE_T_FMT " samples, " SIZE_T_FMT
+            " %s, " SSE_STR ") ..", film->getCropSize().x, film->getCropSize().y,
+            sampleCount, nCores, nCores == 1 ? "core" : "cores");
 
         m_config.blockSize = scene->getBlockSize();
-		m_config.cropSize = film->getCropSize();
+        m_config.cropSize = film->getCropSize();
         m_config.sampleCount = sampleCount;
-		m_config.rngSeed = seed;
+        m_config.rngSeed = seed;
         if(sampleCount % m_config.samplesPerIteration != 0) {
             Log(EWarn,
                 "sampleCount % m_config.samplesPerIteration "
@@ -320,13 +325,13 @@ public:
                 m_config.samplesPerIteration
             );
         }
-		m_config.dump();
+        m_config.dump();
 
         fs::path destinationFile = scene->getDestinationFile();
 
         const int nPixels = m_config.cropSize.x * m_config.cropSize.y;
         m_maxSamplesSize = 2000000;
-	// nPixels * m_config.samplesPerIteration * m_config.savedSamplesPerPath;
+    // nPixels * m_config.samplesPerIteration * m_config.savedSamplesPerPath;
 
         const auto scene_aabb = m_scene->getAABBWithoutCamera();
         const auto aabb_min = scene_aabb.min;
@@ -433,16 +438,16 @@ public:
             );
             ++iteration;
         }
-        saveCheckpoint(destinationFile.parent_path(), iteration);
 
+        saveCheckpoint(destinationFile.parent_path(), iteration);
         std::ofstream statsOutFile(
             (destinationFile.parent_path() / "stats.json").string()
         );
 
         statsOutFile << std::setw(4) << stats << std::endl;
 
-		return success;
-	}
+        return success;
+    }
 
     void dumpScene(const fs::path& path) {
         std::cerr << "Dumping scene description to " << path.string() << endl;
