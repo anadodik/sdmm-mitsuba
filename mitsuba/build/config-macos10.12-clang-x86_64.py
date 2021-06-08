@@ -2,7 +2,7 @@ BUILDDIR       = '#build/release'
 DISTDIR        = '#Mitsuba.app'
 CXX            = 'clang++'
 CC             = 'clang'
-XCODE_SDK      = '/Applications/Xcode_12.0.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk'
+XCODE_SDK      = '/Applications/Xcode_12.0.0_fb.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk'
 CCFLAGS        = ['-mmacosx-version-min=12.00', '-DNDEBUG', '-march=native', '-isysroot', XCODE_SDK, '-O3', '-Wno-deprecated-declarations', '-g', '-DMTS_DEBUG', '-DSINGLE_PRECISION', '-DSPECTRUM_SAMPLES=3', '-DMTS_SSE', '-DMTS_HAS_COHERENT_RT', '-Wextra', '-stdlib=libc++']
 LINKFLAGS      = ['-framework', 'OpenGL', '-framework', 'Cocoa', '-mmacosx-version-min=12.00', '-Wl,-syslibroot', XCODE_SDK, '-Wl,-headerpad,128', '-stdlib=libc++']
 CXXFLAGS       = ['-std=c++17']

@@ -54,6 +54,9 @@ public:
     constexpr static int t_conditionDims = t_dims - t_conditionalDims;
     constexpr static int t_components = 16;
     using Scalar = float;
+    using Vector = sdmm::Vector<Scalar, t_dims>;
+    using ConditionalVector = sdmm::Vector<Scalar, t_conditionalDims>;
+
     using Vectord = Eigen::Matrix<Scalar, t_dims, 1>;
     using ConditionalVectord = Eigen::Matrix<Scalar, t_conditionalDims, 1>;
 
