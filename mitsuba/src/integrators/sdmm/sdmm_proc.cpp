@@ -47,8 +47,9 @@ class SDMMRenderer : public WorkProcessor {
     constexpr static int t_components = SDMMProcess::t_components;
 
     using Scalar = typename SDMMProcess::Scalar;
-    using Vectord = typename SDMMProcess::Vectord;
-    using ConditionalVectord = typename SDMMProcess::ConditionalVectord;
+    using Embedded = typename SDMMProcess::Embedded;
+    using ConditionalEmbedded = typename SDMMProcess::ConditionalEmbedded;
+    using MarginalEmbedded = typename SDMMProcess::MarginalEmbedded;
 
     using SDMMContext = typename SDMMProcess::SDMMContext;
     using Accelerator = typename SDMMProcess::Accelerator;
@@ -172,15 +173,59 @@ public:
         }
     }
 
-    void createCondition(Vectord& sample, const Intersection& its, int depth) const {
+    MarginalEmbedded toMarginalEmbedded(const Point& p) const {
         const auto aabb_min = m_sceneAabb.min;
+        return MarginalEmbedded{
+            (p[0] - aabb_min[0]) / m_spatialNormalization,
+            (p[1] - aabb_min[1]) / m_spatialNormalization,
+            (p[2] - aabb_min[2]) / m_spatialNormalization};
+    }
 
-        if(t_conditionDims >= 3) {
-            sample.template topRows<3>() <<
-                (its.p[0] - aabb_min[0]) / m_spatialNormalization,
-                (its.p[1] - aabb_min[1]) / m_spatialNormalization,
-                (its.p[2] - aabb_min[2]) / m_spatialNormalization
-            ;
+    ConditionalEmbedded toConditionalEmbedded(const Vector3& v) const {
+        return ConditionalEmbedded{v[0], v[1], v[2]};
+    }
+
+    Embedded toJointEmbedded(const Point& p, const Vector3 v) const {
+        const auto aabb_min = m_sceneAabb.min;
+        return Embedded{
+            (p[0] - aabb_min[0]) / m_spatialNormalization,
+            (p[1] - aabb_min[1]) / m_spatialNormalization,
+            (p[2] - aabb_min[2]) / m_spatialNormalization,
+            v[0], v[1], v[2]};
+    }
+
+    void setLearnedBSDF(
+        const Intersection& its,
+        const BSDFSamplingRecord& bRec,
+        unsigned int bsdfType
+    ) const {
+        using RotationMatrix = SDMMProcess::ConditionalSDMM::TangentSpace::MatrixS;
+
+        size_t n_slices = enoki::slices(learned_bsdf);
+        if((bsdfType & BSDF::EDiffuseReflection) == (bsdfType & BSDF::EAll)) {
+            Normal normal = its.shFrame.n;
+            if(Frame::cosTheta(bRec.wi) < 0) {
+                normal = -normal;
+            }
+            sdmm::linalg::Vector<float, 3> world_mean(
+                (float) normal[0], (float) normal[1], (float) normal[2]
+            );
+            enoki::slice(learned_bsdf.tangent_space, 0).set_mean(world_mean);
+        } else {
+            sdmm::linalg::Vector<float, 3> wi(
+                bRec.wi[0], bRec.wi[1], bRec.wi[2]
+            );
+            RotationMatrix to_world_space(
+                its.shFrame.s[0], its.shFrame.t[0], its.shFrame.n[0],
+                its.shFrame.s[1], its.shFrame.t[1], its.shFrame.n[1],
+                its.shFrame.s[2], its.shFrame.t[2], its.shFrame.n[2]
+            );
+            auto&& ts = enoki::packet(learned_bsdf.tangent_space, 0);
+            auto&& cs = ts.coordinate_system;
+            ts.rotate_to_wo(wi);
+            cs.from = to_world_space * cs.from;
+            cs.to = cs.to * sdmm::linalg::transpose(to_world_space);
+            ts.mean = to_world_space * ts.mean;
         }
     }
 
@@ -190,45 +235,34 @@ public:
         const Intersection& its,
         BSDFSamplingRecord& bRec,
         Float& pdf,
-        Float& bsdfPdf,
-        Float& gmmPdf,
-        Scalar& heuristicConditionalWeight,
-        Vectord& sample,
+        Scalar& bsdfSamplingFraction,
+        Embedded& sample,
         RadianceQueryRecord& rRec
     ) const {
-        using RotationMatrix = SDMMProcess::ConditionalSDMM::TangentSpace::MatrixS;
-
-        createCondition(sample, its, rRec.depth);
-        gmmPdf = bsdfPdf = pdf = 0.f;
+        MarginalEmbedded marginalEmbedded = toMarginalEmbedded(its.p);
+        ConditionalEmbedded conditionalEmbedded;
+        pdf = 0.f;
 
         Spectrum bsdfWeight;
 
         const auto type = bsdf->getType();
 
         if((type & BSDF::EDelta) == (type & BSDF::EAll)) {
-            heuristicConditionalWeight = 1.0f;
-            Spectrum result = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
-            pdf = bsdfPdf;
+            bsdfSamplingFraction = 1.0f;
+            Spectrum result = bsdf->sample(bRec, pdf, rRec.nextSample2D());
             return result;
-        }
-
-        Eigen::Matrix<Scalar, 3, 1> normal;
-        normal << its.shFrame.n.x, its.shFrame.n.y, its.shFrame.n.z;
-        if(Frame::cosTheta(bRec.wi) < 0) {
-            normal = -normal;
         }
 
         SDMMContext* sdmmContext = nullptr;
         if(m_iteration != 0) {
-            AcceleratorPoint key(sample(0), sample(1), sample(2));
-            sdmmContext = m_accelerator->find(key);
+            sdmmContext = m_accelerator->find(marginalEmbedded);
         }
         if(m_iteration == 0 || sdmmContext == nullptr || !sdmmContext->initialized) {
-            heuristicConditionalWeight = 1.0f;
-            Spectrum result = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
-            pdf = bsdfPdf;
+            bsdfSamplingFraction = 1.0f;
+            Spectrum result = bsdf->sample(bRec, pdf, rRec.nextSample2D());
             Vector3 worldWo = bRec.its.shFrame.toWorld(bRec.wo);
-            sample.template bottomRows<t_conditionalDims>() << worldWo.x, worldWo.y, worldWo.z;
+            conditionalEmbedded = toConditionalEmbedded(worldWo);
+            sample = toJointEmbedded(its.p, worldWo);
             return result;
         }
 
@@ -241,38 +275,14 @@ public:
         bool usingLearnedBSDF = m_config.bsdfOnly && learnedBSDFFound;
 
         if(usingProduct || usingLearnedBSDF) {
-            size_t n_slices = enoki::slices(learned_bsdf);
-            if((type & BSDF::EDiffuseReflection) == (type & BSDF::EAll)) {
-                sdmm::linalg::Vector<float, 3> world_mean(
-                    (float) normal(0), (float) normal(1), (float) normal(2)
-                );
-                enoki::slice(learned_bsdf.tangent_space, 0).set_mean(world_mean);
-            } else {
-                sdmm::linalg::Vector<float, 3> wi(
-                    bRec.wi[0], bRec.wi[1], bRec.wi[2]
-                );
-                RotationMatrix to_world_space(
-                    its.shFrame.s[0], its.shFrame.t[0], its.shFrame.n[0],
-                    its.shFrame.s[1], its.shFrame.t[1], its.shFrame.n[1],
-                    its.shFrame.s[2], its.shFrame.t[2], its.shFrame.n[2]
-                );
-                auto&& ts = enoki::packet(learned_bsdf.tangent_space, 0);
-                auto&& cs = ts.coordinate_system;
-                ts.rotate_to_wo(wi);
-                cs.from = to_world_space * cs.from;
-                cs.to = cs.to * sdmm::linalg::transpose(to_world_space);
-                ts.mean = to_world_space * ts.mean;
-            }
+            setLearnedBSDF(its, bRec, type);
         }
 
         if(!usingLearnedBSDF) {
-            sdmm::embedded_s_t<SDMMProcess::MarginalSDMM> condition({
-                (float) sample(0), (float) sample(1), (float) sample(2)
-            });
             if(enoki::slices(conditional) != enoki::slices(sdmmContext->conditioner)) {
                 enoki::set_slices(conditional, enoki::slices(sdmmContext->conditioner));
             }
-            validConditional = sdmm::create_conditional(sdmmContext->conditioner, condition, conditional);
+            validConditional = sdmm::create_conditional(sdmmContext->conditioner, marginalEmbedded, conditional);
         }
 
         if(!usingLearnedBSDF && validConditional && usingProduct) {
@@ -283,28 +293,26 @@ public:
             }
         }
 
-        heuristicConditionalWeight = 0.5;
+        bsdfSamplingFraction = 0.5;
         if(usingLearnedBSDF) {
-            heuristicConditionalWeight = 0.f;
+            bsdfSamplingFraction = 0.f;
         } else if(usingProduct) {
-            heuristicConditionalWeight = 0.3;
+            bsdfSamplingFraction = 0.3;
         } else if(!validConditional) {
-            heuristicConditionalWeight = 1.0f;
+            bsdfSamplingFraction = 1.0f;
         }
 
-        if(!validConditional || (!usingLearnedBSDF && rRec.nextSample1D() <= heuristicConditionalWeight)) {
-            bsdfWeight = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
-            pdf = bsdfPdf;
-
+        if(!validConditional || (!usingLearnedBSDF && rRec.nextSample1D() <= bsdfSamplingFraction)) {
+            bsdfWeight = bsdf->sample(bRec, pdf, rRec.nextSample2D());
             if(bsdfWeight.isZero()) {
                 return Spectrum{0.f};
             }
             Vector3 worldWo = bRec.its.shFrame.toWorld(bRec.wo);
-            sample.template bottomRows<t_conditionalDims>() << worldWo.x, worldWo.y, worldWo.z;
+            conditionalEmbedded = toConditionalEmbedded(worldWo);
+            sample = toJointEmbedded(its.p, worldWo);
             if(!validConditional || bRec.sampledType & BSDF::EDelta) {
-                gmmPdf = 0.f;
-                pdf *= heuristicConditionalWeight;
-                return bsdfWeight / heuristicConditionalWeight;
+                pdf *= bsdfSamplingFraction;
+                return bsdfWeight / bsdfSamplingFraction;
             }
 
             bsdfWeight *= pdf;
@@ -312,23 +320,23 @@ public:
             float inv_jacobian;
             if(usingLearnedBSDF) {
                 learned_bsdf.sample(
-                    sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
+                    sdmm_rng, conditionalEmbedded, inv_jacobian, tangent_sample
                 );
             } else if(usingProduct) {
                 product.sample(
-                    sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
+                    sdmm_rng, conditionalEmbedded, inv_jacobian, tangent_sample
                 );
             } else {
                 conditional.sample(
-                    sdmm_rng, embedded_sample, inv_jacobian, tangent_sample
+                    sdmm_rng, conditionalEmbedded, inv_jacobian, tangent_sample
                 );
             }
 
-            auto length = enoki::norm(enoki::tail<3>(embedded_sample));
+            auto length = enoki::norm(enoki::tail<3>(conditionalEmbedded));
             if(inv_jacobian != 0 && enoki::any(enoki::abs(length - 1) >= 1e-5)) {
                 std::cerr << fmt::format(
                     "length=({}, {}, {})\nfrom={}\n",
-                    embedded_sample,
+                    conditionalEmbedded,
                     tangent_sample,
                     inv_jacobian,
                     conditional.tangent_space.coordinate_system.from
@@ -341,34 +349,17 @@ public:
                 return Spectrum(0.f);
             }
 
-            ConditionalVectord condVec;
-            condVec <<
-                embedded_sample.coeff(0),
-                embedded_sample.coeff(1),
-                embedded_sample.coeff(2);
-            // std::cerr << fmt::format(
-            //     "embedded_sample={}, "
-            //     "tangent_sample={}, "
-            //     "condVec={}, "
-            //     "norm={}\n",
-            //     embedded_sample,
-            //     tangent_sample,
-            //     condVec.transpose(),
-            //     enoki::norm(embedded_sample)
-            // );
-            sample.template bottomRows<t_conditionalDims>() << condVec;
-
-            if(condVec.isZero()) {
+            if(conditionalEmbedded == 0) {
                 return Spectrum{0.f};
             }
 
-            bRec.wo = bRec.its.toLocal(
-                Vector3(
-                    (float) condVec.x(),
-                    (float) condVec.y(),
-                    (float) condVec.z()
-                )
+            Vector3 worldWo(
+                (float) conditionalEmbedded.coeff(0),
+                (float) conditionalEmbedded.coeff(1),
+                (float) conditionalEmbedded.coeff(2)
             );
+            bRec.wo = bRec.its.toLocal(worldWo);
+            sample = toJointEmbedded(its.p, worldWo);
             bsdfWeight = bsdf->eval(bRec);
         }
 
@@ -376,37 +367,31 @@ public:
             pdf = pdfSurface(
                 bsdf,
                 bRec,
-                bsdfPdf,
-                gmmPdf,
                 learned_bsdf,
                 bsdf_posterior,
                 sdmmContext->conditioner,
-                heuristicConditionalWeight,
-                sample.template bottomRows<t_conditionalDims>()
+                bsdfSamplingFraction,
+                conditionalEmbedded
             );
         } else if(usingProduct) {
             pdf = pdfSurface(
                 bsdf,
                 bRec,
-                bsdfPdf,
-                gmmPdf,
                 product,
                 posterior,
                 sdmmContext->conditioner,
-                heuristicConditionalWeight,
-                sample.template bottomRows<t_conditionalDims>()
+                bsdfSamplingFraction,
+                conditionalEmbedded
             );
         } else {
             pdf = pdfSurface(
                 bsdf,
                 bRec,
-                bsdfPdf,
-                gmmPdf,
                 conditional,
                 posterior,
                 sdmmContext->conditioner,
-                heuristicConditionalWeight,
-                sample.template bottomRows<t_conditionalDims>()
+                bsdfSamplingFraction,
+                conditionalEmbedded
             );
         }
 
@@ -420,41 +405,36 @@ public:
     Float pdfSurface(
         const BSDF* bsdf,
         const BSDFSamplingRecord& bRec,
-        Float& bsdfPdf,
-        Float& gmmPdf,
         DMM& conditional,
         Value& posterior,
         SDMMProcess::Conditioner& conditioner,
-        const Float heuristicConditionalWeight,
-        const ConditionalVectord& sample
+        const Float bsdfSamplingFraction,
+        const ConditionalEmbedded& sample
     ) const {
         if(enoki::slices(posterior) != enoki::slices(conditional)) {
             enoki::set_slices(posterior, enoki::slices(conditional));
         }
         auto type = bsdf->getType();
-        if (heuristicConditionalWeight == 1.0f || (type & BSDF::EDelta) == (type & BSDF::EAll)) {
+        if (bsdfSamplingFraction == 1.0f || (type & BSDF::EDelta) == (type & BSDF::EAll)) {
             return bsdf->pdf(bRec);
         }
 
-        bsdfPdf = bsdf->pdf(bRec);
+        Float bsdfPdf = bsdf->pdf(bRec);
         if (bsdfPdf <= 0 || !std::isfinite(bsdfPdf)) {
             return 0;
         }
-        sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM> embedded_sample({
-            (float) sample(0), (float) sample(1), (float) sample(2)
-        });
         enoki::vectorize_safe(
             VECTORIZE_WRAP_MEMBER(posterior),
             conditional,
-            embedded_sample,
+            sample,
             posterior
         );
-        gmmPdf = enoki::hsum_nested(posterior);
-        if(!std::isfinite(gmmPdf)) {
+        Float sdmmPdf = enoki::hsum_nested(posterior);
+        if(!std::isfinite(sdmmPdf)) {
             std::cerr << fmt::format(
                 "pdf={}\n"
                 "posterior={}\n"
-                "gmmPdf={}\n"
+                "sdmmPdf={}\n"
                 "bsdfPdf={}\n"
                 "sample={}\n"
 
@@ -471,11 +451,11 @@ public:
                 "cond_cov={}\n"
                 "cov_sqrt={}\n"
                 "",
-                gmmPdf,
+                sdmmPdf,
                 posterior,
-                gmmPdf,
+                sdmmPdf,
                 bsdfPdf,
-                sample.transpose(),
+                sample,
 
                 conditioner.marginal.weight.pmf,
                 conditioner.marginal.cov,
@@ -483,7 +463,7 @@ public:
 
                 conditional.weight.pmf,
                 conditional.tangent_space.coordinate_system.to,
-                conditional.tangent_space.coordinate_system.to * sdmm::Vector<float, 3>((float) sample(0), (float) sample(1), (float) sample(2)),
+                conditional.tangent_space.coordinate_system.to * sample,
                 conditional.tangent_space.mean,
                 conditional.cov,
                 conditional.cov_sqrt
@@ -491,8 +471,8 @@ public:
         }
 
         return
-            heuristicConditionalWeight * bsdfPdf +
-            (1 - heuristicConditionalWeight) * gmmPdf;
+            bsdfSamplingFraction * bsdfPdf +
+            (1 - bsdfSamplingFraction) * sdmmPdf;
     }
 
     Spectrum Li(
@@ -515,9 +495,8 @@ public:
             Spectrum throughput;
             Float samplingPdf;
             sdmm::embedded_s_t<SDMMProcess::Data> point;
+            sdmm::Vector<float, 3> position;
             sdmm::normal_s_t<SDMMProcess::Data> sdmm_normal;
-            Vectord canonicalSample;
-            Eigen::Matrix<Scalar, 3, 1> normal;
 
             void record(const Spectrum& radiance) {
                 for(int ch = 0; ch < 3; ++ch) {
@@ -548,13 +527,12 @@ public:
         rRec.rayIntersect(ray);
 
         Spectrum throughput(1.0f);
-        Vectord canonicalSample;
+        Embedded sample;
         bool scattered = false;
 
             // = std::max(minHeuristicWeight, initialHeuristicWeight * std::pow(0.6f, (Float) m_iteration));
         while (rRec.depth <= m_config.maxDepth || m_config.maxDepth < 0) {
-            Eigen::Matrix<Scalar, 3, 1> normal;
-            normal << its.shFrame.n.x, its.shFrame.n.y, its.shFrame.n.z;
+            Normal normal = its.shFrame.n;
 
             assert(depth <= (int) vertices.size() - 1);
 
@@ -645,18 +623,16 @@ public:
 
             /* Sample BSDF * cos(theta) */
             BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
-            Float misPdf, heuristicPdf, gmmPdf;
-            Scalar heuristicConditionalWeight;
+            Float surfacePdf;
+            Scalar bsdfSamplingFraction;
             Spectrum bsdfWeight = sampleSurface(
                 bsdf,
                 scene,
                 its,
                 bRec,
-                misPdf,
-                heuristicPdf,
-                gmmPdf,
-                heuristicConditionalWeight,
-                canonicalSample,
+                surfacePdf,
+                bsdfSamplingFraction,
+                sample,
                 rRec
             );
             if(!bsdfWeight.isValid()) {
@@ -668,9 +644,6 @@ public:
             if(Frame::cosTheta(bRec.wi) < 0) {
                 normal = -normal;
             }
-
-            Float meanCurvature = 0, gaussianCurvature = 0;
-            // its.shape->getCurvature(its, meanCurvature, gaussianCurvature);
 
             if(bsdfWeight.isZero()) {
                 break;
@@ -716,35 +689,29 @@ public:
 #else
                 const Float emitterPdf = 0;
 #endif
-                Float weight = 1; // miWeight(misPdf, emitterPdf);
+                Float weight = 1; // miWeight(surfacePdf, emitterPdf);
                 if(!value.isZero()) {
                     recordRadiance(throughput * value * weight);
                 }
 
                 if(cacheable) {
-                    Float invPdf = 1.f / misPdf;
+                    Float invPdf = 1.f / surfacePdf;
                     Spectrum incomingRadiance = value * weight;
 
-                    if (misPdf > 0 && std::isfinite(invPdf)) {
+                    if (surfacePdf > 0 && std::isfinite(invPdf)) {
                         bool isDiffuse = !(bsdf->getType() & BSDF::EGlossy);
 
                         vertices[depth] = Vertex{
                             incomingRadiance * invPdf,
                             throughput,
-                            misPdf,
-                            sdmm::embedded_s_t<SDMMProcess::JointSDMM>{
-                                canonicalSample(0),
-                                canonicalSample(1),
-                                canonicalSample(2),
-                                canonicalSample(3),
-                                canonicalSample(4),
-                                canonicalSample(5),
+                            surfacePdf,
+                            sample,
+                            sdmm::Vector<float, 3>{
+                                sample.coeff(0), sample.coeff(1), sample.coeff(2)
                             },
                             sdmm::normal_s_t<SDMMProcess::Data>{
-                                (float) normal(0), (float) normal(1), (float) normal(2)
-                            },
-                            canonicalSample,
-                            normal
+                                (float) normal[0], (float) normal[1], (float) normal[2]
+                            }
                         };
 
                         ++depth;
@@ -784,21 +751,13 @@ public:
             return Li;
         }
 
-        auto push_back_data = [&](SDMMProcess::SDMMContext& context, int d) {
+        auto push_back_data = [&](SDMMProcess::SDMMContext& context, int d, bool addToStats=true) {
             Float averageWeight = vertices[d].weight.average();
-            if(!m_collect_data || !sdmm::is_valid_sample(averageWeight)) {
-                return;
-            }
-
-            sdmm::Vector<float, 3> position({
-                (float) vertices[d].point.coeff(0),
-                (float) vertices[d].point.coeff(1),
-                (float) vertices[d].point.coeff(2)
-            });
-
             {
                 std::lock_guard lock(context.mutex_wrapper.mutex);
-                context.stats.push_back(position);
+                if(addToStats) {
+                    context.stats.push_back(vertices[d].position);
+                }
                 context.data.push_back(
                     vertices[d].point,
                     vertices[d].sdmm_normal,
@@ -807,14 +766,16 @@ public:
             }
         };
 
-        Eigen::Matrix<Scalar, 3, 1> offset;
+        sdmm::Vector<float, 3> offset;
         int firstSaved = std::max(depth - m_config.savedSamplesPerPath, 0);
         for(int d = depth - 1; d >= firstSaved; --d) {
-            Eigen::Matrix<Scalar, 3, 1> position = vertices[d].
-                canonicalSample.template topRows<3>();
-            AcceleratorPoint key(position(0), position(1), position(2));
+            Float averageWeight = vertices[d].weight.average();
+            if(!m_collect_data || !sdmm::is_valid_sample(averageWeight)) {
+                continue;
+            }
+            const AcceleratorPoint& position = vertices[d].position;
             AcceleratorAABB sampleAABB;
-            auto sampleContext = m_accelerator->find(key, sampleAABB);
+            auto sampleContext = m_accelerator->find(position, sampleAABB);
             if(sampleContext != nullptr) {
                 push_back_data(*sampleContext, d);
             } else {
@@ -823,29 +784,23 @@ public:
                 continue;
             }
 
-            int nJitters = ((d == depth - 1) ? 1 : 0);
+            int nJitters = 1; // ((d == depth - 1) ? 1 : 0);
             for(int jitter_i = 0; jitter_i < nJitters; ++jitter_i) {
-                offset <<
-                    rRec.sampler->next1D() - 0.5,
-                    rRec.sampler->next1D() - 0.5,
-                    rRec.sampler->next1D() - 0.5;
+                offset = sdmm::Vector<float, 3>{
+                    rRec.sampler->next1D() - 0.5f,
+                    rRec.sampler->next1D() - 0.5f,
+                    rRec.sampler->next1D() - 0.5f
+                };
                 auto diagonal = sampleAABB.diagonal();
-                offset.array() *= Eigen::Matrix<Scalar, 3, 1>(
-                    diagonal.coeff(0), diagonal.coeff(1), diagonal.coeff(2)
-                ).array();
-                if(!offset.array().isFinite().all()) {
-                    std::cerr << fmt::format("offset={}, diagonal={}\n", offset.transpose(), diagonal);
-                }
+                offset *= diagonal;
 
-                Eigen::Matrix<Scalar, 3, 1> jitteredPosition =
-                    position.array() + offset.array();
-                AcceleratorPoint key(jitteredPosition(0), jitteredPosition(1), jitteredPosition(2));
+                sdmm::Vector<float, 3> jitteredPosition = position + offset;
                 AcceleratorAABB aabb;
-                auto sdmmContext = m_accelerator->find(key, aabb);
+                auto sdmmContext = m_accelerator->find(jitteredPosition, aabb);
                 if(sdmmContext == nullptr || enoki::all(aabb.min == sampleAABB.min)) {
                     continue;
                 } else {
-                    push_back_data(*sdmmContext, d);
+                    push_back_data(*sdmmContext, d, false);
                 }
             }
         }

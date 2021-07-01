@@ -53,13 +53,8 @@ public:
     constexpr static int t_conditionalDims = 3;
     constexpr static int t_conditionDims = t_dims - t_conditionalDims;
     constexpr static int t_components = 16;
+
     using Scalar = float;
-    using Vector = sdmm::Vector<Scalar, t_dims>;
-    using ConditionalVector = sdmm::Vector<Scalar, t_conditionalDims>;
-
-    using Vectord = Eigen::Matrix<Scalar, t_dims, 1>;
-    using ConditionalVectord = Eigen::Matrix<Scalar, t_conditionalDims, 1>;
-
     constexpr static size_t PacketSize = 8;
     constexpr static size_t JointSize = 5;
     constexpr static size_t MarginalSize = 3;
@@ -97,6 +92,10 @@ public:
 
     using SDMMContext = sdmm::SDMMContext<JointSDMM, Conditioner, RNG>;
     using Accelerator = sdmm::accelerators::STree<Scalar, 3, SDMMContext>;
+
+    using Embedded = sdmm::embedded_s_t<SDMMProcess::JointSDMM>;
+    using ConditionalEmbedded = sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM>;
+    using MarginalEmbedded = sdmm::embedded_s_t<SDMMProcess::MarginalSDMM>;
 
     SDMMProcess(
         const RenderJob *parent,
