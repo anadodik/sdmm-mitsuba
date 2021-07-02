@@ -115,7 +115,11 @@ public:
     }
 
     void cancel() override {
-        Scheduler::getInstance()->cancel(m_process);
+        for(auto& process : m_renderProcesses) {
+            if(process) {
+                Scheduler::getInstance()->cancel(process);
+            }
+        }
     }
 
     void saveCheckpoint(const fs::path& experimentPath, int iteration) {
@@ -157,7 +161,7 @@ public:
     TreeStats compute_tree_stats() {
         auto& nodes = m_accelerator->data();
         TreeStats tree_stats;
-        for(size_t context_i = 0; context_i < nodes.size(); ++context_i) {
+        for(size_t context_i = 0; context_i < m_accelerator->size(); ++context_i) {
             if(nodes[context_i].is_leaf) {
                 ++tree_stats.leaf_nodes_count;
                 if(nodes[context_i].value != nullptr) {
@@ -177,14 +181,15 @@ public:
 
     TreeStats optimize_async_run() {
         spdlog::info("Splitting samples.");
-        m_accelerator->split(m_splitThreshold);
-
-        auto& nodes = m_accelerator->data();
-        m_node_idcs.reserve(nodes.size());
-        m_node_idcs.clear();
+        m_thread_pool->parallelFor(0, (int) m_accelerator->size(), [this](int node_i){
+            m_accelerator->split_leaf_recurse((uint32_t) node_i, m_splitThreshold);
+        });
 
         TreeStats tree_stats;
-        for(size_t context_i = 0; context_i < nodes.size(); ++context_i) {
+        auto& nodes = m_accelerator->data();
+        m_node_idcs.reserve(m_accelerator->size());
+        m_node_idcs.clear();
+        for(size_t context_i = 0; context_i < m_accelerator->size(); ++context_i) {
             if(nodes[context_i].is_leaf) {
                 ++tree_stats.leaf_nodes_count;
                 if(nodes[context_i].value != nullptr) {
@@ -208,6 +213,7 @@ public:
             optimization_running = true;
         }
 
+        spdlog::info("Launching optimisation.");
         m_thread_pool->parallelFor(0, (int) m_node_idcs.size(), [&nodes, this](int i){
             size_t context_i = m_node_idcs[(size_t) i];
             auto& context = nodes[context_i].value;
@@ -246,14 +252,16 @@ public:
 
     void optimize() {
         spdlog::info("Splitting samples.");
-        m_accelerator->split(m_splitThreshold);
+        m_thread_pool->parallelFor(0, (int) m_accelerator->size(), [this](int node_i){
+            m_accelerator->split_leaf_recurse((uint32_t) node_i, m_splitThreshold);
+        });
 
         auto& nodes = m_accelerator->data();
-        m_node_idcs.reserve(nodes.size());
+        m_node_idcs.reserve(m_accelerator->size());
         m_node_idcs.clear();
         int total_n_samples = 0;
         int max_depth = 0;
-        for(size_t context_i = 0; context_i < nodes.size(); ++context_i) {
+        for(size_t context_i = 0; context_i < m_accelerator->size(); ++context_i) {
             if(nodes[context_i].is_leaf) {
                 total_n_samples += nodes[context_i].value->data.size;
                 if(max_depth < nodes[context_i].depth) {
@@ -282,6 +290,7 @@ public:
             sdmm::prepare(context->conditioner, context->sdmm);
             context->training_data.clear();
             context->data.clear();
+            context->stats.clear();
             context->initialized = true;
         });
     }
@@ -379,54 +388,79 @@ public:
         auto stats = json::array();
         int iteration = 0;
         bool success = true;
+
+        m_renderProcesses.reserve(m_config.samplesPerIteration);
+        ref<Timer> timer = new Timer();
         for(
             int samplesRendered = 0;
             samplesRendered < sampleCount;
             samplesRendered += m_config.samplesPerIteration
         ) {
             m_still_training = !m_config.bsdfOnly && samplesRendered < m_config.sampleCount / 3;
+            spdlog::info("Render iteration {}.", iteration);
 
-            // if(!m_still_training) {
-            //     m_config.samplesPerIteration = sampleCount - samplesRendered;
-            // }
+            m_renderProcesses.clear();
+            for(int renderPass = 0; renderPass < 1; ++renderPass) {
+                ref<SDMMProcess> process = new SDMMProcess(
+                    job,
+                    queue,
+                    m_config,
+                    m_accelerator.get(),
+                    iteration,
+                    m_still_training
+                );
+                m_renderProcesses.push_back(process);
+                m_renderProcesses.back()->bindResource("scene", sceneResID);
+                m_renderProcesses.back()->bindResource("sensor", sensorResID);
+                m_renderProcesses.back()->bindResource("sampler", samplerResID);
+            }
 
-            std::cerr <<
-                "Render iteration " + std::to_string(iteration) + ".\n";
-
-            ref<SDMMProcess> process = new SDMMProcess(
-                job,
-                queue,
-                m_config,
-                m_accelerator.get(),
-                iteration,
-                m_still_training
-            );
-            m_process = process;
-
-            process->bindResource("scene", sceneResID);
-            process->bindResource("sensor", sensorResID);
-            process->bindResource("sampler", samplerResID);
-
-            ref<Timer> timer = new Timer();
-            scheduler->schedule(process);
-            scheduler->wait(process);
-
-            m_process = NULL;
-            process->develop();
-
-            success = success && (process->getReturnStatus() == ParallelProcess::ESuccess);
+            static const size_t processBatchSize = 128;
+            for (size_t i = 0; i < m_renderProcesses.size(); i += processBatchSize) {
+                const size_t start = i;
+                const size_t end = std::min(i + processBatchSize, m_renderProcesses.size());
+                for (size_t j = start; j < end; ++j) {
+                    scheduler->schedule(m_renderProcesses[j]);
+                }
+                for (size_t j = start; j < end; ++j) {
+                    auto& process = m_renderProcesses[j];
+                    scheduler->wait(process);
+                    process->develop();
+                    success = success && (process->getReturnStatus() == ParallelProcess::ESuccess);
+                }
+                if(!success) {
+                    break;
+                }
+            }
             if(!success) {
                 break;
             }
+            if(m_config.optimizeAsync && optimization_running) {
+                optimize_async_wait_and_update();
+            }
+            Float elapsedSeconds = timer->getSeconds();
+            totalElapsedSeconds += elapsedSeconds;
 
+            // Dumping files to disk.
+            Float meanPathLength = 0.f;
+            for(auto& process : m_renderProcesses) {
+                auto workResult = process->getResult();
+                workResult->dumpIndividual(
+                    m_config.samplesPerIteration,
+                    iteration,
+                    destinationFile.parent_path(),
+                    timer->lap()
+                );
+                meanPathLength += workResult->averagePathLength / (float) workResult->pathCount;
+            }
+            meanPathLength /= (Float) m_renderProcesses.size();
             TreeStats tree_stats;
+
+            timer->reset();
             if(m_config.optimizeAsync) {
-                if(optimization_running) {
-                    optimize_async_wait_and_update();
-                }
                 if(m_still_training) {
                     tree_stats = optimize_async_run();
-                } else {
+                } else if(m_compute_tree_stats) {
                     tree_stats = compute_tree_stats();
                 }
             } else {
@@ -434,12 +468,6 @@ public:
                     optimize();
                 }
             }
-
-            auto workResult = process->getResult();
-
-            Float elapsedSeconds = timer->getSeconds();
-            totalElapsedSeconds += elapsedSeconds;
-            Float meanPathLength = workResult->averagePathLength / (float) workResult->pathCount;
 
             stats.push_back({
                 {"iteration", iteration},
@@ -455,13 +483,6 @@ public:
                 {"optimized_nodes_count", tree_stats.optimized_nodes_count},
                 {"active_nodes_count", tree_stats.active_nodes_count}
             });
-
-            workResult->dumpIndividual(
-                m_config.samplesPerIteration,
-                iteration,
-                destinationFile.parent_path(),
-                timer->lap()
-            );
             ++iteration;
         }
 
@@ -476,11 +497,12 @@ public:
 
     MTS_DECLARE_CLASS()
 private:
-    ref<ParallelProcess> m_process;
-    SDMMConfiguration m_config;
+    std::vector<ref<SDMMProcess>> m_renderProcesses;
 
+    SDMMConfiguration m_config;
     uint32_t m_maxSamplesSize;
     bool m_still_training = false;
+    bool m_compute_tree_stats = false;
     std::vector<size_t> m_node_idcs;
     bool optimization_running = false;
     int m_splitThreshold = 16000;

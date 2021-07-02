@@ -164,86 +164,12 @@ public:
 
                 sensorRay.scaleDifferential(diffScaleFactor);
 
-                Vectord firstSample = Vectord::Constant(0);
-                bool savedSample = false;
-                spec *= Li(
-                    sensorRay,
-                    rRec,
-                    samplePos,
-                    firstSample,
-                    savedSample
-                );
+                spec *= Li(sensorRay, rRec);
                 result->averagePathLength += rRec.depth;
                 result->pathCount++;
                 result->putSample(samplePos, spec);
             }
         }
-    }
-
-    template<int conditionalDims>
-    static typename std::enable_if<conditionalDims == 2, Vector3>::type
-    canonicalToDir(const Eigen::Matrix<Scalar, conditionalDims, 1>& p) {
-        const Float cosTheta = 2 * p.x() - 1;
-        const Float phi = 2 * M_PI * p.y();
-
-        const Float sinTheta = sqrt(1 - cosTheta * cosTheta);
-        Float sinPhi, cosPhi;
-        math::sincos(phi, &sinPhi, &cosPhi);
-
-        return {sinTheta * cosPhi, sinTheta * sinPhi, cosTheta};
-    }
-
-    template<int conditionalDims>
-    static typename std::enable_if<conditionalDims == 3, Vector3>::type
-    canonicalToDir(const Eigen::Matrix<Scalar, conditionalDims, 1>& p) {
-        return {(float) p.x(), (float) p.y(), (float) p.z()};
-    }
-
-    template<int conditionalDims>
-    static typename std::enable_if<conditionalDims == 2, Scalar>::type
-    canonicalToDirInvJacobian() {
-        return 4 * M_PI;
-    }
-
-    template<int conditionalDims>
-    static typename std::enable_if<conditionalDims == 3, Scalar>::type
-    canonicalToDirInvJacobian() {
-        return 1;
-    }
-
-    template<int conditionalDims>
-    static typename std::enable_if<
-        conditionalDims == 2, Eigen::Matrix<Scalar, conditionalDims, 1>
-    >::type dirToCanonical(const Vector& d) {
-        if (!std::isfinite(d.x) || !std::isfinite(d.y) || !std::isfinite(d.z)) {
-            return {0, 0};
-        }
-
-        const Float cosTheta = std::min(std::max(d.z, -1.0f), 1.0f);
-        Float phi = std::atan2(d.y, d.x);
-        while (phi < 0)
-            phi += 2.0 * M_PI;
-
-        return {(cosTheta + 1) / 2, phi / (2 * M_PI)};
-    }
-
-    template<int conditionalDims>
-    static typename std::enable_if<
-        conditionalDims == 3, Eigen::Matrix<Scalar, conditionalDims, 1>
-    >::type dirToCanonical(const Vector& d) {
-        return {d.x, d.y, d.z};
-    }
-
-    template<int conditionalDims>
-    static typename std::enable_if<conditionalDims == 2, Scalar>::type
-    dirToCanonicalInvJacobian() {
-        return INV_FOURPI;
-    }
-
-    template<int conditionalDims>
-    static typename std::enable_if<conditionalDims == 3, Scalar>::type
-    dirToCanonicalInvJacobian() {
-        return 1;
     }
 
     void createCondition(Vectord& sample, const Intersection& its, int depth) const {
@@ -436,7 +362,13 @@ public:
                 return Spectrum{0.f};
             }
 
-            bRec.wo = bRec.its.toLocal(canonicalToDir(condVec));
+            bRec.wo = bRec.its.toLocal(
+                Vector3(
+                    (float) condVec.x(),
+                    (float) condVec.y(),
+                    (float) condVec.z()
+                )
+            );
             bsdfWeight = bsdf->eval(bRec);
         }
 
@@ -565,10 +497,7 @@ public:
 
     Spectrum Li(
         const RayDifferential &r,
-        RadianceQueryRecord &rRec,
-        const Point2& samplePos,
-        Vectord& firstSample,
-        bool& savedSample
+        RadianceQueryRecord &rRec
     ) const {
         const Scene *scene = rRec.scene;
         Intersection &its = rRec.its;
@@ -627,7 +556,7 @@ public:
             Eigen::Matrix<Scalar, 3, 1> normal;
             normal << its.shFrame.n.x, its.shFrame.n.y, its.shFrame.n.z;
 
-            assert(depth < (int) vertices.size() - 1);
+            assert(depth <= (int) vertices.size() - 1);
 
             /* Sample
                 tau(x, y) (Surface integral). This happens with probability mRec.pdfFailure
