@@ -32,7 +32,6 @@
 #include <tev/ThreadPool.h>
 #include "sdmm_config.h"
 #include "sdmm_proc.h"
-#include "mesh.h"
 
 using json = nlohmann::json;
 
@@ -346,7 +345,7 @@ public:
         const int nPixels = m_config.imageSize.x * m_config.imageSize.y;
         m_maxSamplesSize = 2000000;
             // nPixels * m_config.samplesPerIteration * m_config.savedSamplesPerPath;
-    std::cerr << "Maximum number of samples possible: " << m_maxSamplesSize << "\n";
+        std::cerr << "Maximum number of samples possible: " << m_maxSamplesSize << "\n";
 
         const auto scene_aabb = m_scene->getAABBWithoutCamera();
         const auto aabb_min = scene_aabb.min;
@@ -473,111 +472,6 @@ public:
         saveCheckpoint(destinationFile.parent_path(), iteration);
 
         return success;
-    }
-
-    void dumpScene(const fs::path& path) {
-        std::cerr << "Dumping scene description to " << path.string() << endl;
-
-        auto& sceneShapes = m_scene->getShapes();
-        std::vector<Shape*> shapes;
-        for (size_t i = 0; i < sceneShapes.size(); ++i) {
-            Shape* shape = sceneShapes[i].get();
-            if (!shape || !shape->getBSDF()) {
-                continue;
-            }
-
-            auto bsdfType = shape->getBSDF()->getType();
-            if ((bsdfType & BSDF::EDiffuseReflection) || (bsdfType & BSDF::EGlossyReflection)) {
-                shapes.push_back(shape);
-            }
-        }
-
-        for (size_t i = 0; i < shapes.size(); ++i) {
-            Shape* s = shapes[i];
-            if (s->isCompound()) {
-                int j = 0;
-                Shape* child = s->getElement(j);
-                while (child != nullptr) {
-                    shapes.emplace_back(child);
-                    child = s->getElement(++j);
-                }
-            }
-        }
-
-        std::vector<ref<TriMesh>> meshes;
-        for (Shape* s : shapes) {
-            if (s->isCompound()) {
-                continue;
-            }
-            ref<TriMesh> mesh = s->createTriMesh();
-            if (mesh) {
-                meshes.emplace_back(mesh);
-            }
-        }
-
-        // blob << (float) m_fieldOfView;
-
-        // for (int i = 0; i < 4; ++i) {
-        //     for (int j = 0; j < 4; ++j) {
-        //         blob << (float) m_cameraMatrix(i, j);
-        //     }
-        // }
-
-        // blob << (float) m_sceneAabb.min[0];
-        // blob << (float) m_sceneAabb.min[1];
-        // blob << (float) m_sceneAabb.min[2];
-
-        // blob << (float) m_spatialNormalization;
-
-        bool allMeshesHaveNormals = true;
-        for (auto& mesh : meshes) {
-            allMeshesHaveNormals = allMeshesHaveNormals && mesh->hasVertexNormals();
-        }
-        std::cerr << "All meshes have normals: " << allMeshesHaveNormals << ".\n";
-        assert(allMeshesHaveNormals);
-
-        vio::Scene vio_scene;
-        for (auto& mesh : meshes) {
-            SAssert(mesh->hasVertexNormals());
-
-            auto vio_mesh = std::make_shared<vio::Mesh>();
-            // std::cerr << "Added mesh!\n";
-
-            size_t triangleCount = mesh->getTriangleCount();
-            // std::cerr << "triangleCount=" << triangleCount << "!.\n";
-            vio_mesh->indices().resize(3, triangleCount);
-            // std::cerr << "Resized indices!\n";
-
-            size_t vertexCount = mesh->getVertexCount();
-            vio_mesh->positions().resize(3, vertexCount);
-            vio_mesh->normals().resize(3, vertexCount);
-            // std::cerr << "Resized positions and normals!\n";
-
-            // Indices
-            const Triangle* triangles = mesh->getTriangles();
-            for (size_t i = 0; i < triangleCount; ++i) {
-                vio_mesh->indices().col(i) <<
-                    triangles[i].idx[0],
-                    triangles[i].idx[1],
-                    triangles[i].idx[2];
-            }
-            std::cerr << "Added indices!.\n";
-
-            // Vertices and normals
-            const Point* vertices = mesh->getVertexPositions();
-            const Normal* normals = mesh->getVertexNormals();
-
-            for (size_t i = 0; i < vertexCount; ++i) {
-                vio_mesh->positions().col(i) <<
-                    vertices[i].x, vertices[i].y, vertices[i].z;
-                vio_mesh->normals().col(i) <<
-                    normals[i].x, normals[i].y, normals[i].z;
-            }
-            // std::cerr << "Added positions and normals!\n";
-            vio_scene.meshes().push_back(vio_mesh);
-        }
-
-        vio_scene.save(path.string());
     }
 
     MTS_DECLARE_CLASS()

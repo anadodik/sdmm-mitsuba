@@ -85,14 +85,6 @@ public:
         return new SDMMWorkResult(m_config, m_rfilter.get(), Vector2i(m_config.blockSize));
     }
 
-    Vectord sampleUniformVector(ref<Sampler> sampler) const {
-        Vectord uniformSample;
-        for(int dim_i = 0; dim_i < t_dims; ++dim_i) {
-            uniformSample(dim_i) = math::clamp(sampler->next1D(), 0.f, 1.f);
-        }
-        return uniformSample;
-    }
-
     void prepare() {
         Scene *scene = static_cast<Scene *>(getResource("scene"));
         m_scene = new Scene(scene);
@@ -111,13 +103,6 @@ public:
         const RectangularWorkUnit *rect = static_cast<const RectangularWorkUnit *>(workUnit);
         SDMMWorkResult *result = static_cast<SDMMWorkResult *>(workResult);
 
-        fs::path destinationFile = m_scene->getDestinationFile();
-        m_cameraMatrix = m_sensor->getWorldTransform()->eval(0).getMatrix();
-
-        PerspectiveCamera* perspectiveCamera = dynamic_cast<PerspectiveCamera*>(&(*m_sensor));
-        if (perspectiveCamera) {
-            m_fieldOfView = perspectiveCamera->getXFov();
-        }
         m_sceneAabb = m_scene->getAABBWithoutCamera();
         const auto aabb_extents = m_sceneAabb.getExtents();
         m_spatialNormalization = std::max(
@@ -129,19 +114,12 @@ public:
             throw std::runtime_error( "WARNING: ONLY SAVING ONE VERTEX PER PATH!\n");
         }
 
-#ifdef MTS_DEBUG_FP
-        enableFPExceptions();
-#endif
-
         result->setSize(rect->getSize());
         result->setOffset(rect->getOffset());
         result->clear();
+
         m_hilbertCurve.initialize(TVector2<int>(rect->getSize()));
         auto& points = m_hilbertCurve.getPoints();
-
-#ifdef MTS_DEBUG_FP
-        disableFPExceptions();
-#endif
 
         Float diffScaleFactor = 1.0f /
             std::sqrt((Float) m_sampler->getSampleCount());
@@ -159,15 +137,11 @@ public:
         if (!m_sensor->getFilm()->hasAlpha()) /* Don't compute an alpha channel if we don't have to */
             queryType &= ~RadianceQueryRecord::EOpacity;
 
-        m_timer = new Timer();
-
         for(
             int sampleInIteration = 0;
             sampleInIteration < (int) m_config.samplesPerIteration;
             ++sampleInIteration
         ) {
-            bool allSamplesZero = true;
-            m_timer->reset();
             for (size_t pixel_i = 0; pixel_i < points.size(); ++pixel_i) {
                 Point2i offset =
                     Point2i(m_hilbertCurve[pixel_i]) +
@@ -201,15 +175,6 @@ public:
                 );
                 result->averagePathLength += rRec.depth;
                 result->pathCount++;
-
-                if(spec.max() != 0.f) {
-                    allSamplesZero = false;
-                }
-
-                if(!spec.isValid()) {
-                    std::cerr << spec.toString() << " INVALID\n";
-                    continue;
-                }
                 result->putSample(samplePos, spec);
             }
         }
@@ -336,9 +301,8 @@ public:
             heuristicConditionalWeight = 1.0f;
             Spectrum result = bsdf->sample(bRec, bsdfPdf, rRec.nextSample2D());
             pdf = bsdfPdf;
-            sample.template bottomRows<t_conditionalDims>() = dirToCanonical<t_conditionalDims>(
-                bRec.its.shFrame.toWorld(bRec.wo)
-            );
+            Vector3 worldWo = bRec.its.shFrame.toWorld(bRec.wo);
+            sample.template bottomRows<t_conditionalDims>() << worldWo.x, worldWo.y, worldWo.z;
             return result;
         }
 
@@ -409,9 +373,8 @@ public:
             if(bsdfWeight.isZero()) {
                 return Spectrum{0.f};
             }
-            sample.template bottomRows<t_conditionalDims>() = dirToCanonical<t_conditionalDims>(
-                bRec.its.shFrame.toWorld(bRec.wo)
-            );
+            Vector3 worldWo = bRec.its.shFrame.toWorld(bRec.wo);
+            sample.template bottomRows<t_conditionalDims>() << worldWo.x, worldWo.y, worldWo.z;
             if(!validConditional || bRec.sampledType & BSDF::EDelta) {
                 gmmPdf = 0.f;
                 pdf *= heuristicConditionalWeight;
@@ -555,7 +518,6 @@ public:
             posterior
         );
         gmmPdf = enoki::hsum_nested(posterior);
-        // gmmPdf = conditional.pdf(sample) * dirToCanonicalInvJacobian<t_conditionalDims>();
         if(!std::isfinite(gmmPdf)) {
             std::cerr << fmt::format(
                 "pdf={}\n"
@@ -782,10 +744,6 @@ public:
             // its.shape->getCurvature(its, meanCurvature, gaussianCurvature);
 
             if(bsdfWeight.isZero()) {
-                if(!savedSample) {
-                    firstSample = canonicalSample;
-                    savedSample = true;
-                }
                 break;
             }
 
@@ -837,10 +795,6 @@ public:
                 if(cacheable) {
                     Float invPdf = 1.f / misPdf;
                     Spectrum incomingRadiance = value * weight;
-                    if(!savedSample) {
-                        firstSample = canonicalSample;
-                        savedSample = true;
-                    }
 
                     if (misPdf > 0 && std::isfinite(invPdf)) {
                         bool isDiffuse = !(bsdf->getType() & BSDF::EGlossy);
@@ -1066,15 +1020,12 @@ private:
     ref<Sampler> m_sampler;
     ref<ReconstructionFilter> m_rfilter;
 
-    MemoryPool m_pool;
     SDMMConfiguration m_config;
     HilbertCurve2D<int> m_hilbertCurve;
     int m_iteration;
     bool m_collect_data;
-    ref<Timer> m_timer;
     Float m_spatialNormalization;
 
-    Matrix4x4 m_cameraMatrix;
     AABB m_sceneAabb;
     Float m_fieldOfView = 50;
 

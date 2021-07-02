@@ -43,10 +43,6 @@ public:
 	// Clear the contents of the work result
 	void clear();
 
-	void clearOutliers() { m_outliers->clear(); }
-	void clearSpatialDensity() { m_spatialDensity->clear(); }
-	void clearDenoised() { m_denoised->clear(); }
-
 	/// Fill the work result with content acquired from a binary data stream
 	virtual void load(Stream *stream);
 
@@ -61,44 +57,10 @@ public:
 	   the individual sampling strategies to a series of images */
 	void dump(const SDMMConfiguration &conf,
 			const fs::path &prefix, const fs::path &stem) const;
-
-	inline void putDebugSample(int populationId, int iteration, const Point2 &sample,
-			const Spectrum &spec) {
-		m_debugBlocks[sub2ind(populationId, iteration)]->put(sample, spec, 1.0f);
-	}
-
-	void dumpManual(const SDMMConfiguration &conf,
-			const fs::path &prefix, const fs::path &stem) const;
-
-	inline void putManualSample(const Point2 &sample, const Spectrum &spec) {
-		m_manualImage->put(sample, spec, 1.0f);
-	}
-
 #endif
 	void dumpIndividual(
         int spp, int iteration, const fs::path &directory, Float time
     ) const;
-
-	void dumpOutliers(const SDMMConfiguration &conf,
-			const fs::path &prefix, const fs::path &stem, int iteration) const;
-    
-	void dumpSpatialDensity(
-		int spp, const fs::path &prefix, const fs::path &stem, int iteration
-	) const;
-
-	void dumpDenoised(int spp, const fs::path &prefix, const fs::path &stem, int iteration) const;
-
-	inline void putOutlierSample(const Point2 &sample, const Spectrum &spec) {
-		m_outliers->put(sample, spec, 1.0f);
-	}
-
-	inline void putSpatialDensitySample(const Point2 &sample, const Spectrum &spec) {
-		m_spatialDensity->put(sample, spec, 1.0f);
-	}
-
-	inline void putDenoisedSample(const Point2 &sample, const Spectrum &spec) {
-		m_denoised->put(sample, spec, 1.0f);
-	}
 
 	inline void putSample(const Point2 &sample, const Spectrum &spec) {
 		m_block->put(sample, spec, 1.0f);
@@ -140,15 +102,10 @@ protected:
 
 protected:
 #if SDMM_DEBUG == 1
-    int sub2ind(int populationId, int iteration) const { return populationId * m_iterations + iteration; }
 	ref_vector<ImageBlock> m_debugBlocks;
 #endif
-    ref<ImageBlock> m_manualImage;
-    ref<ImageBlock> m_block, m_blockSqr;
-	ref<ImageBlock> m_denoised;
-	ref<ImageBlock> m_outliers;
-	ref<ImageBlock> m_spatialDensity;
-	ref<ImageBlock> m_export, m_exportSquared;
+    ref<ImageBlock> m_block;
+	ref<ImageBlock> m_blockSqr;
 };
 
 MTS_NAMESPACE_END

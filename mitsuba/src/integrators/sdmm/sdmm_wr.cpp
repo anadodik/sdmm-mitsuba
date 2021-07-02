@@ -52,18 +52,6 @@ SDMMWorkResult::SDMMWorkResult(const SDMMConfiguration &conf,
 	m_manualImage->setSize(blockSize);
 	m_manualImage->setOffset(Point2i(0, 0));
 #endif
-
-    m_outliers = new ImageBlock(Bitmap::ESpectrum, blockSize, rfilter);
-    m_outliers->setSize(blockSize);
-    m_outliers->setOffset(Point2i(0, 0));
-
-    m_spatialDensity = new ImageBlock(Bitmap::ESpectrum, blockSize, rfilter);
-    m_spatialDensity->setSize(blockSize);
-    m_spatialDensity->setOffset(Point2i(0, 0));
-
-    m_denoised = new ImageBlock(Bitmap::ESpectrum, blockSize, rfilter);
-    m_denoised->setSize(blockSize);
-    m_denoised->setOffset(Point2i(0, 0));
 }
 
 SDMMWorkResult::~SDMMWorkResult() { }
@@ -86,10 +74,6 @@ void SDMMWorkResult::clear() {
 #endif
 	m_block->clear();
 	m_blockSqr->clear();
-
-    m_outliers->clear();
-    m_spatialDensity->clear();
-    m_denoised->clear();
 }
 
 #if SDMM_DEBUG == 1
@@ -127,44 +111,6 @@ void SDMMWorkResult::dumpManual(const SDMMConfiguration &conf,
 }
 
 #endif
-
-void SDMMWorkResult::dumpOutliers(const SDMMConfiguration &conf,
-		const fs::path &prefix, const fs::path &stem, int iteration) const {
-	Float weight = (Float) 1.0f / (Float) (conf.samplesPerIteration);
-    Bitmap *bitmap = const_cast<Bitmap *>(m_outliers->getBitmap());
-    fs::path hdrFilename = prefix / "individual" / fs::path(formatString("outliers_it%05i.exr", iteration));;
-    bitmap->convert(bitmap, weight);
-    Vector2i borderSize{m_outliers->getBorderSize(), m_outliers->getBorderSize()};
-    auto cropped = bitmap->crop(Point2i(borderSize), bitmap->getSize() - 2 * borderSize);
-    ref<FileStream> targetFileHDR = new FileStream(hdrFilename, FileStream::ETruncReadWrite);
-    cropped->write(Bitmap::EOpenEXR, targetFileHDR, 1);
-}
-
-void SDMMWorkResult::dumpSpatialDensity(
-    int spp, const fs::path &prefix, const fs::path &stem, int iteration
-) const {
-	Float weight = (Float) 1.0f / (Float) spp;
-    Bitmap *bitmap = const_cast<Bitmap *>(m_spatialDensity->getBitmap());
-    fs::path hdrFilename = prefix / "individual" / fs::path(formatString("density_it%05i.exr", iteration));;
-    bitmap->convert(bitmap, weight);
-    Vector2i borderSize{m_spatialDensity->getBorderSize(), m_spatialDensity->getBorderSize()};
-    auto cropped = bitmap->crop(Point2i(borderSize), bitmap->getSize() - 2 * borderSize);
-    ref<FileStream> targetFileHDR = new FileStream(hdrFilename, FileStream::ETruncReadWrite);
-    cropped->write(Bitmap::EOpenEXR, targetFileHDR, 1);
-}
-
-void SDMMWorkResult::dumpDenoised(
-    int spp, const fs::path &prefix, const fs::path &stem, int iteration
-) const {
-	Float weight = (Float) 1.0f / (Float) spp;
-    Bitmap *bitmap = const_cast<Bitmap *>(m_denoised->getBitmap());
-    fs::path hdrFilename = prefix / "individual" / fs::path(formatString("denoised_it%05i.exr", iteration));;
-    bitmap->convert(bitmap, weight);
-    Vector2i borderSize{m_denoised->getBorderSize(), m_denoised->getBorderSize()};
-    auto cropped = bitmap->crop(Point2i(borderSize), bitmap->getSize() - 2 * borderSize);
-    ref<FileStream> targetFileHDR = new FileStream(hdrFilename, FileStream::ETruncReadWrite);
-    cropped->write(Bitmap::EOpenEXR, targetFileHDR, 1);
-}
 
 void SDMMWorkResult::dumpIndividual(
     int spp,
@@ -206,9 +152,6 @@ void SDMMWorkResult::load(Stream *stream) {
 #endif
 	m_block->load(stream);
 	m_blockSqr->load(stream);
-    m_outliers->load(stream);
-    m_spatialDensity->load(stream);
-    m_denoised->load(stream);
 }
 
 void SDMMWorkResult::save(Stream *stream) const {
@@ -218,9 +161,6 @@ void SDMMWorkResult::save(Stream *stream) const {
 #endif
 	m_block->save(stream);
 	m_blockSqr->save(stream);
-    m_outliers->save(stream);
-    m_spatialDensity->save(stream);
-    m_denoised->save(stream);
 }
 
 std::string SDMMWorkResult::toString() const {
