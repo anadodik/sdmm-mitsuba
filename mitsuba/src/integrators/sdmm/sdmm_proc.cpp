@@ -856,16 +856,24 @@ public:
         }
 
         auto push_back_data = [&](SDMMProcess::SDMMContext& context, int d) {
-            if(!m_collect_data) {
+            Float averageWeight = vertices[d].weight.average();
+            if(!m_collect_data || !sdmm::is_valid_sample(averageWeight)) {
                 return;
             }
 
+            sdmm::Vector<float, 3> position({
+                (float) vertices[d].point.coeff(0),
+                (float) vertices[d].point.coeff(1),
+                (float) vertices[d].point.coeff(2)
+            });
+
             {
                 std::lock_guard lock(context.mutex_wrapper.mutex);
+                context.stats.push_back(position);
                 context.data.push_back(
                     vertices[d].point,
                     vertices[d].sdmm_normal,
-                    vertices[d].weight.average()
+                    averageWeight
                 );
             }
         };
