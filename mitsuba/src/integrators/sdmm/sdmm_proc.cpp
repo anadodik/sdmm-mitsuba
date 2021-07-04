@@ -857,7 +857,7 @@ public:
 
         auto push_back_data = [&](SDMMProcess::SDMMContext& context, int d) {
             Float averageWeight = vertices[d].weight.average();
-            if(!m_collect_data || !sdmm::is_valid_sample(averageWeight)) {
+            if(!sdmm::is_valid_sample(averageWeight)) {
                 return;
             }
 
