@@ -1,20 +1,10 @@
 {
   "python.linting.pylintEnabled": true,
   "python.linting.enabled": true,
-  "languageserver": {
-    "ccls": {
-      "command": "ccls",
-      "filetypes": ["c", "cpp", "objc", "objcpp"],
-      "rootPatterns": [".ccls", "compile_commands.json", "build/compile_commands.json", ".vim/", ".git/", ".hg/"],
-      "initializationOptions": {
-         "cache": {
-           "directory": ".ccls-cache"
-         },
-         "compilationDatabaseDirectory": ".",
-         "client": {
-           "snippetSupport": true
-        }
-       }
-    }
-  }
+
+  "coc.preferences.timeout": 5000,
+  "coc.preferences.jumpCommand": "tabe",
+  "python.pythonPath": "/home/anadodik/miniconda3/bin/python3",
+  "clangd.compilationDatabasePath": "mitsuba",
+  "clangd.semanticHighlighting": "true"
 }
