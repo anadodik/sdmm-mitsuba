@@ -861,15 +861,9 @@ public:
                 return;
             }
 
-            sdmm::Vector<float, 3> position({
-                (float) vertices[d].point.coeff(0),
-                (float) vertices[d].point.coeff(1),
-                (float) vertices[d].point.coeff(2)
-            });
-
             {
                 std::lock_guard lock(context.mutex_wrapper.mutex);
-                context.stats.push_back(position);
+                context.stats.push_back(vertices[d].point);
                 context.data.push_back(
                     vertices[d].point,
                     vertices[d].sdmm_normal,
