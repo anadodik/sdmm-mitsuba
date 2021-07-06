@@ -855,18 +855,38 @@ public:
             return Li;
         }
 
-        auto push_back_data = [&](SDMMProcess::SDMMContext& context, int d) {
-            if(!m_collect_data) {
+        auto push_back_data = [&](SDMMProcess::SDMMContext& context, int d, bool push_stats=false) {
+            Float averageWeight = vertices[d].weight.average();
+            if(!m_collect_data || !sdmm::is_valid_sample(averageWeight)) {
                 return;
             }
 
+            sdmm::Vector<float, 3> position({
+                (float) vertices[d].point.coeff(0),
+                (float) vertices[d].point.coeff(1),
+                (float) vertices[d].point.coeff(2)
+            });
+
             {
                 std::lock_guard lock(context.mutex_wrapper.mutex);
+                if (push_stats) {
+                    context.stats.push_back(position);
+                }
                 context.data.push_back(
                     vertices[d].point,
                     vertices[d].sdmm_normal,
-                    vertices[d].weight.average()
+                    averageWeight
                 );
+                // if(context.data.stats_size != context.stats.size) {
+                //     throw std::runtime_error(
+                //         fmt::format(
+                //             "iteration={}, stats sizes do not match {} == {} != {}", 
+                //             m_iteration,
+                //             context.data.size,
+                //             context.data.stats_size,
+                //             context.stats.size
+                //             ));
+                // }
             }
         };
 
@@ -879,14 +899,14 @@ public:
             AcceleratorAABB sampleAABB;
             auto sampleContext = m_accelerator->find(key, sampleAABB);
             if(sampleContext != nullptr) {
-                push_back_data(*sampleContext, d);
+                push_back_data(*sampleContext, d, true);
             } else {
                 std::cerr << "ERROR: COULD NOT FIND CELL FOR SAMPLE." << std::endl;
                 throw std::runtime_error("ERROR: COULD NOT FIND CELL FOR SAMPLE.");
                 continue;
             }
 
-            int nJitters = ((d == depth - 1) ? 1 : 0);
+            int nJitters = ((d >= depth - 1) ? 1 : 0);
             for(int jitter_i = 0; jitter_i < nJitters; ++jitter_i) {
                 offset <<
                     rRec.sampler->next1D() - 0.5,

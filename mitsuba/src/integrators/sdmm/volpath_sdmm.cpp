@@ -177,7 +177,9 @@ public:
 
     TreeStats optimize_async_run() {
         spdlog::info("Splitting samples.");
-        m_accelerator->split(m_splitThreshold);
+        if (m_accelerator->leaf_nodes() <= 2048) {
+            m_accelerator->split(m_splitThreshold);
+        }
 
         auto& nodes = m_accelerator->data();
         m_node_idcs.reserve(nodes.size());
@@ -212,6 +214,7 @@ public:
             size_t context_i = m_node_idcs[(size_t) i];
             auto& context = nodes[context_i].value;
             std::swap(context->data, context->training_data);
+            // context->stats.clear();
         });
 
         m_thread_pool->parallelForNoWait(0, (int) m_node_idcs.size(), [&nodes, this](int i){
@@ -222,6 +225,7 @@ public:
             }
             sdmm::em_step(context->sdmm, context->em, context->training_data);
             context->training_data.clear();
+            // context->training_data.clear_stats();
             context->update_ready = true;
         });
         return tree_stats;
