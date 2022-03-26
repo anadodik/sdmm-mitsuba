@@ -424,8 +424,8 @@ if not conan:
 flags = conan["conan"]
 env.MergeFlags(flags)
 
-pp = pprint.PrettyPrinter(indent=2)
-pp.pprint(flags)
-pp.pprint(conan)
+# pp = pprint.PrettyPrinter(indent=2)
+# pp.pprint(flags)
+# pp.pprint(conan)
 
 Return('env')

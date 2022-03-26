@@ -5,7 +5,7 @@ DISTDIR        = '#dist'
 CXX            = 'g++'
 CC             = 'gcc'
 # TODO: DISABLE SSE
-CCFLAGS        = ['-DNDEBUG', '-march=native', '-mno-avx512f', '-O3', '-Wno-deprecated-declarations', '-g', '-DMTS_DEBUG', '-DSINGLE_PRECISION', '-DSPECTRUM_SAMPLES=3', '-DMTS_SSE', '-DMTS_HAS_COHERENT_RT', '-Wextra', '-std=gnu++17', '-fopenmp', '-ftree-vectorize', '-funsafe-math-optimizations', '-fno-rounding-math', '-fno-signaling-nans', '-fno-math-errno', '-fno-stack-protector', '-ffp-contract=fast', '-fomit-frame-pointer', '-fPIC']
+CCFLAGS        = ['-DNDEBUG', '-march=native', '-msse2avx', '-O3', '-Wno-deprecated-declarations', '-g', '-DMTS_DEBUG', '-DSINGLE_PRECISION', '-DSPECTRUM_SAMPLES=3', '-DMTS_SSE', '-DMTS_HAS_COHERENT_RT', '-Wextra', '-std=gnu++17', '-fopenmp', '-ftree-vectorize', '-funsafe-math-optimizations', '-fno-rounding-math', '-fno-signaling-nans', '-fno-math-errno', '-fno-stack-protector', '-ffp-contract=fast', '-fomit-frame-pointer', '-fPIC'] # , '-DTRACY_ENABLE', '-fno-omit-frame-pointer']
 # CXXFLAGS       = ['-O3', '-DNDEBUG', '-w', '-Wall', '-Wfloat-conversion', '-fPIC', '-g', '-pipe', '-march=native', '-mno-avx512f', '-msse2avx', '-mvzeroupper', '-mtune=intel', '-ftree-vectorize', '-funsafe-math-optimizations', '-fno-rounding-math', '-fno-signaling-nans', '-fno-math-errno', '-DMTS_DEBUG', '-DSINGLE_PRECISION', '-DSPECTRUM_SAMPLES=3', '-DMTS_SSE', '-DMTS_HAS_COHERENT_RT', '-fopenmp', '-fvisibility=hidden', '-mtls-dialect=gnu2', '-std=gnu++17', '-Wno-error=deprecated', '-fno-stack-protector', '-ffp-contract=fast', '-fomit-frame-pointer']
 LINKFLAGS      = []
 SHLINKFLAGS    = ['-rdynamic', '-shared', '-fPIC', '-lstdc++'] # '-lprofiler'

@@ -140,6 +140,8 @@ if __name__ == '__main__':
     elif args.integrator == 'ppg':
         parameters['budget'] = str(args.sampleCount)
         parameters['budgetType'] = 'spp'
+    else:
+        raise NotImplementedError(f"Integrator {args.integrator} not recognized.")
 
     def run(scene_name):
         if args.integrator == 'gt':

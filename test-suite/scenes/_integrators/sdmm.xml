@@ -3,7 +3,7 @@
 <scene version="0.6.0">
     <integer name="maxDepth" value="10"/>
     <integer name="rrDepth" value="10"/>
-    <default name="blockSize" value="8"/>
+    <default name="blockSize" value="4"/>
 
     <default name="sampleProduct" value="false"/>
     <default name="bsdfOnly" value="false"/>

@@ -22,7 +22,7 @@
 		<float name="farClip" value="2800"/>
 		<float name="focusDistance" value="1000"/>
 		<transform name="toWorld">
-			<lookAt origin="278, 273, -800" target="278, 273, -799" up="0, 1, 0"/>
+			<lookAt origin="120, 15, -10" target="120, 15, -9" up="0, 1, 0"/>
 		</transform>
 		<float name="fov" value="39.3077"/>
 
@@ -32,7 +32,7 @@
 		</sampler>
 
 		<film type="hdrfilm">
-            <integer name="width" value="640"/>
+            <integer name="width" value="360"/>
             <integer name="height" value="360"/>
 			<boolean name="banner" value="false"/>
 

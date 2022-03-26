@@ -88,6 +88,7 @@ void RenderJob::run() {
     ref<Film> film = m_scene->getFilm();
     ref<Sampler> sampler = m_scene->getSampler();
     m_cancelled = false;
+    tracy::SetThreadName(getName().c_str());
 
     try {
         m_scene->getFilm()->setDestinationFile(m_scene->getDestinationFile(),

@@ -39,6 +39,10 @@ MTS_NAMESPACE_BEGIN
 
 static StatsCounter avgPathLength("SDMM path tracer", "Average path length", EAverage);
 static StatsCounter avgInvalidSamples("SDMM path tracer", "Average proportion of discarded samples.", EAverage);
+static StatsCounter avgFoundConditional("SDMM path tracer", "Average proportion of found conditional samples.", EAverage);
+static StatsCounter avgSampleTime("SDMM path tracer", "Average sample time.", EAverage);
+static StatsCounter avgConditioningTime("SDMM path tracer", "Average cond. time.", EAverage);
+static StatsCounter avgPdfTime("SDMM path tracer", "Average pdf time.", EAverage);
 
 class SDMMRenderer : public WorkProcessor {
     constexpr static int t_dims = SDMMProcess::t_dims;
@@ -136,7 +140,9 @@ public:
 
         if (!m_sensor->getFilm()->hasAlpha()) /* Don't compute an alpha channel if we don't have to */
             queryType &= ~RadianceQueryRecord::EOpacity;
-
+        
+        sampleSurfaceTime = conditioningTime = pdfTime = 0;
+        fineTimer = new Timer();
         for(
             int sampleInIteration = 0;
             sampleInIteration < (int) m_config.samplesPerIteration;
@@ -178,6 +184,14 @@ public:
                 result->putSample(samplePos, spec);
             }
         }
+        avgSampleTime += (int) (sampleSurfaceTime * 1000);
+        avgSampleTime.incrementBase();
+
+        avgConditioningTime += (int) (conditioningTime * 1000);
+        avgConditioningTime.incrementBase();
+
+        avgPdfTime += (int) (pdfTime * 1000);
+        avgPdfTime.incrementBase();
     }
 
     template<int conditionalDims>
@@ -270,6 +284,7 @@ public:
         Vectord& sample,
         RadianceQueryRecord& rRec
     ) const {
+        ZoneScoped;
         using RotationMatrix = SDMMProcess::ConditionalSDMM::TangentSpace::MatrixS;
 
         createCondition(sample, its, rRec.depth);
@@ -294,6 +309,7 @@ public:
 
         SDMMContext* sdmmContext = nullptr;
         if(m_iteration != 0) {
+            ZoneScopedN("sampleSurface, find");
             AcceleratorPoint key(sample(0), sample(1), sample(2));
             sdmmContext = m_accelerator->find(key);
         }
@@ -340,13 +356,20 @@ public:
         }
 
         if(!usingLearnedBSDF) {
+            fineTimer->reset();
+            ZoneScopedN("sampleSurface, create_conditional");
             sdmm::embedded_s_t<SDMMProcess::MarginalSDMM> condition({
                 (float) sample(0), (float) sample(1), (float) sample(2)
             });
             if(enoki::slices(conditional) != enoki::slices(sdmmContext->conditioner)) {
                 enoki::set_slices(conditional, enoki::slices(sdmmContext->conditioner));
             }
+            avgFoundConditional.incrementBase();
             validConditional = sdmm::create_conditional(sdmmContext->conditioner, condition, conditional);
+            if (validConditional) {
+                avgFoundConditional += 1;
+            }
+            conditioningTime += fineTimer->getSeconds();
         }
 
         if(!usingLearnedBSDF && validConditional && usingProduct) {
@@ -496,6 +519,7 @@ public:
         const Float heuristicConditionalWeight,
         const ConditionalVectord& sample
     ) const {
+        ZoneScoped;
         if(enoki::slices(posterior) != enoki::slices(conditional)) {
             enoki::set_slices(posterior, enoki::slices(conditional));
         }
@@ -508,6 +532,7 @@ public:
         if (bsdfPdf <= 0 || !std::isfinite(bsdfPdf)) {
             return 0;
         }
+        fineTimer->reset();
         sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM> embedded_sample({
             (float) sample(0), (float) sample(1), (float) sample(2)
         });
@@ -518,6 +543,7 @@ public:
             posterior
         );
         gmmPdf = enoki::hsum_nested(posterior);
+        pdfTime += fineTimer->getSeconds();
         if(!std::isfinite(gmmPdf)) {
             std::cerr << fmt::format(
                 "pdf={}\n"
@@ -577,10 +603,6 @@ public:
         Spectrum Li(0.0f);
         Float eta = 1.0f;
 
-        constexpr static Float initialHeuristicWeight = 1.f;
-        const Float heuristicWeight =
-            (m_iteration == 0) ? initialHeuristicWeight : 0.5;
-
         struct Vertex {
             Spectrum weight;
             Spectrum throughput;
@@ -622,6 +644,7 @@ public:
         Vectord canonicalSample;
         bool scattered = false;
 
+        ref<Timer> sampling_timer = new Timer();
             // = std::max(minHeuristicWeight, initialHeuristicWeight * std::pow(0.6f, (Float) m_iteration));
         while (rRec.depth <= m_config.maxDepth || m_config.maxDepth < 0) {
             Eigen::Matrix<Scalar, 3, 1> normal;
@@ -718,6 +741,7 @@ public:
             BSDFSamplingRecord bRec(its, rRec.sampler, ERadiance);
             Float misPdf, heuristicPdf, gmmPdf;
             Scalar heuristicConditionalWeight;
+            sampling_timer->reset();
             Spectrum bsdfWeight = sampleSurface(
                 bsdf,
                 scene,
@@ -730,6 +754,8 @@ public:
                 canonicalSample,
                 rRec
             );
+            sampleSurfaceTime += sampling_timer->getSeconds();
+
             if(!bsdfWeight.isValid()) {
                 std::cerr << "!bsdfWeight.isValid()\n";
                 return Li;
@@ -793,33 +819,29 @@ public:
                 }
 
                 if(cacheable) {
-                    Float invPdf = 1.f / misPdf;
+                    Float clampedPdf = std::max(misPdf, 0.1f);
+                    Float invPdf = 1.f / clampedPdf;
                     Spectrum incomingRadiance = value * weight;
+                    vertices[depth] = Vertex{
+                        incomingRadiance * invPdf,
+                        throughput,
+                        clampedPdf,
+                        sdmm::embedded_s_t<SDMMProcess::JointSDMM>{
+                            canonicalSample(0),
+                            canonicalSample(1),
+                            canonicalSample(2),
+                            canonicalSample(3),
+                            canonicalSample(4),
+                            canonicalSample(5),
+                        },
+                        sdmm::normal_s_t<SDMMProcess::Data>{
+                            (float) normal(0), (float) normal(1), (float) normal(2)
+                        },
+                        canonicalSample,
+                        normal
+                    };
 
-                    if (misPdf > 0 && std::isfinite(invPdf)) {
-                        bool isDiffuse = !(bsdf->getType() & BSDF::EGlossy);
-
-                        vertices[depth] = Vertex{
-                            incomingRadiance * invPdf,
-                            throughput,
-                            misPdf,
-                            sdmm::embedded_s_t<SDMMProcess::JointSDMM>{
-                                canonicalSample(0),
-                                canonicalSample(1),
-                                canonicalSample(2),
-                                canonicalSample(3),
-                                canonicalSample(4),
-                                canonicalSample(5),
-                            },
-                            sdmm::normal_s_t<SDMMProcess::Data>{
-                                (float) normal(0), (float) normal(1), (float) normal(2)
-                            },
-                            canonicalSample,
-                            normal
-                        };
-
-                        ++depth;
-                    }
+                    ++depth;
                 }
             }
 
@@ -851,13 +873,14 @@ public:
         avgPathLength.incrementBase();
         avgPathLength += rRec.depth;
 
-        if(depth == 0 || !m_collect_data || Li.max() == 0) {
+        if(depth == 0 || !m_collect_data) {
             return Li;
         }
 
         auto push_back_data = [&](SDMMProcess::SDMMContext& context, int d, bool push_stats=false) {
+            ZoneScoped;
             Float averageWeight = vertices[d].weight.average();
-            if(!m_collect_data || !sdmm::is_valid_sample(averageWeight)) {
+            if (!sdmm::is_valid_sample(averageWeight)) {
                 return;
             }
 
@@ -869,14 +892,14 @@ public:
 
             {
                 std::lock_guard lock(context.mutex_wrapper.mutex);
-                if (push_stats) {
-                    context.stats.push_back(position);
-                }
                 context.data.push_back(
                     vertices[d].point,
                     vertices[d].sdmm_normal,
                     averageWeight
                 );
+                if (push_stats) {
+                    context.stats.push_back(position);
+                }
                 // if(context.data.stats_size != context.stats.size) {
                 //     throw std::runtime_error(
                 //         fmt::format(
@@ -907,6 +930,10 @@ public:
             }
 
             int nJitters = ((d >= depth - 1) ? 1 : 0);
+            if (vertices[d].weight.average() > 1000) {
+                ++nJitters;
+            }
+            int attempts = 0;
             for(int jitter_i = 0; jitter_i < nJitters; ++jitter_i) {
                 offset <<
                     rRec.sampler->next1D() - 0.5,
@@ -926,6 +953,10 @@ public:
                 AcceleratorAABB aabb;
                 auto sdmmContext = m_accelerator->find(key, aabb);
                 if(sdmmContext == nullptr || enoki::all(aabb.min == sampleAABB.min)) {
+                    ++attempts;
+                    if (attempts < 8) {
+                        --jitter_i;
+                    }
                     continue;
                 } else {
                     push_back_data(*sdmmContext, d);
@@ -1044,23 +1075,35 @@ private:
     HilbertCurve2D<int> m_hilbertCurve;
     int m_iteration;
     bool m_collect_data;
-    Float m_spatialNormalization;
-
     AABB m_sceneAabb;
-    Float m_fieldOfView = 50;
+    Float m_spatialNormalization;
+    mutable Float sampleSurfaceTime;
+    mutable Float conditioningTime;
+    mutable Float pdfTime;
+    mutable ref<Timer> fineTimer;
+    Float computeConditionalTime;
 
-    mutable SDMMProcess::ConditionalSDMM conditional;
-    mutable BSDF::DMM learned_bsdf;
-    mutable SDMMProcess::ConditionalSDMM product;
-    mutable SDMMProcess::RNG sdmm_rng;
-    mutable sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM> embedded_sample;
-    mutable sdmm::tangent_s_t<SDMMProcess::ConditionalSDMM> tangent_sample;
+    static thread_local SDMMProcess::ConditionalSDMM conditional;
+    static thread_local BSDF::DMM learned_bsdf;
+    static thread_local SDMMProcess::ConditionalSDMM product;
+    static thread_local SDMMProcess::RNG sdmm_rng;
+    static thread_local sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM> embedded_sample;
+    static thread_local sdmm::tangent_s_t<SDMMProcess::ConditionalSDMM> tangent_sample;
 
-    mutable SDMMProcess::Value posterior;
-    mutable BSDF::Value bsdf_posterior;
+    static thread_local SDMMProcess::Value posterior;
+    static thread_local BSDF::Value bsdf_posterior;
 
     Accelerator* m_accelerator;
 };
+
+thread_local SDMMProcess::ConditionalSDMM SDMMRenderer::conditional;
+thread_local BSDF::DMM SDMMRenderer::learned_bsdf;
+thread_local SDMMProcess::ConditionalSDMM SDMMRenderer::product;
+thread_local SDMMProcess::RNG SDMMRenderer::sdmm_rng;
+thread_local sdmm::embedded_s_t<SDMMProcess::ConditionalSDMM> SDMMRenderer::embedded_sample;
+thread_local sdmm::tangent_s_t<SDMMProcess::ConditionalSDMM> SDMMRenderer::tangent_sample;
+thread_local SDMMProcess::Value SDMMRenderer::posterior;
+thread_local BSDF::Value SDMMRenderer::bsdf_posterior;
 
 /* ==================================================================== */
 /*                           Parallel process                           */

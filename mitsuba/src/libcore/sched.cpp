@@ -22,6 +22,8 @@
 
 #include <boost/thread/thread.hpp>
 
+#include "../integrators/sdmm/tracy/Tracy.hpp"
+
 MTS_NAMESPACE_BEGIN
 
 SerializableObject *WorkProcessor::getResource(const std::string &name) {

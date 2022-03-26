@@ -20,6 +20,9 @@
 #if !defined(__MITSUBA_MITSUBA_H_)
 #define __MITSUBA_MITSUBA_H_
 
+#include "../src/integrators/sdmm/tracy/Tracy.hpp"
+#include "../src/integrators/sdmm/tracy/common/TracySystem.hpp"
+
 #include <mitsuba/core/platform.h>
 #include <boost/version.hpp>
 #include <sstream>

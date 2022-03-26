@@ -7,7 +7,7 @@ import shutil
 from test_suite_utils import SCENES, RESULTS_PATH
 
 ALLOWED_TYPES = r'(.*\.json|.*\.exr|.*\.log|.*\.asdmm)$'
-OUT_PATH = os.path.join(RESULTS_PATH, 'results_stats')
+OUT_PATH = os.path.join(RESULTS_PATH, 'results_new_vmm')
 
 def copy(from_paths):
     from_pattern = re.compile(from_paths)
@@ -67,10 +67,13 @@ SDMM_FROM_PATHS = [
     # RESULTS_PATH + '/(.*)/sdmm/sdmm_product_16c_3/maxDepth=10,rrDepth=10,sampleCo=1024,samplePr=true,samplesP=4',
     # RESULTS_PATH + '/(.*)/sdmm/sdmm_product_16c_4/maxDepth=10,rrDepth=10,sampleCo=1024,samplePr=true,samplesP=4',
     # RESULTS_PATH + '/(.*)/sdmm/sdmm_product_16c_5/maxDepth=10,rrDepth=10,sampleCo=1024,samplePr=true,samplesP=4',
-    RESULTS_PATH + '/(.*)/sdmm/sdmm_stats_1/maxDepth=10,rrDepth=10,sampleCo=1024,samplesP=4',
-    RESULTS_PATH + '/(.*)/sdmm/dmm_stats_1/maxDepth=10,rrDepth=10,sampleCo=1024,samplesP=4',
+    # RESULTS_PATH + '/(.*)/sdmm/sdmm_stats_1/maxDepth=10,rrDepth=10,sampleCo=1024,samplesP=4',
+    # RESULTS_PATH + '/(.*)/sdmm/dmm_stats_1/maxDepth=10,rrDepth=10,sampleCo=1024,samplesP=4',
 
     # RESULTS_PATH + '/(.*)/sdmm/sdmm_single_mixture_radiance_648c/maxDepth=10,rrDepth=10,sampleCo=1024,samplePr=true,samplesP=4',
+    # RESULTS_PATH + '/(.*)/sdmm/radiance_2048leafs_4000st_delay_on_discard0_1/maxDepth=10,optimize=false,rrDepth=10,sampleCo=1024,samplesP=4',
+    # RESULTS_PATH + '/(.*)/sdmm/product_2048leafs_4000st_delay_on_discard0_1/maxDepth=10,optimize=false,rrDepth=10,sampleCo=1024,samplePr=true,samplesP=4',
+    # RESULTS_PATH + '/(.*)/sdmm/radiance_2048leafs_4000st_delay_on_discard0_1/maxDepth=10,rrDepth=10,sampleCo=1024,samplePr=true,samplesP=4',
 ]
 GT_FROM_PATHS = RESULTS_PATH + '/(.*)/gt'
 PPG_FROM_PATHS = [
@@ -79,6 +82,7 @@ PPG_FROM_PATHS = [
     # RESULTS_PATH + '/(.*)/ppg/baseline_3/budget=1024,budgetTy=spp,maxDepth=10,rrDepth=10,sampleCo=1024',
     # RESULTS_PATH + '/(.*)/ppg/baseline_4/budget=1024,budgetTy=spp,maxDepth=10,rrDepth=10,sampleCo=1024',
     # RESULTS_PATH + '/(.*)/ppg/baseline_5/budget=1024,budgetTy=spp,maxDepth=10,rrDepth=10,sampleCo=1024',
+    # RESULTS_PATH + '/(.*)/ppg/no_turbo_1/budget=1024,budgetTy=spp,maxDepth=10,rrDepth=10,sampleCo=1024',
 ]
 PATH_FROM_PATHS = [
     # RESULTS_PATH + '/(.*)/ppg/unidirectional_path_tracing_1/budget=1024,budgetTy=spp,maxDepth=10,rrDepth=10,sampleCo=1024'
@@ -86,6 +90,7 @@ PATH_FROM_PATHS = [
     # RESULTS_PATH + '/(.*)/ppg/unidirectional_path_tracing_3/budget=1024,budgetTy=spp,maxDepth=10,rrDepth=10,sampleCo=1024'
     # RESULTS_PATH + '/(.*)/ppg/unidirectional_path_tracing_4/budget=1024,budgetTy=spp,maxDepth=10,rrDepth=10,sampleCo=1024'
     # RESULTS_PATH + '/(.*)/ppg/unidirectional_path_tracing_5/budget=1024,budgetTy=spp,maxDepth=10,rrDepth=10,sampleCo=1024'
+    RESULTS_PATH + '/(.*)/ppg/unidir_1/budget=1024,budgetTy=spp,maxDepth=10,rrDepth=10,sampleCo=1024',
 ]
 
 # copy(GT_FROM_PATHS)

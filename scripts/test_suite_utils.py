@@ -33,7 +33,7 @@ SCENES = [
     # 'cbox',
     # 'cbox-white',
     # 'cornell-box-big',
-    # 'glass-of-water',
+    'glass-of-water',
     # 'pool-rerendering',
     # 'lucy',
     # 'lucy-flipped',
@@ -50,7 +50,7 @@ SCENE_TITLES = {
     # 'bathroom2': 'Salle de Bain',
     'living-room-2': 'White Room',
     'bedroom': 'Bedroom',
-    # 'glass-of-water': 'Glass of Water',
+    'glass-of-water': 'Glass of Water',
     'pool': 'Swimming Pool',
     'torus': 'Torus',
     'hairball': 'Hairball',
@@ -90,6 +90,9 @@ def get_gt_path(scene_name):
     output_directory = os.path.join(RESULTS_PATH, scene_name, 'gt')
     output_path = os.path.join(output_directory, scene_name + '.exr')
     return output_path
+
+def get_all_subdirs(directory):
+    return [f.path for f in os.scandir(directory) if f.is_dir()]
 
 def imsave(filename, img, gamma=2.2, divide_by=1.0, exposure=0.0):
     def tonemapped(image, gamma):

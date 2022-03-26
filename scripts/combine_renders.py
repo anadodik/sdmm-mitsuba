@@ -18,7 +18,7 @@ from pathlib import Path
 from tqdm import tqdm
 from typing import NamedTuple
 
-from test_suite_utils import get_gt_path, MrSE, MAPE, SMAPE, aggregate
+from test_suite_utils import get_gt_path, get_all_subdirs, MrSE, MAPE, SMAPE, aggregate
 from test_suite_utils import SCENES, SCENE_TITLES, RESULTS_PATH
 
 from matplotlib import rc
@@ -55,7 +55,14 @@ class ErrorType(Enum):
     CUMULATIVE = auto()
     INDIVIDUAL = auto()
 
-def get_errors(run_dir, combination_type='var', error_type=ErrorType.CUMULATIVE, integrator='sdmm'):
+def get_errors(
+    run_dir,
+    combination_type='var',
+    error_type=ErrorType.CUMULATIVE,
+    integrator='sdmm',
+    discard_spp=40,
+    out_postfix="test",
+):
     run_dir = os.path.join(run_dir, "") # adds to the end '/' if needed
     out_dir = os.path.dirname(run_dir)
 
@@ -133,7 +140,7 @@ def get_errors(run_dir, combination_type='var', error_type=ErrorType.CUMULATIVE,
 
     final_image /= total_reciprocal_weight
 
-    out_path = os.path.join(out_dir, scene_name + '_test' + '.exr')
+    out_path = os.path.join(out_dir, scene_name + "_" + out_postfix + '.exr')
     if os.path.exists(out_path):
         os.remove(out_path)
     pyexr.write(out_path, final_image.astype(np.float32))
@@ -318,10 +325,6 @@ def combine_renders(run_dir, combination_type='var', error_type=ErrorType.CUMULA
     }
 
 
-def get_all_subdirs(directory):
-    return [f.path for f in os.scandir(directory) if f.is_dir()]
-
-
 class ExperimentRun(NamedTuple):
     name: str
     readable_name: str
@@ -344,7 +347,19 @@ RUNS = [
     # ExperimentRun("sdmm_radiance_1", "SDMM Radiance 1", "sdmm"),
     # ExperimentRun("sdmm_product_1", "SDMM Product 1", "sdmm"),
     # ExperimentRun("sdmm_product_01bsdf_16c", "SDMM Product 0.1 BSDF 16 C", "sdmm"),
-    ExperimentRun("sdmm_radiance_16c_1", "SDMM Radiance 16 Comp 1", "sdmm"),
+    # ExperimentRun("sdmm_radiance_16c_1", "SDMM Radiance 16 Comp 1", "sdmm"),
+    # ExperimentRun("debug_1", "SDMM Clear Stats", "sdmm"),
+    # ExperimentRun("debug_2_1", "SDMM Broken Stats", "sdmm"),
+    # ExperimentRun("debug_3_1", "SDMM Correct Stats", "sdmm"),
+    # ExperimentRun("optimizing_splitting_1", "SDMM Correct Stats < 2048+512", "sdmm"),
+    # ExperimentRun("optimizing_splitting_2048_1", "SDMM Correct Stats < 2048", "sdmm"),
+    # ExperimentRun("fixed_timings_1", "SDMM Fixed Timings", "sdmm"),
+    # ExperimentRun("radiance_2048leafs_32000st_delay_on_discard0_1", "SDMM 2048L 32000ST", "sdmm"),
+    ExperimentRun("radiance_2048leafs_16000st_delay_on_discard0_1", "SDMM 2048L 16000ST", "sdmm"),
+    ExperimentRun("radiance_2048leafs_4000st_delay_on_discard0_1", "SDMM 2048L 4000ST", "sdmm"),
+    ExperimentRun("radiance_4096leafs_16000st_delay_on_discard0_1", "SDMM 4096L 16000ST", "sdmm"),
+    ExperimentRun("radiance_4096leafs_4000st_delay_on_discard0_1", "SDMM 4096L 4000ST", "sdmm"),
+    # ExperimentRun("vmm_comp_4098leafs_1", "VMM Comp", "sdmm"),
     # ExperimentRun("dmm_radiance_approx_1k_components_1", "DMM Radiance 16 Comp 1", "sdmm"),
     # ExperimentRun("sdmm_product_16c_1", "SDMM Product 16 Comp 1", "sdmm"),
     # ExperimentRun("sdmm_product_1", "SDMM Product 1", "sdmm"),
@@ -355,14 +370,15 @@ RUNS = [
     # ExperimentRun("dmm", "DMM", "sdmm"),
     # ExperimentRun("async_4spp_2", "Async 4 SPP 2", "sdmm"),
     # ExperimentRun("async_4spp_8min", "Async 4 SPP 8 min", "sdmm"),
-    ExperimentRun("baseline_2", "PPG", "ppg"),
+    # ExperimentRun("baseline_2", "PPG", "ppg"),
+    ExperimentRun("no_turbo_1", "PPG No Turbo", "ppg"),
 ]
 
 
 def make_comparison_figure(runs, name_prefix, error_type):
     scene_errors = {}
     for scene in SCENES:
-        # if scene not in ['glossy-kitchen']:
+        # if scene not in ['bottle', 'bedroom']:
         #     continue
         runs_errors = {}
         for run in runs:
@@ -441,84 +457,6 @@ def make_comparison_figure(runs, name_prefix, error_type):
         )
 
 
-def compare_all_runs():
-    allowed_runs = {
-        'radiance': "Radiance Guiding",
-        'radiance_32c': "Radiance Guiding (32 Components)",
-        'product': "Product Guiding",
-        'product_32c': "Product Guiding (32 Components)",
-    }
-    for scene in SCENES:
-        if scene not in ['glossy-bathroom']:
-            continue
-        all_errors = {}
-        scene_path = os.path.join(RESULTS_PATH, scene, 'sdmm')
-        experiments = get_all_subdirs(scene_path)
-        print(experiments)
-        for experiment in experiments:
-            if not os.path.basename(experiment) in allowed_runs.keys():
-                continue
-            runs = get_all_subdirs(experiment)
-            # print(f'Found runs: {runs}.')
-            assert(len(runs) == 1)
-            for run in runs:
-                # print(f'Combining renders: {run}.')
-                errors = combine_renders(run, 'var')
-                # print(f'errors={errors}')
-                all_errors[os.path.basename(experiment)] = errors
-
-        plots = {
-            'mrse.svg': ['MrSE'],
-            'mape.svg': ['MAPE'],
-            'smape.svg': ['SMAPE'],
-        }
-        for plot_filename, allowed_errors in plots.items():
-            plot_file = os.path.join(os.path.join(scene_path), plot_filename)
-            fig, ax = plt.subplots(figsize=(12, 9))
-            ax.set_axisbelow(True)
-            ax.minorticks_on()
-            ax.grid(which='major', axis='both', linestyle='-', linewidth='0.5')
-            ax.grid(which='minor', axis='both', linestyle=':', linewidth='0.5')
-            for experiment_name, experiment_errors in all_errors.items():
-                # print(f'Experiment name={experiment_name}')
-                for error_name, errors in experiment_errors.items():
-                    if error_name not in allowed_errors:
-                        continue
-                    ax.semilogy(errors[0], label=f'{allowed_runs[experiment_name]}')
-            # ax.set_yscale('log')
-            ax.legend(fontsize="x-large")
-            fig.tight_layout()
-            plt.savefig(plot_file, format=os.path.splitext(plot_filename)[-1][1:], dpi=fig.dpi)
-
-        for plot_filename, allowed_errors in plots.items():
-            plot_file = os.path.join(os.path.join(scene_path), 'final_' + plot_filename)
-            fig, ax = plt.subplots(figsize=(12, 9))
-
-            experiment_names = []
-            final_errors = []
-            for experiment_name, experiment_errors in all_errors.items():
-                # print(f'Experiment name={experiment_name}')
-                for error_name, errors in experiment_errors.items():
-                    if error_name not in allowed_errors:
-                        continue
-                    print(f"{experiment_name}: {errors[1]}")
-                    experiment_names.append(experiment_name)
-                    final_errors.append(errors[1])
-            x = np.arange(len(experiment_names))
-            ax.set_xticks(x)
-            ax.set_xticklabels(experiment_names)
-            rects = ax.bar(x, final_errors)
-            for rect in rects:
-                height = rect.get_height()
-                ax.annotate('{:.03f}'.format(height),
-                            xy=(rect.get_x() + rect.get_width() / 2, height),
-                            xytext=(0, 3),  # 3 points vertical offset
-                            textcoords="offset points",
-                            ha='center', va='bottom')
-            # ax.legend()
-            fig.tight_layout()
-            plt.savefig(plot_file, format=os.path.splitext(plot_filename)[-1][1:], dpi=fig.dpi)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Combine SDMM Runs!')
     parser.add_argument('-t', '--tonemap', action='store_true')
@@ -531,8 +469,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.all:
-        # compare_all_runs()
-        make_comparison_figure(RUNS, 'async_or_sync_', ErrorType.CUMULATIVE)
+        make_comparison_figure(RUNS, 'zero_split_', ErrorType.CUMULATIVE)
         # make_comparison_figure(RUNS, 'cbox_', ErrorType.CUMULATIVE)
         quit()
 
